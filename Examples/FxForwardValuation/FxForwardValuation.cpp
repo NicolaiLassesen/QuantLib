@@ -1,8 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2008 Jose Aparicio
- Copyright (C) 2014 Peter Caspers
+ Copyright (C) 2020 Nicolai Lassesen
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -22,7 +21,13 @@
 #ifdef BOOST_MSVC
 #  include <ql/auto_link.hpp>
 #endif
-#include <ql/quotes/simplequote.hpp>
+
+#include <ql/settings.hpp>
+#include <ql/time/calendars/target.hpp>
+#include <ql/currency.hpp>
+#include <ql/currencies/all.hpp>
+#include <ql/instruments/foreignexchangeforward.h>
+#include <ql/utilities/dataformatters.hpp>
 
 #include <iomanip>
 #include <iostream>
@@ -37,11 +42,30 @@ namespace QuantLib {
 }
 #endif
 
-int main(int argc, char* argv[]) {
+int main(int, char*[]) {
 
     try {
 
+        std::cout << std::endl;
 
+        Date todaysDate(11, March, 2020);
+        Settings::instance().evaluationDate() = todaysDate;
+
+        std::cout << "Today: " << todaysDate.weekday() << ", " << todaysDate << std::endl;
+
+        Date deliveryDate = TARGET().adjust(todaysDate + Period(3 * Months), Following);
+        Currency baseCurrency = EURCurrency(),
+                 termCurrency = USDCurrency();
+        Real baseNotionalAmount = 10000;
+        Rate contractAllInRate = 1.1389;
+
+        ext::shared_ptr<ForeignExchangeForward> fxFwd(new ForeignExchangeForward(
+            deliveryDate, baseCurrency, termCurrency, baseNotionalAmount, contractAllInRate));
+
+        std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
+
+        Rate spotExchangeRate = 1.1351;
+         
         return 0;
     } catch (exception& e) {
         cerr << e.what() << endl;

@@ -4288,6 +4288,9 @@
     <ClInclude Include="ql\methods\finitedifferences\schemes\cranknicolsonscheme.hpp">
       <Filter>methods\finitedifferences\schemes</Filter>
     </ClInclude>
+    <ClInclude Include="ql\instruments\foreignexchangeforward.h">
+      <Filter>instruments</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ql\methods\montecarlo\brownianbridge.cpp">
@@ -6923,6 +6926,9 @@
     </ClCompile>
     <ClCompile Include="ql\methods\finitedifferences\schemes\cranknicolsonscheme.cpp">
       <Filter>methods\finitedifferences\schemes</Filter>
+    </ClCompile>
+    <ClCompile Include="ql\instruments\foreignexchangeforward.cpp">
+      <Filter>instruments</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
