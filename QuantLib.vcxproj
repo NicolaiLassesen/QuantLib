@@ -915,6 +915,7 @@
     <ClInclude Include="ql\instruments\fixedratebondforward.hpp" />
     <ClInclude Include="ql\instruments\floatfloatswap.hpp" />
     <ClInclude Include="ql\instruments\floatfloatswaption.hpp" />
+    <ClInclude Include="ql\instruments\foreignexchangeforward.h" />
     <ClInclude Include="ql\instruments\forward.hpp" />
     <ClInclude Include="ql\instruments\forwardrateagreement.hpp" />
     <ClInclude Include="ql\instruments\forwardvanillaoption.hpp" />
@@ -2131,6 +2132,7 @@
     <ClCompile Include="ql\instruments\fixedratebondforward.cpp" />
     <ClCompile Include="ql\instruments\floatfloatswap.cpp" />
     <ClCompile Include="ql\instruments\floatfloatswaption.cpp" />
+    <ClCompile Include="ql\instruments\foreignexchangeforward.cpp" />
     <ClCompile Include="ql\instruments\forward.cpp" />
     <ClCompile Include="ql\instruments\forwardrateagreement.cpp" />
     <ClCompile Include="ql\instruments\forwardvanillaoption.cpp" />
