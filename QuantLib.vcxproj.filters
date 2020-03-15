@@ -337,6 +337,9 @@
     <Filter Include="methods\finitedifferences\utilities">
       <UniqueIdentifier>{be723df5-2e58-41de-8071-8d2e2f62410a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pricingengines\fx">
+      <UniqueIdentifier>{7c9a8a42-fd2d-464b-b520-bd6ee28ac7db}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ql\methods\all.hpp">
@@ -4291,6 +4294,9 @@
     <ClInclude Include="ql\instruments\foreignexchangeforward.h">
       <Filter>instruments</Filter>
     </ClInclude>
+    <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.h">
+      <Filter>pricingengines\fx</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ql\methods\montecarlo\brownianbridge.cpp">
@@ -6929,6 +6935,9 @@
     </ClCompile>
     <ClCompile Include="ql\instruments\foreignexchangeforward.cpp">
       <Filter>instruments</Filter>
+    </ClCompile>
+    <ClCompile Include="ql\pricingengines\fx\forwardpointsengine.cpp">
+      <Filter>pricingengines\fx</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

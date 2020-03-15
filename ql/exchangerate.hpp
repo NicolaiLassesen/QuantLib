@@ -71,6 +71,8 @@ namespace QuantLib {
         //! chain two exchange rates
         static ExchangeRate chain(const ExchangeRate& r1,
                                   const ExchangeRate& r2);
+        //! get inverse exchange rate
+        static ExchangeRate inverse(const ExchangeRate& r);
         //@}
       private:
         Currency source_, target_;

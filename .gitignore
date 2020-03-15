@@ -116,3 +116,4 @@ nbproject
 .dir-locals.el
 Build.props
 Directory.Build.props
+/QuantLib.sln.DotSettings.user

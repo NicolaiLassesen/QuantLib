@@ -1496,6 +1496,7 @@
     <ClInclude Include="ql\pricingengines\forward\forwardperformanceengine.hpp" />
     <ClInclude Include="ql\pricingengines\forward\mcvarianceswapengine.hpp" />
     <ClInclude Include="ql\pricingengines\forward\replicatingvarianceswapengine.hpp" />
+    <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.h" />
     <ClInclude Include="ql\pricingengines\genericmodelengine.hpp" />
     <ClInclude Include="ql\pricingengines\greeks.hpp" />
     <ClInclude Include="ql\pricingengines\inflation\all.hpp" />
@@ -2511,6 +2512,7 @@
     <ClCompile Include="ql\pricingengines\credit\integralcdsengine.cpp" />
     <ClCompile Include="ql\pricingengines\credit\isdacdsengine.cpp" />
     <ClCompile Include="ql\pricingengines\credit\midpointcdsengine.cpp" />
+    <ClCompile Include="ql\pricingengines\fx\forwardpointsengine.cpp" />
     <ClCompile Include="ql\pricingengines\greeks.cpp" />
     <ClCompile Include="ql\pricingengines\inflation\inflationcapfloorengines.cpp" />
     <ClCompile Include="ql\pricingengines\lookback\analyticcontinuousfixedlookback.cpp" />

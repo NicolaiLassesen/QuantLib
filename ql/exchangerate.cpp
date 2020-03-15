@@ -76,4 +76,8 @@ namespace QuantLib {
         return result;
     }
 
+    ExchangeRate ExchangeRate::inverse(const ExchangeRate& r) {
+        return ExchangeRate(r.target(), r.source(), 1.0 / r.rate());
+    }
+
 }
