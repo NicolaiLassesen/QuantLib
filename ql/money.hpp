@@ -46,6 +46,8 @@ namespace QuantLib {
         const Currency& currency() const;
         Decimal value() const;
         Money rounded() const;
+        //! is this a usable instance?
+        bool empty() const;
         //@}
         /*! \name Money arithmetics
 
@@ -150,8 +152,9 @@ namespace QuantLib {
     }
 
     inline Money Money::rounded() const {
-        return Money(currency_.rounding()(value_), currency_);
-    }
+        return Money(currency_.rounding()(value_), currency_); }
+
+    inline bool Money::empty() const { return currency_.empty(); }
 
     inline Money Money::operator+() const {
         return *this;

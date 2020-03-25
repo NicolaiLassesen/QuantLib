@@ -20,6 +20,7 @@
 #include <ql/pricingengines/cliquet/all.hpp>
 #include <ql/pricingengines/credit/all.hpp>
 #include <ql/pricingengines/forward/all.hpp>
+#include <ql/pricingengines/fx/all.hpp>
 #include <ql/pricingengines/inflation/all.hpp>
 #include <ql/pricingengines/lookback/all.hpp>
 #include <ql/pricingengines/quanto/all.hpp>

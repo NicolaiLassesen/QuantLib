@@ -21,7 +21,7 @@
     \brief Base forward class
 */
 
-#include <ql/instruments/foreignexchangeforward.h>
+#include <ql/instruments/foreignexchangeforward.hpp>
 #include <ql/time/all.hpp>
 
 namespace QuantLib {
@@ -50,17 +50,19 @@ namespace QuantLib {
 
     ForeignExchangeForward::ForeignExchangeForward(const Date& deliveryDate,
                                                    const Money& baseNotionalAmount,
-                                                   const ExchangeRate& contractAllInRate)
+                                                   const ExchangeRate& contractAllInRate,
+                                                   Type forwardType)
     : ForeignExchangeForward(
-          deliveryDate, baseNotionalAmount, contractAllInRate, FxTerms(contractAllInRate)) {}
+          deliveryDate, baseNotionalAmount, contractAllInRate, forwardType, FxTerms(contractAllInRate)) {}
 
     ForeignExchangeForward::ForeignExchangeForward(const Date& deliveryDate,
                                                    const Money& baseNotionalAmount,
                                                    const ExchangeRate& contractAllInRate,
+                                                   Type forwardType,
                                                    const FxTerms& terms)
     : deliveryDate_(deliveryDate), baseNotionalAmount_(baseNotionalAmount),
       termNotionalAmount_(contractAllInRate.exchange(baseNotionalAmount)),
-      foreignExchangeTerms_(terms) {
+      forwardType_(forwardType), foreignExchangeTerms_(terms) {
         QL_ENSURE(baseNotionalAmount_.currency() == contractAllInRate.source() ||
                       baseNotionalAmount_.currency() == contractAllInRate.target(),
                   "currency of base notional differs from all in rate currencies");
@@ -71,6 +73,7 @@ namespace QuantLib {
                                  contractAllInRate :
                                  ExchangeRate::inverse(contractAllInRate);
     }
+
     void QuantLib::ForeignExchangeForward::setupArguments(PricingEngine::arguments* args) const {
         ForeignExchangeForward::arguments* arguments =
             dynamic_cast<ForeignExchangeForward::arguments*>(args);
@@ -78,6 +81,7 @@ namespace QuantLib {
         arguments->deliveryDate = deliveryDate_;
         arguments->baseNotionalAmount = baseNotionalAmount_;
         arguments->contractAllInRate = contractAllInRate_;
+        arguments->forwardType = forwardType_;
         arguments->dayCounter = foreignExchangeTerms_.dayCounter();
         arguments->calendar = foreignExchangeTerms_.calendar();
         arguments->businessDayConvention = foreignExchangeTerms_.businessDayConvention();
@@ -89,30 +93,73 @@ namespace QuantLib {
         const ForeignExchangeForward::results* results =
             dynamic_cast<const ForeignExchangeForward::results*>(r);
         QL_ENSURE(results != 0, "wrong result type");
-        forwardValue_ = results->forwardValue;
+        fairForwardPoints_ = results->fairForwardPoints;
+        forwardNetValueBase_ = results->forwardNetValueBase;
+        forwardNetValueTerm_ = results->forwardNetValueTerm;
+        presentNetValueBase_ = results->presentNetValueBase;
+        presentNetValueTerm_ = results->presentNetValueTerm;
     }
 
-    Money ForeignExchangeForward::forwardValue() const {
+    Decimal ForeignExchangeForward::fairForwardPoints() const {
         calculate();
-        QL_ENSURE(forwardValue_ != Money(), "forwardValue not given");
-        return forwardValue_;
+        QL_ENSURE(fairForwardPoints_ != Null<Decimal>(), "fairForwardPoints not given");
+        return fairForwardPoints_;
+    }
+
+    Money ForeignExchangeForward::forwardNetValueBase() const {
+        calculate();
+        QL_ENSURE(!forwardNetValueBase_.empty(), "forwardNetValueBase not given");
+        return forwardNetValueBase_;
+    }
+    Money ForeignExchangeForward::forwardNetValueTerm() const {
+        calculate();
+        QL_ENSURE(!forwardNetValueTerm_.empty(), "forwardNetValueTerm not given");
+        return forwardNetValueTerm_;
+    }
+
+    Money ForeignExchangeForward::presentNetValueBase() const {
+        calculate();
+        QL_ENSURE(!presentNetValueBase_.empty(), "presentNetValueBase not given");
+        return presentNetValueBase_;
+    }
+
+    Money ForeignExchangeForward::presentNetValueTerm() const {
+        calculate();
+        QL_ENSURE(!presentNetValueTerm_.empty(), "presentNetValueBase not given");
+        return presentNetValueTerm_;
+    }
+
+    Money ForeignExchangeForward::forwardGrossValueBase() const {
+        calculate();
+        QL_ENSURE(!forwardNetValueBase_.empty(), "forwardValue not given");
+        Money fwdGrossBase = forwardNetValueBase_ - baseNotionalAmount_ * this->baseSign();
+        return fwdGrossBase;
+    }
+
+    Money ForeignExchangeForward::forwardGrossValueTerm() const {
+        calculate();
+        QL_ENSURE(!forwardNetValueTerm_.empty(), "forwardValue not given");
+        Money fwdGrossTerm = forwardNetValueTerm_ + termNotionalAmount_ * this->baseSign();
+        return fwdGrossTerm;
     }
 
     void ForeignExchangeForward::setupExpired() const {
         Instrument::setupExpired();
-        forwardValue_ = Money();
+        forwardNetValueBase_ = Money();
+        forwardNetValueTerm_ = Money();
+        presentNetValueBase_ = Money();
+        presentNetValueTerm_ = Money();
     }
 
     void ForeignExchangeForward::arguments::validate() const {
-        // TODO: Validate arguments (make sure all currencies match, eg. for current exchange rate,
-        // forward points (curve) etc.)
+        QL_REQUIRE(baseNotionalAmount.currency() == contractAllInRate.source(),
+                   "contract all-in rate should have same base currency as notionnal amount");
     }
 
 
     std::ostream& operator<<(std::ostream& out, const ForeignExchangeForward& c) {
         return out << c.baseCurrency() << c.termCurrency() << " " << io::iso_date(c.deliveryDate())
-                   << " " << c.notionalAmountBase();
-        //<< " - " << c.contractAllInRate();
+                   << " " << c.contractNotionalAmountBase();
     }
 
 }

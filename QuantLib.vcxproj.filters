@@ -4291,10 +4291,17 @@
     <ClInclude Include="ql\methods\finitedifferences\schemes\cranknicolsonscheme.hpp">
       <Filter>methods\finitedifferences\schemes</Filter>
     </ClInclude>
-    <ClInclude Include="ql\instruments\foreignexchangeforward.h">
+    <ClInclude Include="ql\forwardexchangerate.hpp" />
+    <ClInclude Include="ql\termstructures\fxforwardpointtermstructure.hpp">
+      <Filter>termstructures</Filter>
+    </ClInclude>
+    <ClInclude Include="ql\instruments\foreignexchangeforward.hpp">
       <Filter>instruments</Filter>
     </ClInclude>
-    <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.h">
+    <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.hpp">
+      <Filter>pricingengines\fx</Filter>
+    </ClInclude>
+    <ClInclude Include="all.hpp">
       <Filter>pricingengines\fx</Filter>
     </ClInclude>
   </ItemGroup>
@@ -6939,5 +6946,6 @@
     <ClCompile Include="ql\pricingengines\fx\forwardpointsengine.cpp">
       <Filter>pricingengines\fx</Filter>
     </ClCompile>
+    <ClCompile Include="ql\forwardexchangerate.cpp" />
   </ItemGroup>
 </Project>

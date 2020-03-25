@@ -497,6 +497,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="all.hpp" />
     <ClInclude Include="ql\cashflows\all.hpp" />
     <ClInclude Include="ql\cashflows\averagebmacoupon.hpp" />
     <ClInclude Include="ql\cashflows\capflooredcoupon.hpp" />
@@ -829,6 +830,7 @@
     <ClInclude Include="ql\experimental\volatility\zabrinterpolatedsmilesection.hpp" />
     <ClInclude Include="ql\experimental\volatility\zabrinterpolation.hpp" />
     <ClInclude Include="ql\experimental\volatility\zabrsmilesection.hpp" />
+    <ClInclude Include="ql\forwardexchangerate.hpp" />
     <ClInclude Include="ql\indexes\all.hpp" />
     <ClInclude Include="ql\indexes\bmaindex.hpp" />
     <ClInclude Include="ql\indexes\ibor\all.hpp" />
@@ -915,7 +917,7 @@
     <ClInclude Include="ql\instruments\fixedratebondforward.hpp" />
     <ClInclude Include="ql\instruments\floatfloatswap.hpp" />
     <ClInclude Include="ql\instruments\floatfloatswaption.hpp" />
-    <ClInclude Include="ql\instruments\foreignexchangeforward.h" />
+    <ClInclude Include="ql\instruments\foreignexchangeforward.hpp" />
     <ClInclude Include="ql\instruments\forward.hpp" />
     <ClInclude Include="ql\instruments\forwardrateagreement.hpp" />
     <ClInclude Include="ql\instruments\forwardvanillaoption.hpp" />
@@ -1496,7 +1498,7 @@
     <ClInclude Include="ql\pricingengines\forward\forwardperformanceengine.hpp" />
     <ClInclude Include="ql\pricingengines\forward\mcvarianceswapengine.hpp" />
     <ClInclude Include="ql\pricingengines\forward\replicatingvarianceswapengine.hpp" />
-    <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.h" />
+    <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.hpp" />
     <ClInclude Include="ql\pricingengines\genericmodelengine.hpp" />
     <ClInclude Include="ql\pricingengines\greeks.hpp" />
     <ClInclude Include="ql\pricingengines\inflation\all.hpp" />
@@ -1621,6 +1623,7 @@
     <ClInclude Include="ql\termstructures\credit\probabilitytraits.hpp" />
     <ClInclude Include="ql\termstructures\credit\survivalprobabilitystructure.hpp" />
     <ClInclude Include="ql\termstructures\defaulttermstructure.hpp" />
+    <ClInclude Include="ql\termstructures\fxforwardpointtermstructure.hpp" />
     <ClInclude Include="ql\termstructures\inflation\all.hpp" />
     <ClInclude Include="ql\termstructures\inflation\inflationhelpers.hpp" />
     <ClInclude Include="ql\termstructures\inflation\inflationtraits.hpp" />
@@ -2084,6 +2087,7 @@
     <ClCompile Include="ql\experimental\volatility\svismilesection.cpp" />
     <ClCompile Include="ql\experimental\volatility\volcube.cpp" />
     <ClCompile Include="ql\experimental\volatility\zabr.cpp" />
+    <ClCompile Include="ql\forwardexchangerate.cpp" />
     <ClCompile Include="ql\indexes\bmaindex.cpp" />
     <ClCompile Include="ql\indexes\ibor\bibor.cpp" />
     <ClCompile Include="ql\indexes\ibor\eonia.cpp" />

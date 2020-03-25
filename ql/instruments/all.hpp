@@ -24,6 +24,7 @@
 #include <ql/instruments/fixedratebondforward.hpp>
 #include <ql/instruments/floatfloatswap.hpp>
 #include <ql/instruments/floatfloatswaption.hpp>
+#include <ql/instruments/foreignexchangeforward.hpp>
 #include <ql/instruments/forward.hpp>
 #include <ql/instruments/forwardrateagreement.hpp>
 #include <ql/instruments/forwardvanillaoption.hpp>

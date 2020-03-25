@@ -24,7 +24,8 @@
 #ifndef quantlib_forward_points_engine_hpp
 #define quantlib_forward_points_engine_hpp
 
-#include <ql/instruments/foreignexchangeforward.h>
+#include <ql/instruments/foreignexchangeforward.hpp>
+#include <ql/termstructures/fxforwardpointtermstructure.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
 
 namespace QuantLib {
@@ -32,23 +33,25 @@ namespace QuantLib {
     class ForwardPointsEngine : public ForeignExchangeForward::engine {
       public:
         ForwardPointsEngine(
-            Currency valuationCurrency,
-            Decimal spotExchangeRate,
-            Decimal forwardPoints,
-            const Handle<YieldTermStructure>& discountCurve = Handle<YieldTermStructure>());
+            const ExchangeRate& spotExchangeRate,
+            const Handle<FxForwardPointTermStructure>& forwardPointsCurve =
+                Handle<FxForwardPointTermStructure>(),
+            const Handle<YieldTermStructure>& baseDiscountCurve = Handle<YieldTermStructure>(),
+            const Handle<YieldTermStructure>& termDiscountCurve = Handle<YieldTermStructure>());
         void calculate() const;
-        Currency valuationCurrency() const { return valuationCurrency_; }
-        Decimal spotExchangeRate() const { return spotExchangeRate_; }
-        Decimal forwardPoints() const { return forwardPoints_; }
-        Handle<YieldTermStructure> discountCurve() const { return discountCurve_; }
+        Currency valuationCurrency() const { return spotExchangeRate_.source(); }
+        const ExchangeRate spotExchangeRate() const { return spotExchangeRate_; }
+        Handle<FxForwardPointTermStructure> forwardPointsCurve() const {
+            return forwardPointsCurve_;
+        }
+        Handle<YieldTermStructure> baseDiscountCurve() const { return baseDiscountCurve_; }
+        Handle<YieldTermStructure> termDiscountCurve() const { return termDiscountCurve_; }
+
       private:
-        Currency valuationCurrency_;
-        // TODO: Create spot exchange rate table with all currencies and use that
-        Decimal spotExchangeRate_;
-        // TODO: For now just use forward point as simple real - when everything is ready and works
-        // create forward point curve and use that
-        Decimal forwardPoints_;
-        Handle<YieldTermStructure> discountCurve_;
+        ExchangeRate spotExchangeRate_;
+        Handle<FxForwardPointTermStructure> forwardPointsCurve_;
+        Handle<YieldTermStructure> baseDiscountCurve_;
+        Handle<YieldTermStructure> termDiscountCurve_;
     };
 
 }

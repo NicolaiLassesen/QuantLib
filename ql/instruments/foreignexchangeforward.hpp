@@ -24,10 +24,10 @@
 #ifndef quantlib_foreignexchangeforward_hpp
 #define quantlib_foreignexchangeforward_hpp
 
-#include <ql/instruments/forward.hpp>
 #include <ql/currency.hpp>
-#include <ql/money.hpp>
 #include <ql/exchangerate.hpp>
+#include <ql/instruments/forward.hpp>
+#include <ql/money.hpp>
 #include <ql/utilities/dataformatters.hpp>
 
 namespace QuantLib {
@@ -59,12 +59,16 @@ namespace QuantLib {
 
     class ForeignExchangeForward : public Instrument {
       public:
-        ForeignExchangeForward(const Date& deliveryDate,
-                               const Money& baseNotionalAmount,
-                               const ExchangeRate& contractAllInRate);
+        enum class Type { SellBaseBuyTermForward, BuyBaseSellTermForward };
+
         ForeignExchangeForward(const Date& deliveryDate,
                                const Money& baseNotionalAmount,
                                const ExchangeRate& contractAllInRate,
+                               Type forwardType = Type::SellBaseBuyTermForward);
+        ForeignExchangeForward(const Date& deliveryDate,
+                               const Money& baseNotionalAmount,
+                               const ExchangeRate& contractAllInRate,
+                               Type forwardType,
                                const FxTerms& terms);
 
         class arguments;
@@ -80,31 +84,46 @@ namespace QuantLib {
 
         //! \name Inspectors
         //@{
+        const Type forwardType() const;
         const Date& deliveryDate() const;
         const Currency& baseCurrency() const;
         const Currency& termCurrency() const;
-        ExchangeRate contractAllInRate() const;
-        Real notionalAmountBase() const;
-        Real notionalAmountTerm() const;
+        const ExchangeRate& contractAllInRate() const;
+        const Money& contractNotionalAmountBase() const;
+        Money contractNotionalAmountTerm() const;
         const FxTerms& foreignExchangeTerms() const;
         //@}
 
         //! \name Results
         //@{
-        Money forwardValue() const;
+        Decimal fairForwardPoints() const;
+        Money forwardNetValueBase() const;
+        Money forwardNetValueTerm() const;
+        Money presentNetValueBase() const;
+        Money presentNetValueTerm() const;
+        Money forwardGrossValueBase() const;
+        Money forwardGrossValueTerm() const;
         //@}
 
       protected:
         void setupExpired() const;
+        Decimal baseSign() const {
+            return forwardType_ == ForeignExchangeForward::Type::SellBaseBuyTermForward ? -1.0 : 1.0;
+        }
 
         Date deliveryDate_;
         Money baseNotionalAmount_;
         Money termNotionalAmount_;
         ExchangeRate contractAllInRate_;
+        Type forwardType_;
         FxTerms foreignExchangeTerms_;
         Currency termCurrency_;
 
-        mutable Money forwardValue_;
+        mutable Decimal fairForwardPoints_;
+        mutable Money forwardNetValueBase_;
+        mutable Money forwardNetValueTerm_;
+        mutable Money presentNetValueBase_;
+        mutable Money presentNetValueTerm_;
 
       private:
     };
@@ -113,10 +132,14 @@ namespace QuantLib {
     class ForeignExchangeForward::arguments : public PricingEngine::arguments {
       public:
         void validate() const;
+        Decimal baseSign() const {
+            return forwardType == ForeignExchangeForward::Type::SellBaseBuyTermForward ? -1.0 : 1.0;
+        }
 
         Date deliveryDate;
         Money baseNotionalAmount;
         ExchangeRate contractAllInRate;
+        Type forwardType;
         DayCounter dayCounter;
         Calendar calendar;
         BusinessDayConvention businessDayConvention;
@@ -126,10 +149,17 @@ namespace QuantLib {
 
     class ForeignExchangeForward::results : public Instrument::results {
       public:
-        Currency valuationCurrency;
-        Money forwardValue;
+        Decimal fairForwardPoints;
+        Money forwardNetValueBase;
+        Money forwardNetValueTerm;
+        Money presentNetValueBase;
+        Money presentNetValueTerm;
         void reset() {
-            forwardValue = Money();
+            fairForwardPoints = Null<Decimal>();
+            forwardNetValueBase = Money();
+            forwardNetValueTerm = Money();
+            presentNetValueBase = Money();
+            presentNetValueTerm = Money();
             Instrument::results::reset();
         }
     };
@@ -159,6 +189,10 @@ namespace QuantLib {
         return deliveryDate_ < Settings::instance().evaluationDate();
     }
 
+    inline const ForeignExchangeForward::Type ForeignExchangeForward::forwardType() const {
+        return forwardType_;
+    }
+
     inline const Date& ForeignExchangeForward::deliveryDate() const { return deliveryDate_; }
 
     inline const Currency& ForeignExchangeForward::baseCurrency() const {
@@ -167,16 +201,16 @@ namespace QuantLib {
 
     inline const Currency& ForeignExchangeForward::termCurrency() const { return termCurrency_; }
 
-    inline ExchangeRate ForeignExchangeForward::contractAllInRate() const {
+    inline const ExchangeRate& ForeignExchangeForward::contractAllInRate() const {
         return contractAllInRate_;
     }
 
-    inline Real ForeignExchangeForward::notionalAmountBase() const {
-        return baseNotionalAmount_.value();
+    inline const Money& ForeignExchangeForward::contractNotionalAmountBase() const {
+        return baseNotionalAmount_;
     }
 
-    inline Real ForeignExchangeForward::notionalAmountTerm() const {
-        return contractAllInRate_.exchange(baseNotionalAmount_).value();
+    inline Money ForeignExchangeForward::contractNotionalAmountTerm() const {
+        return contractAllInRate_.exchange(baseNotionalAmount_);
     }
 
     inline const FxTerms& ForeignExchangeForward::foreignExchangeTerms() const {
