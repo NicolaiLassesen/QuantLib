@@ -80,8 +80,7 @@ int main(int, char*[]) {
         Date todaysDate(28, February, 2020);
         Settings::instance().evaluationDate() = todaysDate;
         Money::conversionType = Money::ConversionType::AutomatedConversion;
-        std::cout << "Today: " << todaysDate.weekday() << ", " << todaysDate << std::endl
-                  << std::endl;
+        std::cout << "Today: " << todaysDate.weekday() << ", " << todaysDate << std::endl << std::endl;
 
         ExchangeRateManager::instance().add(ExchangeRate(USDCurrency(), EURCurrency(), 0.9103736341));
         ExchangeRateManager::instance().add(ExchangeRate(GBPCurrency(), EURCurrency(), 1.1628202171));
@@ -223,7 +222,6 @@ void runLongGbpEurExample(const Date& todaysDate) {
     // ============================
 }
 
-
 void printResults(const ext::shared_ptr<ForeignExchangeForward> fxFwd) {
     Money contractTermNotional = fxFwd->contractNotionalAmountTerm();
     Money forwardTermGross = fxFwd->forwardGrossValueTerm();
@@ -235,7 +233,6 @@ void printResults(const ext::shared_ptr<ForeignExchangeForward> fxFwd) {
     std::cout << "Forward net value: " << forwardNetValue << std::endl;
     std::cout << "Present net value: " << presentNetValue << std::endl;
 }
-
 
 Handle<FxForwardPointTermStructure> usdEurFwdPointStructure(const Date& todaysDate) {
 

@@ -290,7 +290,7 @@ namespace QuantLib {
         this->data_[1] = this->fwdPoints_[0];
         for (Size i = 1; i < dates_.size(); ++i) {
             QL_REQUIRE(dates_[i] > dates_[i - 1],
-                       "invalid date (" << dates_[i] << ", vs " << dates_[i - 1] << ")");
+                       "invalid date (" << dates_[i] << " vs " << dates_[i - 1] << ") - curve data should be sorted by tenor");
             this->times_[i + 1] = dayCounter().yearFraction(refDate, dates_[i]);
             QL_REQUIRE(!close(this->times_[i + 1], this->times_[i]),
                        "two dates correspond to the same time "

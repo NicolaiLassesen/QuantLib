@@ -365,7 +365,7 @@ namespace QuantLib {
         else if (p1lim.first > p2lim.second)
             return false;
         else
-            QL_FAIL("undecidable comparison between " << p1 << " and " << p2);
+            QL_FAIL("undecidable comparison between Period objects " << p1 << " and " << p2);
     }
 
 
