@@ -22,6 +22,7 @@
 #ifdef BOOST_MSVC
 #  include <ql/auto_link.hpp>
 #endif
+#include "ql/instruments/makecds.hpp"
 #include <ql/cashflows/fixedratecoupon.hpp>
 #include <ql/cashflows/iborcoupon.hpp>
 #include <ql/instruments/creditdefaultswap.hpp>
@@ -213,21 +214,21 @@ void example01() {
 
 void example02() {
 
-Date todaysDate(25, September, 2014);
-Settings::instance().evaluationDate() = todaysDate;
+    Date todaysDate(25, September, 2014);
+    Settings::instance().evaluationDate() = todaysDate;
 
-Date termDate = TARGET().adjust(todaysDate+Period(2*Years), Following);
+    Date termDate = TARGET().adjust(todaysDate + Period(2 * Years), Following);
 
-Schedule cdsSchedule =
-    MakeSchedule().from(todaysDate).to(termDate)
-                  .withFrequency(Quarterly)
-                  .withCalendar(WeekendsOnly())
-                  .withConvention(ModifiedFollowing)
-                  .withTerminationDateConvention(ModifiedFollowing)
-                  .withRule(DateGeneration::CDS);
+    Schedule cdsSchedule = MakeSchedule()
+                               .from(todaysDate)
+                               .to(termDate)
+                               .withFrequency(Quarterly)
+                               .withCalendar(WeekendsOnly())
+                               .withConvention(ModifiedFollowing)
+                               .withTerminationDateConvention(ModifiedFollowing)
+                               .withRule(DateGeneration::CDS);
 
-std::copy(cdsSchedule.begin(), cdsSchedule.end(),
-    std::ostream_iterator<Date>(cout, "\n"));
+    std::copy(cdsSchedule.begin(), cdsSchedule.end(), std::ostream_iterator<Date>(cout, "\n"));
 
     Date evaluationDate = Date(21, October, 2014);
 
@@ -235,36 +236,23 @@ std::copy(cdsSchedule.begin(), cdsSchedule.end(),
 
     // set up ISDA IR curve helpers
 
-    ext::shared_ptr<DepositRateHelper> dp1m =
-        ext::make_shared<DepositRateHelper>(0.000060, 1 * Months, 2,
-                                              TARGET(), ModifiedFollowing,
-                                              false, Actual360());
-    ext::shared_ptr<DepositRateHelper> dp2m =
-        ext::make_shared<DepositRateHelper>(0.000450, 2 * Months, 2,
-                                              TARGET(), ModifiedFollowing,
-                                              false, Actual360());
-    ext::shared_ptr<DepositRateHelper> dp3m =
-        ext::make_shared<DepositRateHelper>(0.000810, 3 * Months, 2,
-                                              TARGET(), ModifiedFollowing,
-                                              false, Actual360());
-    ext::shared_ptr<DepositRateHelper> dp6m =
-        ext::make_shared<DepositRateHelper>(0.001840, 6 * Months, 2,
-                                              TARGET(), ModifiedFollowing,
-                                              false, Actual360());
-    ext::shared_ptr<DepositRateHelper> dp9m =
-        ext::make_shared<DepositRateHelper>(0.002560, 9 * Months, 2,
-                                              TARGET(), ModifiedFollowing,
-                                              false, Actual360());
-    ext::shared_ptr<DepositRateHelper> dp12m =
-        ext::make_shared<DepositRateHelper>(0.003370, 12 * Months, 2,
-                                              TARGET(), ModifiedFollowing,
-                                              false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp1m = ext::make_shared<DepositRateHelper>(
+        0.000060, 1 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp2m = ext::make_shared<DepositRateHelper>(
+        0.000450, 2 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp3m = ext::make_shared<DepositRateHelper>(
+        0.000810, 3 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp6m = ext::make_shared<DepositRateHelper>(
+        0.001840, 6 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp9m = ext::make_shared<DepositRateHelper>(
+        0.002560, 9 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp12m = ext::make_shared<DepositRateHelper>(
+        0.003370, 12 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
 
     // intentionally we do not provide a fixing for the euribor index used for
     // bootstrapping in order to be compliant with the ISDA specification
 
-    ext::shared_ptr<IborIndex> euribor6m =
-        ext::make_shared<Euribor>(Euribor(6 * Months));
+    ext::shared_ptr<IborIndex> euribor6m = ext::make_shared<Euribor>(Euribor(6 * Months));
 
     // check if indexed coupon is defined (it should not to be 100% consistent with
     // the ISDA spec)
@@ -275,44 +263,31 @@ std::copy(cdsSchedule.begin(), cdsSchedule.end(),
     }
 
     ext::shared_ptr<SwapRateHelper> sw2y = ext::make_shared<SwapRateHelper>(
-        0.002230, 2 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.002230, 2 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw3y = ext::make_shared<SwapRateHelper>(
-        0.002760, 3 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.002760, 3 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw4y = ext::make_shared<SwapRateHelper>(
-        0.003530, 4 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.003530, 4 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw5y = ext::make_shared<SwapRateHelper>(
-        0.004520, 5 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.004520, 5 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw6y = ext::make_shared<SwapRateHelper>(
-        0.005720, 6 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.005720, 6 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw7y = ext::make_shared<SwapRateHelper>(
-        0.007050, 7 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.007050, 7 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw8y = ext::make_shared<SwapRateHelper>(
-        0.008420, 8 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.008420, 8 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw9y = ext::make_shared<SwapRateHelper>(
-        0.009720, 9 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.009720, 9 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw10y = ext::make_shared<SwapRateHelper>(
-        0.010900, 10 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.010900, 10 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw12y = ext::make_shared<SwapRateHelper>(
-        0.012870, 12 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.012870, 12 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw15y = ext::make_shared<SwapRateHelper>(
-        0.014970, 15 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.014970, 15 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw20y = ext::make_shared<SwapRateHelper>(
-        0.017000, 20 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.017000, 20 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
     ext::shared_ptr<SwapRateHelper> sw30y = ext::make_shared<SwapRateHelper>(
-        0.018210, 30 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(),
-        euribor6m);
+        0.018210, 30 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
 
     std::vector<ext::shared_ptr<RateHelper> > isdaRateHelper;
 
@@ -336,113 +311,104 @@ std::copy(cdsSchedule.begin(), cdsSchedule.end(),
     isdaRateHelper.push_back(sw20y);
     isdaRateHelper.push_back(sw30y);
 
-    Handle<YieldTermStructure> rateTs(
-        ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear> >(
-            0, WeekendsOnly(), isdaRateHelper, Actual365Fixed()));
+    Handle<YieldTermStructure> rateTs(ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear> >(
+        0, WeekendsOnly(), isdaRateHelper, Actual365Fixed()));
     rateTs->enableExtrapolation();
 
     // output rate curve
     std::cout << "ISDA rate curve: " << std::endl;
-    for(Size i=0;i<isdaRateHelper.size(); i++) {
+    for (Size i = 0; i < isdaRateHelper.size(); i++) {
         Date d = isdaRateHelper[i]->latestDate();
-        std::cout << d << "\t" << setprecision(6) <<
-            rateTs->zeroRate(d,Actual365Fixed(),Continuous).rate() << "\t" <<
-            rateTs->discount(d) << std::endl;
+        std::cout << d << "\t" << setprecision(6)
+                  << rateTs->zeroRate(d, Actual365Fixed(), Continuous).rate() << "\t"
+                  << rateTs->discount(d) << std::endl;
     }
 
     // build reference credit curve (flat)
     ext::shared_ptr<DefaultProbabilityTermStructure> defaultTs0 =
-        ext::make_shared<FlatHazardRate>(0, WeekendsOnly(), 0.016739207493630,Actual365Fixed());
+        ext::make_shared<FlatHazardRate>(0, WeekendsOnly(), 0.016739207493630, Actual365Fixed());
 
     // reference CDS
-    Schedule sched( Date(22,September,2014), Date(20,December,2019), 3*Months,
-            WeekendsOnly(), Following, Unadjusted, DateGeneration::CDS, false, Date(), Date() );
-    ext::shared_ptr<CreditDefaultSwap> trade =
-        ext::shared_ptr<CreditDefaultSwap>(
-            new CreditDefaultSwap(Protection::Buyer, 100000000.0, 0.01, sched,
-                                  Following, Actual360(), true, true,
-                                  Date(22,October,2014), ext::shared_ptr<Claim>(),
-                                  Actual360(true), true));
+    Schedule sched(Date(22, September, 2014), Date(20, December, 2019), 3 * Months, WeekendsOnly(),
+                   Following, Unadjusted, DateGeneration::CDS, false, Date(), Date());
+    ext::shared_ptr<CreditDefaultSwap> trade1 =
+        ext::shared_ptr<CreditDefaultSwap>(new CreditDefaultSwap(
+            Protection::Buyer, 100000000.0, 0.01, sched, Following, Actual360(), true, true,
+            Date(22, October, 2014), ext::shared_ptr<Claim>(), Actual360(true), true));
 
-    ext::shared_ptr<FixedRateCoupon> cp = ext::dynamic_pointer_cast<FixedRateCoupon>(trade->coupons()[0]);
-    std::cout << "first period = " << cp->accrualStartDate() << " to " << cp->accrualEndDate() <<
-        " accrued amount = " << cp->accruedAmount(Date(24,October,2014)) << std::endl;
+    ext::shared_ptr<FixedRateCoupon> cp =
+        ext::dynamic_pointer_cast<FixedRateCoupon>(trade1->coupons()[0]);
+    std::cout << "first period = " << cp->accrualStartDate() << " to " << cp->accrualEndDate()
+              << " accrued amount = " << cp->accruedAmount(Date(24, October, 2014)) << std::endl;
 
     // price with isda engine
     ext::shared_ptr<IsdaCdsEngine> engine = ext::make_shared<IsdaCdsEngine>(
-            Handle<DefaultProbabilityTermStructure>(defaultTs0), 0.4, rateTs,
-            false, IsdaCdsEngine::Taylor, IsdaCdsEngine::NoBias, IsdaCdsEngine::Piecewise);
+        Handle<DefaultProbabilityTermStructure>(defaultTs0), 0.4, rateTs, false,
+        IsdaCdsEngine::Taylor, IsdaCdsEngine::NoBias, IsdaCdsEngine::Piecewise);
 
-    trade->setPricingEngine(engine);
+    trade1->setPricingEngine(engine);
 
-    std::cout << "reference trade NPV = " << trade->NPV() << std::endl;
-
+    std::cout << "reference trade NPV = " << trade1->NPV() << std::endl;
 
     // build credit curve with one cds
     std::vector<ext::shared_ptr<DefaultProbabilityHelper> > isdaCdsHelper;
 
-    ext::shared_ptr<CdsHelper> cds5y(new SpreadCdsHelper(
-        0.00672658551, 4 * Years + 6 * Months, 1, WeekendsOnly(), Quarterly,
-        Following, DateGeneration::CDS, Actual360(), 0.4, rateTs, true, true,
-        Date(), Actual360(true), true, CreditDefaultSwap::ISDA));
+    ext::shared_ptr<CdsHelper> cds5y(
+        new SpreadCdsHelper(0.00672658551, 4 * Years + 6 * Months, 1, WeekendsOnly(), Quarterly,
+                            Following, DateGeneration::CDS, Actual360(), 0.4, rateTs, true, true,
+                            Date(), Actual360(true), true, CreditDefaultSwap::ISDA));
 
     isdaCdsHelper.push_back(cds5y);
 
-    Handle<DefaultProbabilityTermStructure> defaultTs(ext::make_shared<
-        PiecewiseDefaultCurve<SurvivalProbability, LogLinear> >(
-        0, WeekendsOnly(), isdaCdsHelper, Actual365Fixed()));
+    Handle<DefaultProbabilityTermStructure> defaultTs(
+        ext::make_shared<PiecewiseDefaultCurve<SurvivalProbability, LogLinear> >(
+            0, WeekendsOnly(), isdaCdsHelper, Actual365Fixed()));
+
+    Handle<DefaultProbabilityTermStructure> defaultTs2(
+        ext::make_shared<PiecewiseDefaultCurve<HazardRate, BackwardFlat> >(
+            0, WeekendsOnly(), isdaCdsHelper, Actual365Fixed()));
 
     std::cout << "ISDA credit curve: " << std::endl;
-    for(Size i=0;i<isdaCdsHelper.size();i++) {
+    for (Size i = 0; i < isdaCdsHelper.size(); i++) {
         Date d = isdaCdsHelper[i]->latestDate();
         Real pd = defaultTs->defaultProbability(d);
         Real t = defaultTs->timeFromReference(d);
-        std::cout << d << ";" << pd << ";" << 1.0 - pd << ";" <<
-            -std::log(1.0-pd)/t << std::endl;
+        std::cout << d << ";" << pd << ";" << 1.0 - pd << ";" << -std::log(1.0 - pd) / t
+                  << std::endl;
     }
 
 
+    // set up sample CDS trade
+    ext::shared_ptr<CreditDefaultSwap> trade2 =
+        MakeCreditDefaultSwap(5 * Years, 0.03).withNominal(100000000.0);
 
-    // // set up sample CDS trade
-
-    // ext::shared_ptr<CreditDefaultSwap> trade =
-    //     MakeCreditDefaultSwap(5 * Years, 0.03);
-
-    // // set up isda engine
-
-    // // ext::shared_ptr<IsdaCdsEngine> isdaPricer =
-    // //     ext::make_shared<IsdaCdsEngine>(
-    // //         isdaCdsHelper, 0.4, isdaRateHelper);
-    // ext::shared_ptr<IsdaCdsEngine> isdaPricer =
-    //     ext::make_shared<IsdaCdsEngine>(defaultTs,0.40,rateTs);
+    // set up isda engine
+    // ext::shared_ptr<IsdaCdsEngine> isdaPricer = ext::make_shared<IsdaCdsEngine>(isdaCdsHelper, 0.4, isdaRateHelper);
+    ext::shared_ptr<IsdaCdsEngine> isdaPricer = ext::make_shared<IsdaCdsEngine>(defaultTs, 0.40, rateTs);
 
     // check the curves built by the engine
+    Handle<YieldTermStructure> isdaYts = isdaPricer->isdaRateCurve();
+    Handle<DefaultProbabilityTermStructure> isdaCts = isdaPricer->isdaCreditCurve();
 
-    // Handle<YieldTermStructure> isdaYts = isdaPricer->isdaRateCurve();
-    // Handle<DefaultProbabilityTermStructure> isdaCts = isdaPricer->isdaCreditCurve();
+    std::cout << "isda rate 1m " << dp1m->latestDate() << " "
+              << isdaYts->zeroRate(dp1m->latestDate(), Actual365Fixed(), Continuous) << std::endl;
+    std::cout << "isda rate 3m " << dp3m->latestDate() << " "
+              << isdaYts->zeroRate(dp3m->latestDate(), Actual365Fixed(), Continuous) << std::endl;
+    std::cout << "isda rate 6m " << dp6m->latestDate() << " "
+              << isdaYts->zeroRate(dp6m->latestDate(), Actual365Fixed(), Continuous) << std::endl;
 
-    // std::cout << "isda rate 1m " << dp1m->latestDate() << " "
-    //           << isdaYts->zeroRate(dp1m->latestDate(), Actual365Fixed(),
-    //                                   Continuous) << std::endl;
-    // std::cout << "isda rate 3m " << dp3m->latestDate() << " "
-    //           << isdaYts->zeroRate(dp3m->latestDate(), Actual365Fixed(),
-    //                                   Continuous) << std::endl;
-    // std::cout << "isda rate 6m " << dp6m->latestDate() << " "
-    //           << isdaYts->zeroRate(dp6m->latestDate(), Actual365Fixed(),
-    //                                   Continuous) << std::endl;
+    std::cout << "isda hazard 5y " << cds5y->latestDate() << " "
+              << isdaCts->hazardRate(cds5y->latestDate(), true) << std::endl;
 
-    // std::cout << "isda hazard 5y " << cds5y->latestDate() << " "
-    //           << isdaCts->hazardRate(cds5y->latestDate()) << std::endl;
+    defaultTs->enableExtrapolation(true);
 
     // price the trade
+    trade2->setPricingEngine(isdaPricer);
 
-    // trade->setPricingEngine(isdaPricer);
+    Real npv = trade2->NPV();
 
-    // Real npv = trade->NPV();
-
-    // std::cout << "Pricing of example trade with ISDA engine:" << std::endl;
-    // std::cout << "NPV = " << npv << std::endl;
-
+    std::cout << "Pricing of example trade with ISDA engine:" << std::endl;
+    std::cout << "NPV = " << npv << std::endl;
 }
 
 void example03() {
@@ -629,6 +595,194 @@ void example03() {
     }
 }
 
+void example04() {
+
+    // Calculating on a weekend
+    Date evaluationDate = Date(19, September, 2020);
+    Settings::instance().evaluationDate() = evaluationDate;
+
+    // set up ISDA IR curve helpers
+    ext::shared_ptr<DepositRateHelper> dp1m = ext::make_shared<DepositRateHelper>(
+        0.000060, 1 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp2m = ext::make_shared<DepositRateHelper>(
+        0.000450, 2 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp3m = ext::make_shared<DepositRateHelper>(
+        0.000810, 3 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp6m = ext::make_shared<DepositRateHelper>(
+        0.001840, 6 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp9m = ext::make_shared<DepositRateHelper>(
+        0.002560, 9 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+    ext::shared_ptr<DepositRateHelper> dp12m = ext::make_shared<DepositRateHelper>(
+        0.003370, 12 * Months, 2, TARGET(), ModifiedFollowing, false, Actual360());
+
+    // intentionally we do not provide a fixing for the euribor index used for
+    // bootstrapping in order to be compliant with the ISDA specification
+    ext::shared_ptr<IborIndex> euribor6m = ext::make_shared<Euribor>(Euribor(6 * Months));
+
+    // check if indexed coupon is defined (it should not to be 100% consistent with
+    // the ISDA spec)
+    if (!IborCoupon::usingAtParCoupons()) {
+        std::cout << "Warning: IborCoupon::usingAtParCoupons() == false is used, "
+                  << "which is not precisely consistent with the specification "
+                  << "of the ISDA rate curve." << std::endl;
+    }
+
+    ext::shared_ptr<SwapRateHelper> sw2y = ext::make_shared<SwapRateHelper>(
+        0.002230, 2 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw3y = ext::make_shared<SwapRateHelper>(
+        0.002760, 3 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw4y = ext::make_shared<SwapRateHelper>(
+        0.003530, 4 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw5y = ext::make_shared<SwapRateHelper>(
+        0.004520, 5 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw6y = ext::make_shared<SwapRateHelper>(
+        0.005720, 6 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw7y = ext::make_shared<SwapRateHelper>(
+        0.007050, 7 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw8y = ext::make_shared<SwapRateHelper>(
+        0.008420, 8 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw9y = ext::make_shared<SwapRateHelper>(
+        0.009720, 9 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw10y = ext::make_shared<SwapRateHelper>(
+        0.010900, 10 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw12y = ext::make_shared<SwapRateHelper>(
+        0.012870, 12 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw15y = ext::make_shared<SwapRateHelper>(
+        0.014970, 15 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw20y = ext::make_shared<SwapRateHelper>(
+        0.017000, 20 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+    ext::shared_ptr<SwapRateHelper> sw30y = ext::make_shared<SwapRateHelper>(
+        0.018210, 30 * Years, TARGET(), Annual, ModifiedFollowing, Thirty360(), euribor6m);
+
+    std::vector<ext::shared_ptr<RateHelper> > isdaRateHelper;
+    isdaRateHelper.push_back(dp1m);
+    isdaRateHelper.push_back(dp2m);
+    isdaRateHelper.push_back(dp3m);
+    isdaRateHelper.push_back(dp6m);
+    isdaRateHelper.push_back(dp9m);
+    isdaRateHelper.push_back(dp12m);
+    isdaRateHelper.push_back(sw2y);
+    isdaRateHelper.push_back(sw3y);
+    isdaRateHelper.push_back(sw4y);
+    isdaRateHelper.push_back(sw5y);
+    isdaRateHelper.push_back(sw6y);
+    isdaRateHelper.push_back(sw7y);
+    isdaRateHelper.push_back(sw8y);
+    isdaRateHelper.push_back(sw9y);
+    isdaRateHelper.push_back(sw10y);
+    isdaRateHelper.push_back(sw12y);
+    isdaRateHelper.push_back(sw15y);
+    isdaRateHelper.push_back(sw20y);
+    isdaRateHelper.push_back(sw30y);
+
+    Handle<YieldTermStructure> rateTs(ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear> >(
+        evaluationDate, isdaRateHelper, Actual365Fixed()));
+    rateTs->enableExtrapolation();
+
+    // output rate curve
+    std::cout << "ISDA rate curve: " << std::endl;
+    for (auto& i : isdaRateHelper) {
+        Date d = i->latestDate();
+        std::cout << d << "\t" << setprecision(6)
+                  << rateTs->zeroRate(d, Actual365Fixed(), Continuous).rate() << "\t"
+                  << rateTs->discount(d) << std::endl;
+    }
+
+    // build reference credit curve (flat)
+    ext::shared_ptr<DefaultProbabilityTermStructure> defaultTs0 =
+        ext::make_shared<FlatHazardRate>(evaluationDate, 0.026739207493630, Actual365Fixed());
+
+    Date startDate(20, March, 2020);
+    Date termDate(20, September, 2025);
+
+    Schedule cdsSchedule = MakeSchedule()
+                               .from(startDate)
+                               .to(termDate)
+                               .withFrequency(Quarterly)
+                               .withCalendar(WeekendsOnly())
+                               .withConvention(ModifiedFollowing)
+                               .withTerminationDateConvention(Unadjusted)
+                               .withRule(DateGeneration::CDS);
+    //std::copy(cdsSchedule.begin(), cdsSchedule.end(), std::ostream_iterator<Date>(cout, "\n"));
+
+    // reference CDS
+    ext::shared_ptr<CreditDefaultSwap> trade1 =
+        ext::shared_ptr<CreditDefaultSwap>(new CreditDefaultSwap(
+            Protection::Buyer, 100000000.0, 0.05, cdsSchedule, Following, Actual360(), true, true,
+            evaluationDate + Period(1, Days), ext::shared_ptr<Claim>(), Actual360(true), true));
+
+    ext::shared_ptr<FixedRateCoupon> cp =
+        ext::dynamic_pointer_cast<FixedRateCoupon>(trade1->coupons()[1]);
+    std::cout << "first period = " << cp->accrualStartDate() << " to " << cp->accrualEndDate()
+              << " accrued amount = " << cp->accruedAmount(evaluationDate) << std::endl;
+
+    // price with isda engine
+    ext::shared_ptr<IsdaCdsEngine> engine = ext::make_shared<IsdaCdsEngine>(
+        Handle<DefaultProbabilityTermStructure>(defaultTs0), 0.4, rateTs, false,
+        IsdaCdsEngine::Taylor, IsdaCdsEngine::NoBias, IsdaCdsEngine::Piecewise);
+
+    trade1->setPricingEngine(engine);
+
+    std::cout << "reference trade NPV = " << trade1->NPV() << std::endl;
+
+    // build credit curve with one cds
+    ext::shared_ptr<CdsHelper> cds5y(
+        new SpreadCdsHelper(0.026739207493630, 5 * Years, 1, WeekendsOnly(), Quarterly, Following,
+                            DateGeneration::CDS, Actual360(), 0.4, rateTs, true, true, Date(),
+                            Actual360(true), true, CreditDefaultSwap::ISDA));
+
+    std::vector<ext::shared_ptr<DefaultProbabilityHelper> > isdaCdsHelper;
+    isdaCdsHelper.push_back(cds5y);
+
+    Handle<DefaultProbabilityTermStructure> defaultTs(
+        ext::make_shared<PiecewiseDefaultCurve<SurvivalProbability, LogLinear> >(
+            evaluationDate, isdaCdsHelper, Actual365Fixed()));
+    defaultTs->enableExtrapolation(true);
+
+    //Handle<DefaultProbabilityTermStructure> defaultTs2(
+    //    ext::make_shared<PiecewiseDefaultCurve<HazardRate, BackwardFlat> >(
+    //        0, WeekendsOnly(), isdaCdsHelper, Actual365Fixed()));
+
+    std::cout << "ISDA credit curve: " << std::endl;
+    for (Size i = 0; i < isdaCdsHelper.size(); i++) {
+        Date d = isdaCdsHelper[i]->latestDate();
+        Real pd = defaultTs->defaultProbability(d);
+        Real t = defaultTs->timeFromReference(d);
+        std::cout << d << ";" << pd << ";" << 1.0 - pd << ";" << -std::log(1.0 - pd) / t
+                  << std::endl;
+    }
+
+    // set up sample CDS trade
+    ext::shared_ptr<CreditDefaultSwap> trade2 =
+        MakeCreditDefaultSwap(5 * Years, 0.05).withNominal(100000000.0);
+
+    // set up isda engine
+    // ext::shared_ptr<IsdaCdsEngine> isdaPricer = ext::make_shared<IsdaCdsEngine>(isdaCdsHelper,
+    // 0.4, isdaRateHelper);
+    ext::shared_ptr<IsdaCdsEngine> isdaPricer =
+        ext::make_shared<IsdaCdsEngine>(defaultTs, 0.40, rateTs);
+
+    // check the curves built by the engine
+    Handle<YieldTermStructure> isdaYts = isdaPricer->isdaRateCurve();
+    Handle<DefaultProbabilityTermStructure> isdaCts = isdaPricer->isdaCreditCurve();
+
+    std::cout << "isda rate 1m " << dp1m->latestDate() << " "
+              << isdaYts->zeroRate(dp1m->latestDate(), Actual365Fixed(), Continuous) << std::endl;
+    std::cout << "isda rate 3m " << dp3m->latestDate() << " "
+              << isdaYts->zeroRate(dp3m->latestDate(), Actual365Fixed(), Continuous) << std::endl;
+    std::cout << "isda rate 6m " << dp6m->latestDate() << " "
+              << isdaYts->zeroRate(dp6m->latestDate(), Actual365Fixed(), Continuous) << std::endl;
+    std::cout << "isda hazard 5y " << cds5y->latestDate() << " "
+              << isdaCts->hazardRate(cds5y->latestDate(), true) << std::endl;
+
+    // price the trade
+    trade2->setPricingEngine(isdaPricer);
+
+    Real npv = trade2->NPV();
+
+    std::cout << "Pricing of example trade with ISDA engine:" << std::endl;
+    std::cout << "NPV = " << npv << std::endl;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -650,6 +804,11 @@ int main(int argc, char *argv[]) {
         if (example == 0 || example == 3) {
             std::cout << "***** Running example #3 *****" << std::endl;
             example03();
+        }
+
+        if (example == 0 || example == 4) {
+            std::cout << "***** Running example #4 *****" << std::endl;
+            example04();
         }
 
         return 0;

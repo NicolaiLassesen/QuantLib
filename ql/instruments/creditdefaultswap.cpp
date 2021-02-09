@@ -414,6 +414,10 @@ namespace QuantLib {
             ->accrualEndDate();
     }
 
+    const Date& CreditDefaultSwap::maturityDate() const {
+        return maturity_;
+    }
+
 
     CreditDefaultSwap::arguments::arguments()
     : side(Protection::Side(-1)), notional(Null<Real>()),
