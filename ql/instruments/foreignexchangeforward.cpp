@@ -51,14 +51,14 @@ namespace QuantLib {
     ForeignExchangeForward::ForeignExchangeForward(const Date& deliveryDate,
                                                    const Money& baseNotionalAmount,
                                                    const ExchangeRate& contractAllInRate,
-                                                   Type forwardType)
+                                                   const Type& forwardType)
     : ForeignExchangeForward(
           deliveryDate, baseNotionalAmount, contractAllInRate, forwardType, FxTerms(contractAllInRate)) {}
 
     ForeignExchangeForward::ForeignExchangeForward(const Date& deliveryDate,
                                                    const Money& baseNotionalAmount,
                                                    const ExchangeRate& contractAllInRate,
-                                                   Type forwardType,
+                                                   const Type& forwardType,
                                                    const FxTerms& terms)
     : deliveryDate_(deliveryDate), baseNotionalAmount_(baseNotionalAmount),
       termNotionalAmount_(contractAllInRate.exchange(baseNotionalAmount)),
@@ -160,6 +160,17 @@ namespace QuantLib {
     std::ostream& operator<<(std::ostream& out, const ForeignExchangeForward& c) {
         return out << c.baseCurrency() << c.termCurrency() << " " << io::iso_date(c.deliveryDate())
                    << " " << c.contractNotionalAmountBase();
+    }
+
+    std::ostream& operator<<(std::ostream& out, const ForeignExchangeForward::Type& t) {
+        switch (t) {
+            case QuantLib::ForeignExchangeForward::Type::SellBaseBuyTermForward:
+                return out << "SellBaseBuyTermForward";
+            case QuantLib::ForeignExchangeForward::Type::BuyBaseSellTermForward:
+                return out << "BuyBaseSellTermForward";
+            default:
+                QL_FAIL("unknown QuantLib::ForeignExchangeForward::Type(" << QuantLib::Integer(t) << ")");
+        }
     }
 
 }

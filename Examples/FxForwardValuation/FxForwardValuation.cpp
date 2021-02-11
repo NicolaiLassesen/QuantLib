@@ -114,6 +114,7 @@ void runShortUsdEurExample(const Date& todaysDate) {
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
+    // TODO: This is crap - the ExchangeRateManager should return a shared_ptr to the exchange rate instead of the actual instance
     ExchangeRate spotUsdEurRate = ExchangeRateManager::instance().lookup(USDCurrency(), EURCurrency());
     Handle<FxForwardPointTermStructure> eurUsdFwdCurve = eurUsdFwdPointStructure(todaysDate);
     Handle<FxForwardPointTermStructure> usdEurFwdCurve = usdEurFwdPointStructure(todaysDate);
@@ -172,8 +173,7 @@ void runLongUsdEurExample(const Date& todaysDate) {
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
-    ExchangeRate spotUsdEurRate =
-        ExchangeRateManager::instance().lookup(USDCurrency(), EURCurrency());
+    ExchangeRate spotUsdEurRate = ExchangeRateManager::instance().lookup(USDCurrency(), EURCurrency());
     Handle<FxForwardPointTermStructure> eurUsdFwdCurve = eurUsdFwdPointStructure(todaysDate);
     Handle<FxForwardPointTermStructure> usdEurFwdCurve = usdEurFwdPointStructure(todaysDate);
     Handle<YieldTermStructure> eurDiscountCurve = discountingEurCurve(todaysDate);
@@ -202,8 +202,7 @@ void runLongGbpEurExample(const Date& todaysDate) {
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
-    ExchangeRate spotBaseTermRate =
-        ExchangeRateManager::instance().lookup(GBPCurrency(), EURCurrency());
+    ExchangeRate spotBaseTermRate = ExchangeRateManager::instance().lookup(GBPCurrency(), EURCurrency());
     Handle<FxForwardPointTermStructure> termBaseFwdCurve = eurGbpFwdPointStructure(todaysDate);
     Handle<FxForwardPointTermStructure> baseTermFwdCurve = gbpEurFwdPointStructure(todaysDate);
     Handle<YieldTermStructure> termDiscountCurve = discountingEurCurve(todaysDate);
@@ -243,13 +242,13 @@ Handle<FxForwardPointTermStructure> usdEurFwdPointStructure(const Date& todaysDa
     if (spotExchRate.source() != USDCurrency())
         spotExchRate = ExchangeRate::inverse(spotExchRate);
 
-    std::vector<ForwardExchangeRate> fwdExchRates;
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -4.051701, Period(1, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -7.906924, Period(2, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -11.743311, Period(3, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -17.395392, Period(1, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -33.074375, Period(2, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -47.207796, Period(3, Months)));
+    std::vector<boost::shared_ptr<ForwardExchangeRate> > fwdExchRates;
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -4.051701, Period(1, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -7.906924, Period(2, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -11.743311, Period(3, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -17.395392, Period(1, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -33.074375, Period(2, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -47.207796, Period(3, Months))));
 
     ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
         new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
@@ -267,13 +266,13 @@ Handle<FxForwardPointTermStructure> eurUsdFwdPointStructure(const Date& todaysDa
     if (spotExchRate.source() != EURCurrency())
         spotExchRate = ExchangeRate::inverse(spotExchRate);
 
-    std::vector<ForwardExchangeRate> fwdExchRates;
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 4.9, Period(1, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 9.625, Period(2, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 14.305, Period(3, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 21.155, Period(1, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 40.669, Period(2, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 57.975, Period(3, Months)));
+    std::vector<boost::shared_ptr<ForwardExchangeRate> > fwdExchRates;
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 4.9, Period(1, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 9.625, Period(2, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 14.305, Period(3, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 21.155, Period(1, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 40.669, Period(2, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 57.975, Period(3, Months))));
 
     ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
         new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
@@ -290,13 +289,13 @@ Handle<FxForwardPointTermStructure> gbpEurFwdPointStructure(const Date& todaysDa
     if (spotExchRate.source() != GBPCurrency())
         spotExchRate = ExchangeRate::inverse(spotExchRate);
 
-    std::vector<ForwardExchangeRate> fwdExchRates;
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -2.8, Period(1, Weeks)));
-    //fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -6.91, Period(2, Weeks)));
-    //fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -9.74, Period(3, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -12.13, Period(1, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -24.16, Period(2, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -34.99, Period(3, Months)));
+    std::vector<boost::shared_ptr<ForwardExchangeRate>> fwdExchRates;
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -2.8, Period(1, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -6.91, Period(2, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -9.74, Period(3, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -12.13, Period(1, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -24.16, Period(2, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, -34.99, Period(3, Months))));
 
     ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
         new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
@@ -313,13 +312,13 @@ Handle<FxForwardPointTermStructure> eurGbpFwdPointStructure(const Date& todaysDa
     if (spotExchRate.source() != EURCurrency())
         spotExchRate = ExchangeRate::inverse(spotExchRate);
 
-    std::vector<ForwardExchangeRate> fwdExchRates;
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 2.06, Period(1, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 4.01, Period(2, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 6.19, Period(3, Weeks)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 8.98, Period(1, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 17.85, Period(2, Months)));
-    fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 25.97, Period(3, Months)));
+    std::vector<boost::shared_ptr<ForwardExchangeRate> > fwdExchRates;
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 2.06, Period(1, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 4.01, Period(2, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 6.19, Period(3, Weeks))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 8.98, Period(1, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 17.85, Period(2, Months))));
+    fwdExchRates.push_back(boost::shared_ptr<ForwardExchangeRate>(new ForwardExchangeRate(spotExchRate, 25.97, Period(3, Months))));
 
     ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
         new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,

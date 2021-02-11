@@ -34,13 +34,12 @@ namespace QuantLib {
       public:
         ForwardPointsEngine(
             const ExchangeRate& spotExchangeRate,
-            const Handle<FxForwardPointTermStructure>& forwardPointsCurve =
-                Handle<FxForwardPointTermStructure>(),
+            const Handle<FxForwardPointTermStructure>& forwardPointsCurve = Handle<FxForwardPointTermStructure>(),
             const Handle<YieldTermStructure>& baseDiscountCurve = Handle<YieldTermStructure>(),
             const Handle<YieldTermStructure>& termDiscountCurve = Handle<YieldTermStructure>());
         void calculate() const;
         Currency valuationCurrency() const { return spotExchangeRate_.source(); }
-        const ExchangeRate spotExchangeRate() const { return spotExchangeRate_; }
+        const ExchangeRate& spotExchangeRate() const { return spotExchangeRate_; }
         Handle<FxForwardPointTermStructure> forwardPointsCurve() const {
             return forwardPointsCurve_;
         }

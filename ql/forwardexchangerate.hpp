@@ -41,7 +41,7 @@ namespace QuantLib {
         //@{
         ForwardExchangeRate(const Period& tenor = Period());
         ForwardExchangeRate(const ExchangeRate& spotRate,
-                            Decimal forwardPoints,
+                            const Decimal forwardPoints,
                             const Period& tenor = Period());
         //@}
 

@@ -82,6 +82,10 @@ namespace QuantLib {
     };
 
 
+    /*! \relates ExchangeRate::Type */
+    std::ostream& operator<<(std::ostream&, const ExchangeRate::Type& t);
+
+
     // inline definitions
 
     inline ExchangeRate::ExchangeRate() : rate_(Null<Decimal>()) {}

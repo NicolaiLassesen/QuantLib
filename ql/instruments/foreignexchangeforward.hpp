@@ -64,11 +64,11 @@ namespace QuantLib {
         ForeignExchangeForward(const Date& deliveryDate,
                                const Money& baseNotionalAmount,
                                const ExchangeRate& contractAllInRate,
-                               Type forwardType = Type::SellBaseBuyTermForward);
+                               const Type& forwardType = Type::SellBaseBuyTermForward);
         ForeignExchangeForward(const Date& deliveryDate,
                                const Money& baseNotionalAmount,
                                const ExchangeRate& contractAllInRate,
-                               Type forwardType,
+                               const Type& forwardType,
                                const FxTerms& terms);
 
         class arguments;
@@ -171,6 +171,9 @@ namespace QuantLib {
 
     /*! \relates ForeignExchangeForward */
     std::ostream& operator<<(std::ostream&, const ForeignExchangeForward&);
+
+    /*! \relates ForeignExchangeForward::Type */
+    std::ostream& operator<<(std::ostream&, const ForeignExchangeForward::Type& t);
 
 
     // inline definitions

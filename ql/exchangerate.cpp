@@ -82,4 +82,15 @@ namespace QuantLib {
         return exchangeRate;
     }
 
+    std::ostream& operator<<(std::ostream& out, const ExchangeRate::Type& t) {
+        switch (t) {
+            case ExchangeRate::Type::Direct:
+                return out << "Direct";
+            case ExchangeRate::Type::Derived:
+                return out << "Derived";
+            default:
+                QL_FAIL("unknown QuantLib::ExchangeRate::Type(" << QuantLib::Integer(t) << ")");
+        }
+    }
+
 }
