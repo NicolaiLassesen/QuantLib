@@ -62,7 +62,7 @@ namespace QuantLib {
         class Price {
           public:
             enum Type { Dirty, Clean };
-            Price() : amount_(Null<Real>()) {}
+            Price() : amount_(Null<Real>()),type_(Clean) {}
             Price(Real amount, Type type) : amount_(amount), type_(type) {}
             Real amount() const {
                 QL_REQUIRE(amount_ != Null<Real>(), "no amount given");

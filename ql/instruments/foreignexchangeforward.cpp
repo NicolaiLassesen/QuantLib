@@ -74,9 +74,8 @@ namespace QuantLib {
                                  ExchangeRate::inverse(contractAllInRate);
     }
 
-    void QuantLib::ForeignExchangeForward::setupArguments(PricingEngine::arguments* args) const {
-        ForeignExchangeForward::arguments* arguments =
-            dynamic_cast<ForeignExchangeForward::arguments*>(args);
+    void ForeignExchangeForward::setupArguments(PricingEngine::arguments* args) const {
+        arguments* arguments = dynamic_cast<ForeignExchangeForward::arguments*>(args);
         QL_REQUIRE(arguments != 0, "wrong argument type");
         arguments->deliveryDate = deliveryDate_;
         arguments->baseNotionalAmount = baseNotionalAmount_;
@@ -90,8 +89,7 @@ namespace QuantLib {
 
     void ForeignExchangeForward::fetchResults(const PricingEngine::results* r) const {
         Instrument::fetchResults(r);
-        const ForeignExchangeForward::results* results =
-            dynamic_cast<const ForeignExchangeForward::results*>(r);
+        const results* results = dynamic_cast<const ForeignExchangeForward::results*>(r);
         QL_ENSURE(results != 0, "wrong result type");
         fairForwardPoints_ = results->fairForwardPoints;
         forwardNetValueBase_ = results->forwardNetValueBase;
@@ -164,9 +162,9 @@ namespace QuantLib {
 
     std::ostream& operator<<(std::ostream& out, const ForeignExchangeForward::Type& t) {
         switch (t) {
-            case QuantLib::ForeignExchangeForward::Type::SellBaseBuyTermForward:
+            case ForeignExchangeForward::Type::SellBaseBuyTermForward:
                 return out << "SellBaseBuyTermForward";
-            case QuantLib::ForeignExchangeForward::Type::BuyBaseSellTermForward:
+            case ForeignExchangeForward::Type::BuyBaseSellTermForward:
                 return out << "BuyBaseSellTermForward";
             default:
                 QL_FAIL("unknown QuantLib::ForeignExchangeForward::Type(" << QuantLib::Integer(t) << ")");

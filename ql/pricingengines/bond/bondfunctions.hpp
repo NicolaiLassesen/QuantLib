@@ -225,7 +225,6 @@ namespace QuantLib {
                                          Frequency frequency,
                                          Date settlementDate = Date());
         //@}
-
         //! \name Z-spread functions
         //@{
         static Real cleanPrice(const Bond& bond,

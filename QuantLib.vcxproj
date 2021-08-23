@@ -1477,6 +1477,7 @@
     <ClInclude Include="ql\pricingengines\bond\all.hpp" />
     <ClInclude Include="ql\pricingengines\bond\bondfunctions.hpp" />
     <ClInclude Include="ql\pricingengines\bond\discountingbondengine.hpp" />
+    <ClInclude Include="ql\pricingengines\bond\discountingspreadengine.hpp" />
     <ClInclude Include="ql\pricingengines\capfloor\all.hpp" />
     <ClInclude Include="ql\pricingengines\capfloor\analyticcapfloorengine.hpp" />
     <ClInclude Include="ql\pricingengines\capfloor\bacheliercapfloorengine.hpp" />
@@ -2503,6 +2504,7 @@
     <ClCompile Include="ql\pricingengines\blackscholescalculator.cpp" />
     <ClCompile Include="ql\pricingengines\bond\bondfunctions.cpp" />
     <ClCompile Include="ql\pricingengines\bond\discountingbondengine.cpp" />
+    <ClCompile Include="ql\pricingengines\bond\discountingspreadengine.cpp" />
     <ClCompile Include="ql\pricingengines\capfloor\analyticcapfloorengine.cpp" />
     <ClCompile Include="ql\pricingengines\capfloor\bacheliercapfloorengine.cpp" />
     <ClCompile Include="ql\pricingengines\capfloor\blackcapfloorengine.cpp" />

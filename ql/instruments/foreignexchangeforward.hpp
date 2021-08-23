@@ -77,9 +77,9 @@ namespace QuantLib {
 
         //! \name Instrument interface
         //@{
-        bool isExpired() const;
-        void setupArguments(PricingEngine::arguments*) const;
-        void fetchResults(const PricingEngine::results*) const;
+        bool isExpired() const override;
+        void setupArguments(PricingEngine::arguments*) const override;
+        void fetchResults(const PricingEngine::results*) const override;
         //@]
 
         //! \name Inspectors
@@ -106,9 +106,9 @@ namespace QuantLib {
         //@}
 
       protected:
-        void setupExpired() const;
+        void setupExpired() const override;
         Decimal baseSign() const {
-            return forwardType_ == ForeignExchangeForward::Type::SellBaseBuyTermForward ? -1.0 : 1.0;
+            return forwardType_ == Type::SellBaseBuyTermForward ? -1.0 : 1.0;
         }
 
         Date deliveryDate_;
@@ -124,16 +124,14 @@ namespace QuantLib {
         mutable Money forwardNetValueTerm_;
         mutable Money presentNetValueBase_;
         mutable Money presentNetValueTerm_;
-
-      private:
     };
 
 
     class ForeignExchangeForward::arguments : public PricingEngine::arguments {
       public:
-        void validate() const;
+        void validate() const override;
         Decimal baseSign() const {
-            return forwardType == ForeignExchangeForward::Type::SellBaseBuyTermForward ? -1.0 : 1.0;
+            return forwardType == Type::SellBaseBuyTermForward ? -1.0 : 1.0;
         }
 
         Date deliveryDate;
@@ -154,7 +152,7 @@ namespace QuantLib {
         Money forwardNetValueTerm;
         Money presentNetValueBase;
         Money presentNetValueTerm;
-        void reset() {
+        void reset() override {
             fairForwardPoints = Null<Decimal>();
             forwardNetValueBase = Money();
             forwardNetValueTerm = Money();
@@ -166,7 +164,7 @@ namespace QuantLib {
 
 
     class ForeignExchangeForward::engine
-    : public GenericEngine<ForeignExchangeForward::arguments, ForeignExchangeForward::results> {};
+    : public GenericEngine<arguments, results> {};
 
 
     /*! \relates ForeignExchangeForward */

@@ -24,52 +24,48 @@ namespace QuantLib {
 
     Money ExchangeRate::exchange(const Money& amount) const {
         switch (type_) {
-          case Direct:
-            if (amount.currency() == source_)
-                return Money(amount.value()*rate_, target_);
-            else if (amount.currency() == target_)
-                return Money(amount.value()/rate_, source_);
-            else
+            case Direct: {
+                if (amount.currency() == source_)
+                    return Money(amount.value() * rate_, target_);
+                if (amount.currency() == target_)
+                    return Money(amount.value() / rate_, source_);
                 QL_FAIL("exchange rate not applicable");
-          case Derived:
-            if (amount.currency() == rateChain_.first->source() ||
-                amount.currency() == rateChain_.first->target())
-                return rateChain_.second->exchange(
-                                         rateChain_.first->exchange(amount));
-            else if (amount.currency() == rateChain_.second->source() ||
-                       amount.currency() == rateChain_.second->target())
-                return rateChain_.first->exchange(
-                                         rateChain_.second->exchange(amount));
-            else
+            }
+            case Derived: {
+                if (amount.currency() == rateChain_.first->source() ||
+                    amount.currency() == rateChain_.first->target())
+                    return rateChain_.second->exchange(rateChain_.first->exchange(amount));
+                if (amount.currency() == rateChain_.second->source() ||
+                    amount.currency() == rateChain_.second->target())
+                    return rateChain_.first->exchange(rateChain_.second->exchange(amount));
                 QL_FAIL("exchange rate not applicable");
-          default:
-            QL_FAIL("unknown exchange-rate type");
+            }
+            default:
+                QL_FAIL("unknown exchange-rate type");
         }
     }
 
-    ExchangeRate ExchangeRate::chain(const ExchangeRate& r1,
-                                     const ExchangeRate& r2) {
+    ExchangeRate ExchangeRate::chain(const ExchangeRate& r1, const ExchangeRate& r2) {
         ExchangeRate result;
         result.type_ = Derived;
-        result.rateChain_ = std::make_pair(
-                       ext::make_shared<ExchangeRate>(r1),
-                       ext::make_shared<ExchangeRate>(r2));
+        result.rateChain_ =
+            std::make_pair(ext::make_shared<ExchangeRate>(r1), ext::make_shared<ExchangeRate>(r2));
         if (r1.source_ == r2.source_) {
             result.source_ = r1.target_;
             result.target_ = r2.target_;
-            result.rate_ = r2.rate_/r1.rate_;
+            result.rate_ = r2.rate_ / r1.rate_;
         } else if (r1.source_ == r2.target_) {
             result.source_ = r1.target_;
             result.target_ = r2.source_;
-            result.rate_ = 1.0/(r1.rate_*r2.rate_);
+            result.rate_ = 1.0 / (r1.rate_ * r2.rate_);
         } else if (r1.target_ == r2.source_) {
             result.source_ = r1.source_;
             result.target_ = r2.target_;
-            result.rate_ = r1.rate_*r2.rate_;
+            result.rate_ = r1.rate_ * r2.rate_;
         } else if (r1.target_ == r2.target_) {
             result.source_ = r1.source_;
             result.target_ = r2.source_;
-            result.rate_ = r1.rate_/r2.rate_;
+            result.rate_ = r1.rate_ / r2.rate_;
         } else {
             QL_FAIL("exchange rates not chainable");
         }
@@ -78,7 +74,7 @@ namespace QuantLib {
 
     ExchangeRate ExchangeRate::inverse(const ExchangeRate& r) {
         ExchangeRate exchangeRate = ExchangeRate(r.target(), r.source(), 1.0 / r.rate());
-        exchangeRate.type_ = ExchangeRate::Type::Derived;
+        exchangeRate.type_ = Derived;
         return exchangeRate;
     }
 

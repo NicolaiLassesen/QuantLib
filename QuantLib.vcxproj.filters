@@ -4304,6 +4304,9 @@
     <ClInclude Include="all.hpp">
       <Filter>pricingengines\fx</Filter>
     </ClInclude>
+    <ClInclude Include="ql\pricingengines\bond\discountingspreadengine.hpp">
+      <Filter>pricingengines\bond</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ql\methods\montecarlo\brownianbridge.cpp">
@@ -6947,5 +6950,8 @@
       <Filter>pricingengines\fx</Filter>
     </ClCompile>
     <ClCompile Include="ql\forwardexchangerate.cpp" />
+    <ClCompile Include="ql\pricingengines\bond\discountingspreadengine.cpp">
+      <Filter>pricingengines\bond</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

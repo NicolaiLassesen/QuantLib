@@ -105,7 +105,7 @@ namespace QuantLib {
                                                 const Calendar& calendar = Calendar(),
                                                 const Interpolator& interpolator = Interpolator());
         InterpolatedFxForwardPointTermStructure(const Date& referenceDate,
-                                                const std::vector<boost::shared_ptr<ForwardExchangeRate>>& fwdXRates,
+                                                const std::vector<ForwardExchangeRate>& fwdXRates,
                                                 const DayCounter& dayCounter,
                                                 const Calendar& calendar = Calendar(),
                                                 const Interpolator& interpolator = Interpolator());
@@ -216,19 +216,19 @@ namespace QuantLib {
     inline InterpolatedFxForwardPointTermStructure<Interpolator>::
         InterpolatedFxForwardPointTermStructure(
             const Date& referenceDate,
-            const std::vector<boost::shared_ptr<ForwardExchangeRate> >& fwdExchangeRates,
+            const std::vector<ForwardExchangeRate>& fwdExchangeRates,
             const DayCounter& dayCounter,
             const Calendar& calendar,
             const Interpolator& interpolator)
     : FxForwardPointTermStructure(
-          referenceDate, fwdExchangeRates[0]->spotExchangeRate(), dayCounter, calendar),
+          referenceDate, fwdExchangeRates.begin()->spotExchangeRate(), dayCounter, calendar),
       InterpolatedCurve<Interpolator>(fwdExchangeRates.size() + 1, interpolator) {
         // Fill dates/fwdPoints vectors
         dates_.resize(fwdExchangeRates.size());
         fwdPoints_.resize(fwdExchangeRates.size());
         for (Size i = 0; i < fwdExchangeRates.size(); i++) {
-            dates_[i] = referenceDate + fwdExchangeRates[i]->tenor();
-            fwdPoints_[i] = fwdExchangeRates[i]->forwardPoints();
+            dates_[i] = referenceDate + fwdExchangeRates[i].tenor();
+            fwdPoints_[i] = fwdExchangeRates[i].forwardPoints();
         }
         // Run initialization
         initialize();
