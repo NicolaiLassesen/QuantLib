@@ -72,7 +72,9 @@ namespace QuantLib {
             ext::shared_ptr<FixedRateCoupon> coupon =
                 ext::dynamic_pointer_cast<FixedRateCoupon>(leg_[i]);
             QL_REQUIRE(coupon->accrualStartDate() <= protectionStart_,
-                       "contract cannot start before accrual");
+                       "contract cannot start before accrual (accrual: "
+                           << coupon->accrualStartDate() << " vs contract: " << protectionStart_
+                           << ")");
             const Date& rebateDate = effectiveUpfrontDate;
             accrualRebate_ = ext::make_shared<SimpleCashFlow>(
                 coupon->accruedAmount(protectionStart_),
@@ -128,7 +130,8 @@ namespace QuantLib {
             effectiveUpfrontDate);
 
         QL_REQUIRE(effectiveUpfrontDate >= protectionStart_,
-                   "upfront can not be due before contract start");
+                   "upfront (" << effectiveUpfrontDate << ") can not be due before contract start ("
+                               << protectionStart_ << ")");
 
         if(rebatesAccrual) {
             Size i = 0;
@@ -136,7 +139,8 @@ namespace QuantLib {
             ext::shared_ptr<FixedRateCoupon> coupon =
                 ext::dynamic_pointer_cast<FixedRateCoupon>(leg_[i]);
             QL_REQUIRE(coupon->accrualStartDate() <= protectionStart_,
-                       "contract cannot start before accrual");
+                       "contract (" << protectionStart_ << ") cannot start before accrual ("
+                                    << coupon->accrualStartDate() << ")");
             const Date& rebateDate = effectiveUpfrontDate;
             accrualRebate_ = ext::make_shared<SimpleCashFlow>(
                 coupon->accruedAmount(protectionStart_),
