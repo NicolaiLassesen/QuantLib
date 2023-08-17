@@ -79,7 +79,7 @@ int main(int, char*[]) {
 
         Date todaysDate(28, February, 2020);
         Settings::instance().evaluationDate() = todaysDate;
-        Money::conversionType = Money::ConversionType::AutomatedConversion;
+        Money::Settings::instance().conversionType() = Money::ConversionType::AutomatedConversion;
         std::cout << "Today: " << todaysDate.weekday() << ", " << todaysDate << std::endl << std::endl;
 
         ExchangeRateManager::instance().add(ExchangeRate(USDCurrency(), EURCurrency(), 0.9103736341));
@@ -109,8 +109,8 @@ void runShortUsdEurExample(const Date& todaysDate) {
     Money baseNotionalAmount = Money(12925000, USDCurrency());
     ExchangeRate contractAllInRate = ExchangeRate(USDCurrency(), EURCurrency(), 0.897487215294618);
 
-    ext::shared_ptr<ForeignExchangeForward> fxFwd(
-        new ForeignExchangeForward(deliveryDate, baseNotionalAmount, contractAllInRate));
+    auto fxFwd = ext::make_shared<ForeignExchangeForward>(deliveryDate, baseNotionalAmount,
+                                                          contractAllInRate);
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
@@ -121,8 +121,8 @@ void runShortUsdEurExample(const Date& todaysDate) {
     Handle<YieldTermStructure> eurDiscountCurve = discountingEurCurve(todaysDate);
     Handle<YieldTermStructure> usdDiscountCurve = discountingUsdCurve(todaysDate);
 
-    ext::shared_ptr<ForwardPointsEngine> engine(new ForwardPointsEngine(
-        spotUsdEurRate, usdEurFwdCurve, usdDiscountCurve, eurDiscountCurve));
+    auto engine = ext::make_shared<ForwardPointsEngine>(spotUsdEurRate, usdEurFwdCurve,
+                                                        usdDiscountCurve, eurDiscountCurve);
     fxFwd->setPricingEngine(engine);
 
     printResults(fxFwd);
@@ -139,8 +139,8 @@ void runShortGbpEurExample(const Date& todaysDate) {
     Money baseNotionalAmount = Money(40300000, GBPCurrency());
     ExchangeRate contractAllInRate = ExchangeRate(GBPCurrency(), EURCurrency(), 1.16992588519517);
 
-    ext::shared_ptr<ForeignExchangeForward> fxFwd(
-        new ForeignExchangeForward(deliveryDate, baseNotionalAmount, contractAllInRate));
+    auto fxFwd = ext::make_shared<ForeignExchangeForward>(deliveryDate, baseNotionalAmount,
+                                                          contractAllInRate);
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
@@ -150,8 +150,8 @@ void runShortGbpEurExample(const Date& todaysDate) {
     Handle<YieldTermStructure> termDiscountCurve = discountingEurCurve(todaysDate);
     Handle<YieldTermStructure> baseDiscountCurve = discountingGbpCurve(todaysDate);
 
-    ext::shared_ptr<ForwardPointsEngine> engine(new ForwardPointsEngine(
-        spotBaseTermRate, baseTermFwdCurve, baseDiscountCurve, termDiscountCurve));
+    auto engine = ext::make_shared<ForwardPointsEngine>(spotBaseTermRate, baseTermFwdCurve,
+                                                        baseDiscountCurve, termDiscountCurve);
     fxFwd->setPricingEngine(engine);
 
     printResults(fxFwd);
@@ -168,8 +168,8 @@ void runLongUsdEurExample(const Date& todaysDate) {
     Money baseNotionalAmount = Money(24750000, USDCurrency());
     ExchangeRate contractAllInRate = ExchangeRate(USDCurrency(), EURCurrency(), 0.919214806712107);
 
-    ext::shared_ptr<ForeignExchangeForward> fxFwd(
-        new ForeignExchangeForward(deliveryDate, baseNotionalAmount, contractAllInRate));
+    auto fxFwd = ext::make_shared<ForeignExchangeForward>(deliveryDate, baseNotionalAmount,
+                                                          contractAllInRate);
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
@@ -179,8 +179,8 @@ void runLongUsdEurExample(const Date& todaysDate) {
     Handle<YieldTermStructure> eurDiscountCurve = discountingEurCurve(todaysDate);
     Handle<YieldTermStructure> usdDiscountCurve = discountingUsdCurve(todaysDate);
 
-    ext::shared_ptr<ForwardPointsEngine> engine(new ForwardPointsEngine(
-        spotUsdEurRate, usdEurFwdCurve, usdDiscountCurve, eurDiscountCurve));
+    auto engine = ext::make_shared<ForwardPointsEngine>(spotUsdEurRate, usdEurFwdCurve,
+                                                        usdDiscountCurve, eurDiscountCurve);
     fxFwd->setPricingEngine(engine);
 
     printResults(fxFwd);
@@ -197,8 +197,8 @@ void runLongGbpEurExample(const Date& todaysDate) {
     Money baseNotionalAmount = Money(16925000, GBPCurrency());
     ExchangeRate contractAllInRate = ExchangeRate(GBPCurrency(), EURCurrency(), 1.19394431443717);
 
-    ext::shared_ptr<ForeignExchangeForward> fxFwd(
-        new ForeignExchangeForward(deliveryDate, baseNotionalAmount, contractAllInRate));
+    auto fxFwd = ext::make_shared<ForeignExchangeForward>(deliveryDate, baseNotionalAmount,
+                                                          contractAllInRate);
 
     std::cout << "Valuation of FxFwd: " << *fxFwd << std::endl;
 
@@ -208,8 +208,8 @@ void runLongGbpEurExample(const Date& todaysDate) {
     Handle<YieldTermStructure> termDiscountCurve = discountingEurCurve(todaysDate);
     Handle<YieldTermStructure> baseDiscountCurve = discountingGbpCurve(todaysDate);
 
-    ext::shared_ptr<ForwardPointsEngine> engine(new ForwardPointsEngine(
-        spotBaseTermRate, baseTermFwdCurve, baseDiscountCurve, termDiscountCurve));
+    auto engine = ext::make_shared<ForwardPointsEngine>(spotBaseTermRate, baseTermFwdCurve,
+                                                        baseDiscountCurve, termDiscountCurve);
     fxFwd->setPricingEngine(engine);
 
     printResults(fxFwd);
@@ -250,9 +250,8 @@ Handle<FxForwardPointTermStructure> usdEurFwdPointStructure(const Date& todaysDa
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -33.074375, Period(2, Months)));
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -47.207796, Period(3, Months)));
 
-    ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
-        new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
-                                                            calendar));
+    auto fwdPtCurve = ext::make_shared<InterpolatedFxForwardPointTermStructure<Linear>>(
+        todaysDate, fwdExchRates, dayCounter, calendar);
 
     return Handle<FxForwardPointTermStructure>(fwdPtCurve);
 }
@@ -274,9 +273,8 @@ Handle<FxForwardPointTermStructure> eurUsdFwdPointStructure(const Date& todaysDa
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 40.669, Period(2, Months)));
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 57.975, Period(3, Months)));
 
-    ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
-        new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
-                                                            calendar));
+    auto fwdPtCurve = ext::make_shared<InterpolatedFxForwardPointTermStructure<Linear>>(
+        todaysDate, fwdExchRates, dayCounter, calendar);
 
     return Handle<FxForwardPointTermStructure>(fwdPtCurve);
 }
@@ -297,9 +295,8 @@ Handle<FxForwardPointTermStructure> gbpEurFwdPointStructure(const Date& todaysDa
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -24.16, Period(2, Months)));
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, -34.99, Period(3, Months)));
 
-    ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
-        new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
-                                                            calendar));
+    auto fwdPtCurve = ext::make_shared<InterpolatedFxForwardPointTermStructure<Linear>>(
+        todaysDate, fwdExchRates, dayCounter, calendar);
 
     return Handle<FxForwardPointTermStructure>(fwdPtCurve);
 }
@@ -320,9 +317,8 @@ Handle<FxForwardPointTermStructure> eurGbpFwdPointStructure(const Date& todaysDa
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 17.85, Period(2, Months)));
     fwdExchRates.push_back(ForwardExchangeRate(spotExchRate, 25.97, Period(3, Months)));
 
-    ext::shared_ptr<FxForwardPointTermStructure> fwdPtCurve(
-        new InterpolatedFxForwardPointTermStructure<Linear>(todaysDate, fwdExchRates, dayCounter,
-                                                            calendar));
+    auto fwdPtCurve = ext::make_shared<InterpolatedFxForwardPointTermStructure<Linear>>(
+        todaysDate, fwdExchRates, dayCounter, calendar);
 
     return Handle<FxForwardPointTermStructure>(fwdPtCurve);
 }
@@ -338,27 +334,16 @@ Handle<YieldTermStructure> discountingEurCurve(const Date& todaysDate) {
     Date settlementDate = calendar.advance(todaysDate, fixingDays, TimeUnit::Days);
     DayCounter depositDayCounter = Actual360();
 
-    ext::shared_ptr<Quote> d1wRate(new SimpleQuote(-0.00518));
-    ext::shared_ptr<Quote> d1mRate(new SimpleQuote(-0.00488));
-    ext::shared_ptr<Quote> d3mRate(new SimpleQuote(-0.00424));
-    ext::shared_ptr<Quote> d6mRate(new SimpleQuote(-0.00386));
-    ext::shared_ptr<Quote> d1yRate(new SimpleQuote(-0.00311));
-
-    ext::shared_ptr<RateHelper> d1w(new DepositRateHelper(Handle<Quote>(d1wRate), 1 * Weeks,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d1m(new DepositRateHelper(Handle<Quote>(d1mRate), 1 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d3m(new DepositRateHelper(Handle<Quote>(d3mRate), 3 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d6m(new DepositRateHelper(Handle<Quote>(d6mRate), 6 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d1y(new DepositRateHelper(Handle<Quote>(d1yRate), 1 * Years,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
+    auto d1w = ext::make_shared<DepositRateHelper>(-0.00518, 1 * Weeks, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d1m = ext::make_shared<DepositRateHelper>(-0.00488, 1 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d3m = ext::make_shared<DepositRateHelper>(-0.00424, 3 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d6m = ext::make_shared<DepositRateHelper>(-0.00386, 6 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d1y = ext::make_shared<DepositRateHelper>(-0.00311, 1 * Years, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
 
     std::vector<ext::shared_ptr<RateHelper> > depoSwapInstruments;
     depoSwapInstruments.push_back(d1w);
@@ -367,11 +352,12 @@ Handle<YieldTermStructure> discountingEurCurve(const Date& todaysDate) {
     depoSwapInstruments.push_back(d6m);
     depoSwapInstruments.push_back(d1y);
 
-    ext::shared_ptr<YieldTermStructure> depoTermStructure(
-        new PiecewiseYieldCurve<Discount, LogLinear>(settlementDate, depoSwapInstruments,
-                                                     termStructureDayCounter));
+    Handle<YieldTermStructure> depoTermStructure(
+        ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear>>(
+            settlementDate, depoSwapInstruments, termStructureDayCounter));
+    depoTermStructure->enableExtrapolation();
 
-    return Handle<YieldTermStructure>(depoTermStructure);
+    return depoTermStructure;
 }
 
 Handle<YieldTermStructure> discountingUsdCurve(const Date& todaysDate) {
@@ -384,27 +370,16 @@ Handle<YieldTermStructure> discountingUsdCurve(const Date& todaysDate) {
     Date settlementDate = calendar.advance(todaysDate, fixingDays, TimeUnit::Days);
     DayCounter depositDayCounter = Actual360();
 
-    ext::shared_ptr<Quote> d1wRate(new SimpleQuote(0.01568  ));
-    ext::shared_ptr<Quote> d1mRate(new SimpleQuote(0.0151525));
-    ext::shared_ptr<Quote> d3mRate(new SimpleQuote(0.0146275));
-    ext::shared_ptr<Quote> d6mRate(new SimpleQuote(0.0139725));
-    ext::shared_ptr<Quote> d1yRate(new SimpleQuote(0.013815 ));
-
-    ext::shared_ptr<RateHelper> d1w(new DepositRateHelper(Handle<Quote>(d1wRate), 1 * Weeks,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d1m(new DepositRateHelper(Handle<Quote>(d1mRate), 1 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d3m(new DepositRateHelper(Handle<Quote>(d3mRate), 3 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d6m(new DepositRateHelper(Handle<Quote>(d6mRate), 6 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d1y(new DepositRateHelper(Handle<Quote>(d1yRate), 1 * Years,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
+    auto d1w = ext::make_shared<DepositRateHelper>(0.01568, 1 * Weeks, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d1m = ext::make_shared<DepositRateHelper>(0.0151525, 1 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d3m = ext::make_shared<DepositRateHelper>(0.0146275, 3 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d6m = ext::make_shared<DepositRateHelper>(0.0139725, 6 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d1y = ext::make_shared<DepositRateHelper>(0.013815, 1 * Years, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
 
     std::vector<ext::shared_ptr<RateHelper> > depoSwapInstruments;
     depoSwapInstruments.push_back(d1w);
@@ -413,11 +388,12 @@ Handle<YieldTermStructure> discountingUsdCurve(const Date& todaysDate) {
     depoSwapInstruments.push_back(d6m);
     depoSwapInstruments.push_back(d1y);
 
-    ext::shared_ptr<YieldTermStructure> depoTermStructure(
-        new PiecewiseYieldCurve<Discount, LogLinear>(settlementDate, depoSwapInstruments,
-                                                     termStructureDayCounter));
+    Handle<YieldTermStructure> depoTermStructure(
+        ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear>>(
+            settlementDate, depoSwapInstruments, termStructureDayCounter));
+    depoTermStructure->enableExtrapolation();
 
-    return Handle<YieldTermStructure>(depoTermStructure);
+    return depoTermStructure;
 }
 
 Handle<YieldTermStructure> discountingGbpCurve(const Date& todaysDate) {
@@ -430,27 +406,16 @@ Handle<YieldTermStructure> discountingGbpCurve(const Date& todaysDate) {
     Date settlementDate = calendar.advance(todaysDate, fixingDays, TimeUnit::Days);
     DayCounter depositDayCounter = Actual365Fixed(Actual365Fixed::Convention::Standard);
 
-    ext::shared_ptr<Quote> d1wRate(new SimpleQuote(0.00681  ));
-    ext::shared_ptr<Quote> d1mRate(new SimpleQuote(0.0067675));
-    ext::shared_ptr<Quote> d3mRate(new SimpleQuote(0.0067275));
-    ext::shared_ptr<Quote> d6mRate(new SimpleQuote(0.0068675));
-    ext::shared_ptr<Quote> d1yRate(new SimpleQuote(0.0075038));
-
-    ext::shared_ptr<RateHelper> d1w(new DepositRateHelper(Handle<Quote>(d1wRate), 1 * Weeks,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d1m(new DepositRateHelper(Handle<Quote>(d1mRate), 1 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d3m(new DepositRateHelper(Handle<Quote>(d3mRate), 3 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d6m(new DepositRateHelper(Handle<Quote>(d6mRate), 6 * Months,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
-    ext::shared_ptr<RateHelper> d1y(new DepositRateHelper(Handle<Quote>(d1yRate), 1 * Years,
-                                                          fixingDays, calendar, ModifiedFollowing,
-                                                          true, depositDayCounter));
+    auto d1w = ext::make_shared<DepositRateHelper>(0.00681, 1 * Weeks, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d1m = ext::make_shared<DepositRateHelper>(0.0067675, 1 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d3m = ext::make_shared<DepositRateHelper>(0.0067275, 3 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d6m = ext::make_shared<DepositRateHelper>(0.0068675, 6 * Months, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
+    auto d1y = ext::make_shared<DepositRateHelper>(0.0075038, 1 * Years, fixingDays, calendar,
+                                                   ModifiedFollowing, true, depositDayCounter);
 
     std::vector<ext::shared_ptr<RateHelper> > depoSwapInstruments;
     depoSwapInstruments.push_back(d1w);
@@ -459,9 +424,10 @@ Handle<YieldTermStructure> discountingGbpCurve(const Date& todaysDate) {
     depoSwapInstruments.push_back(d6m);
     depoSwapInstruments.push_back(d1y);
 
-    ext::shared_ptr<YieldTermStructure> depoTermStructure(
-        new PiecewiseYieldCurve<Discount, LogLinear>(settlementDate, depoSwapInstruments,
-                                                     termStructureDayCounter));
+    Handle<YieldTermStructure> depoTermStructure(
+        ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear>>(
+            settlementDate, depoSwapInstruments, termStructureDayCounter));
+    depoTermStructure->enableExtrapolation();
 
-    return Handle<YieldTermStructure>(depoTermStructure);
+    return depoTermStructure;
 }

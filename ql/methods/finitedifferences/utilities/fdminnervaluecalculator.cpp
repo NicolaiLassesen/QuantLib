@@ -23,14 +23,14 @@
     \brief layer of abstraction to calculate the inner value
 */
 
-#include <ql/payoff.hpp>
-#include <ql/math/functional.hpp>
-#include <ql/math/integrals/simpsonintegral.hpp>
 #include <ql/instruments/basketoption.hpp>
+#include <ql/math/integrals/simpsonintegral.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmmesher.hpp>
 #include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
 #include <ql/methods/finitedifferences/utilities/fdminnervaluecalculator.hpp>
+#include <ql/payoff.hpp>
 #include <deque>
+#include <utility>
 
 namespace QuantLib {
 
@@ -48,15 +48,12 @@ namespace QuantLib {
         };
     }
 
-    FdmCellAveragingInnerValue::FdmCellAveragingInnerValue(
-        const ext::shared_ptr<Payoff>& payoff,
-        const ext::shared_ptr<FdmMesher>& mesher,
-        Size direction,
-        const ext::function<Real(Real)>& gridMapping)
-    : payoff_(payoff),
-      mesher_(mesher),
-      direction_ (direction),
-      gridMapping_(gridMapping) { }
+    FdmCellAveragingInnerValue::FdmCellAveragingInnerValue(ext::shared_ptr<Payoff> payoff,
+                                                           ext::shared_ptr<FdmMesher> mesher,
+                                                           Size direction,
+                                                           ext::function<Real(Real)> gridMapping)
+    : payoff_(std::move(payoff)), mesher_(std::move(mesher)), direction_(direction),
+      gridMapping_(std::move(gridMapping)) {}
 
     Real FdmCellAveragingInnerValue::innerValue(const FdmLinearOpIterator& iter, Time) {
         const Real loc = mesher_->location(iter, direction_);
@@ -69,10 +66,7 @@ namespace QuantLib {
             avgInnerValues_.resize(mesher_->layout()->dim()[direction_]);
             std::deque<bool> initialized(avgInnerValues_.size(), false);
 
-            const ext::shared_ptr<FdmLinearOpLayout> layout =
-                mesher_->layout();
-            const FdmLinearOpIterator endIter = layout->end();
-            for (FdmLinearOpIterator i = layout->begin(); i != endIter; ++i) {
+            for (const auto& i : *mesher_->layout()) {
                 const Size xn = i.coordinates()[direction_];
                 if (!initialized[xn]) {
                     initialized[xn]     = true;
@@ -87,22 +81,20 @@ namespace QuantLib {
     Real FdmCellAveragingInnerValue::avgInnerValueCalc(const FdmLinearOpIterator& iter, Time t) {
         const Size dim = mesher_->layout()->dim()[direction_];
         const Size coord = iter.coordinates()[direction_];
+
+        if (coord == 0 || coord == dim-1)
+            return innerValue(iter, t);
+
         const Real loc = mesher_->location(iter,direction_);
-        Real a = loc;
-        Real b = loc;
-        if (coord > 0) {
-            a -= mesher_->dminus(iter, direction_)/2.0;
-        }
-        if (coord < dim-1) {
-            b += mesher_->dplus(iter, direction_)/2.0;
-        }
+        const Real a = loc - mesher_->dminus(iter, direction_)/2.0;
+        const Real b = loc + mesher_->dplus(iter, direction_)/2.0;
 
         mapped_payoff f(*payoff_, gridMapping_);
 
         Real retVal;
         try {
             const Real acc
-                = ((f(a) != 0.0 || f(b) != 0.0) ? (f(a)+f(b))*5e-5 : 1e-4);
+                = ((f(a) != 0.0 || f(b) != 0.0) ? Real((f(a)+f(b))*5e-5) : 1e-4);
             retVal = SimpsonIntegral(acc, 8)(f, a, b)/(b-a);
         }
         catch (Error&) {
@@ -113,25 +105,18 @@ namespace QuantLib {
         return retVal;
     }
 
-    namespace {
-        typedef Real (*Real2RealFct)(Real);
-    }
-
     FdmLogInnerValue::FdmLogInnerValue(
         const ext::shared_ptr<Payoff>& payoff,
         const ext::shared_ptr<FdmMesher>& mesher,
         Size direction)
     : FdmCellAveragingInnerValue(
         payoff, mesher, direction,
-        ext::function<Real(Real)>(static_cast<Real2RealFct>(std::exp))) {
-    }
+        [](Real x) -> Real { return std::exp(x); }) {}
 
-    
-    FdmLogBasketInnerValue::FdmLogBasketInnerValue(
-                                const ext::shared_ptr<BasketPayoff>& payoff,
-                                const ext::shared_ptr<FdmMesher>& mesher)
-    : payoff_(payoff),
-      mesher_(mesher) { }
+
+    FdmLogBasketInnerValue::FdmLogBasketInnerValue(ext::shared_ptr<BasketPayoff> payoff,
+                                                   ext::shared_ptr<FdmMesher> mesher)
+    : payoff_(std::move(payoff)), mesher_(std::move(mesher)) {}
 
     Real FdmLogBasketInnerValue::innerValue(
                                     const FdmLinearOpIterator& iter, Time) {

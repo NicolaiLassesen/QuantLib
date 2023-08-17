@@ -2,7 +2,7 @@
 
 /*
 Copyright (C) 2006, 2007 Ferdinando Ametrano
-Copyright (C) 2007 François du Vignaud
+Copyright (C) 2007 FranÃ§ois du Vignaud
 Copyright (C) 2006, 2007 Mark Joshi
 
 This file is part of QuantLib, a free-software/open-source library
@@ -20,7 +20,6 @@ FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
 #include <ql/models/marketmodels/curvestates/cmswapcurvestate.hpp>
-#include <ql/auto_ptr.hpp>    
 
 namespace QuantLib {
 
@@ -179,8 +178,8 @@ namespace QuantLib {
         }
     }
 
-    QL_UNIQUE_OR_AUTO_PTR<CurveState> CMSwapCurveState::clone() const {
-        return QL_UNIQUE_OR_AUTO_PTR<CurveState>(new CMSwapCurveState(*this));
+    std::unique_ptr<CurveState> CMSwapCurveState::clone() const {
+        return std::unique_ptr<CurveState>(new CMSwapCurveState(*this));
     }
 
 }

@@ -6,7 +6,7 @@
  Copyright (C) 2006 Ferdinando Ametrano
  Copyright (C) 2000, 2001, 2002, 2003 RiskMap srl
  Copyright (C) 2003, 2004 StatPro Italia srl
- Copyright (C) 2003 Nicolas Di Césaré
+ Copyright (C) 2003 Nicolas Di CÃ©sarÃ©
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -22,33 +22,32 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/cashflows/couponpricer.hpp>
 #include <ql/cashflows/floatingratecoupon.hpp>
 #include <ql/indexes/interestrateindex.hpp>
-#include <ql/cashflows/couponpricer.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    FloatingRateCoupon::FloatingRateCoupon(
-                            const Date& paymentDate,
-                            Real nominal,
-                            const Date& startDate,
-                            const Date& endDate,
-                            Natural fixingDays,
-                            const ext::shared_ptr<InterestRateIndex>& index,
-                            Real gearing,
-                            Spread spread,
-                            const Date& refPeriodStart,
-                            const Date& refPeriodEnd,
-                            const DayCounter& dayCounter,
-                            bool isInArrears,
-                            const Date& exCouponDate)
+    FloatingRateCoupon::FloatingRateCoupon(const Date& paymentDate,
+                                           Real nominal,
+                                           const Date& startDate,
+                                           const Date& endDate,
+                                           Natural fixingDays,
+                                           const ext::shared_ptr<InterestRateIndex>& index,
+                                           Real gearing,
+                                           Spread spread,
+                                           const Date& refPeriodStart,
+                                           const Date& refPeriodEnd,
+                                           DayCounter dayCounter,
+                                           bool isInArrears,
+                                           const Date& exCouponDate)
     : Coupon(paymentDate, nominal, startDate, endDate, refPeriodStart, refPeriodEnd, exCouponDate),
-      index_(index), dayCounter_(dayCounter),
-      fixingDays_(fixingDays==Null<Natural>() ? index->fixingDays() : fixingDays),
-      gearing_(gearing), spread_(spread),
-      isInArrears_(isInArrears)
-    {
+      index_(index), dayCounter_(std::move(dayCounter)),
+      fixingDays_(fixingDays == Null<Natural>() ? (index ? index->fixingDays() : 0) : fixingDays),
+      gearing_(gearing), spread_(spread), isInArrears_(isInArrears) {
+        QL_REQUIRE(index_, "no index provided");
         QL_REQUIRE(gearing_!=0, "Null gearing not allowed");
 
         if (dayCounter_.empty())
@@ -60,27 +59,20 @@ namespace QuantLib {
 
     void FloatingRateCoupon::setPricer(
                 const ext::shared_ptr<FloatingRateCouponPricer>& pricer) {
-        if (pricer_)
+        if (pricer_ != nullptr)
             unregisterWith(pricer_);
         pricer_ = pricer;
-        if (pricer_)
+        if (pricer_ != nullptr)
             registerWith(pricer_);
         update();
     }
 
     Real FloatingRateCoupon::accruedAmount(const Date& d) const {
         if (d <= accrualStartDate_ || d > paymentDate_) {
+            // out of coupon range
             return 0.0;
-        } else if (tradingExCoupon(d)) {
-            return -nominal() * rate() *
-                   dayCounter().yearFraction(d, accrualEndDate_,
-                                             refPeriodStart_, refPeriodEnd_);
         } else {
-            return nominal() * rate() *
-                dayCounter().yearFraction(accrualStartDate_,
-                                          std::min(d, accrualEndDate_),
-                                          refPeriodStart_,
-                                          refPeriodEnd_);
+            return nominal() * rate() * accruedPeriod(d);
         }
     }
 
@@ -92,9 +84,14 @@ namespace QuantLib {
     }
 
     Rate FloatingRateCoupon::rate() const {
+        calculate();
+        return rate_;
+    }
+
+    void FloatingRateCoupon::performCalculations() const {
         QL_REQUIRE(pricer_, "pricer not set");
         pricer_->initialize(*this);
-        return pricer_->swapletRate();
+        rate_ = pricer_->swapletRate();
     }
 
     Real FloatingRateCoupon::price(const Handle<YieldTermStructure>& discountingCurve) const {

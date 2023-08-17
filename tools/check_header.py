@@ -1,27 +1,32 @@
-#!/usr/bin/python
+#!/usr/bin/python -u
 
-import os, sys, tempfile
+import multiprocessing as mp
+import os
+import sys
+import shutil
 
-if len(sys.argv) != 2:
-    print 'Usage: %s <header file>' % sys.argv[0]
-    sys.exit()
 
-header = sys.argv[1]
+def check(header):
+    cxx = os.environ.get("CXX", "g++")
+    source_file = header + ".cpp"
+    shutil.copy(header, source_file)
+    object_file = header + ".o"
+    command = f"{cxx} -std=c++14 -c -Wno-unknown-pragmas -Wall -Werror -I. {source_file} -o {object_file}"
+    print(command, file=sys.stderr)
+    code = os.system(command)
+    try:
+        os.remove(source_file)
+        os.remove(object_file)
+    except:
+        pass
+    if code != 0:
+        print(f"Errors while checking {header}", file=sys.stderr)
+        return 1
+    return 0
 
-main = r"""
-#include <%s>
-int main() {
-    return 0;
-}
-""" % header
 
-fd,fname = tempfile.mkstemp(suffix = '.cpp', dir = '.', text = True)
-os.write(fd,main)
-os.close(fd)
-
-print 'Checking %s' % header
-command = 'g++ -c -I. %s -o /dev/null' % fname
-os.system(command)
-
-os.unlink(fname)
-
+if __name__ == "__main__":
+    headers = [line.strip() for line in sys.stdin.readlines()]
+    with mp.Pool(processes=mp.cpu_count()) as pool:
+        errors = sum(pool.map(check, headers))
+    sys.exit(errors)

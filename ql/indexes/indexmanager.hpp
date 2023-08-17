@@ -24,10 +24,11 @@
 #ifndef quantlib_index_manager_hpp
 #define quantlib_index_manager_hpp
 
-#include <ql/timeseries.hpp>
 #include <ql/patterns/singleton.hpp>
+#include <ql/timeseries.hpp>
 #include <ql/utilities/observablevalue.hpp>
-
+#include <algorithm>
+#include <cctype>
 
 namespace QuantLib {
 
@@ -35,15 +36,17 @@ namespace QuantLib {
     /*! \note index names are case insensitive */
     class IndexManager : public Singleton<IndexManager> {
         friend class Singleton<IndexManager>;
+
       private:
-        IndexManager() {}
+        IndexManager() = default;
+
       public:
         //! returns whether historical fixings were stored for the index
         bool hasHistory(const std::string& name) const;
         //! returns the (possibly empty) history of the index fixings
         const TimeSeries<Real>& getHistory(const std::string& name) const;
         //! stores the historical fixings of the index
-        void setHistory(const std::string& name, const TimeSeries<Real>&);
+        void setHistory(const std::string& name, TimeSeries<Real> history);
         //! observer notifying of changes in the index fixings
         ext::shared_ptr<Observable> notifier(const std::string& name) const;
         //! returns all names of the indexes for which fixings were stored
@@ -52,10 +55,19 @@ namespace QuantLib {
         void clearHistory(const std::string& name);
         //! clears all stored fixings
         void clearHistories();
+        //! returns whether a specific historical fixing was stored for the index and date
+        bool hasHistoricalFixing(const std::string& name, const Date& fixingDate) const;
+
       private:
-        typedef std::map<std::string, ObservableValue<TimeSeries<Real> > >
-                                                                  history_map;
-        mutable history_map data_;
+        struct CaseInsensitiveCompare {
+          bool operator()(const std::string& s1, const std::string& s2) const {
+            return std::lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(), [](const auto& c1, const auto& c2) {
+              return std::toupper(static_cast<unsigned char>(c1)) < std::toupper(static_cast<unsigned char>(c2));
+            });
+          }
+        };
+
+        mutable std::map<std::string, ObservableValue<TimeSeries<Real>>, CaseInsensitiveCompare> data_;
     };
 
 }

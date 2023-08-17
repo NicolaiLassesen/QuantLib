@@ -5,6 +5,8 @@
  Copyright (C) 2003, 2004, 2005, 2006, 2007 StatPro Italia srl
  Copyright (C) 2004 Jeff Yu
  Copyright (C) 2014 Paolo Mazzocchi
+ Copyright (C) 2020 Leonardo Arcari
+ Copyright (C) 2020 Kline s.r.l.
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -24,6 +26,21 @@
 #include <ql/errors.hpp>
 
 namespace QuantLib {
+
+    namespace {
+
+        // Requires: from < to.
+        Date::serial_type daysBetweenImpl(const Calendar& cal,
+                                          const Date& from, const Date& to,
+                                          bool includeFirst, bool includeLast) {
+            auto res = static_cast<Date::serial_type>(includeLast && cal.isBusinessDay(to));
+            for (Date d = includeFirst ? from : from + 1; d < to; ++d) {
+                res += static_cast<Date::serial_type>(cal.isBusinessDay(d));
+            }
+            return res;
+        }
+
+    }
 
     void Calendar::addHoliday(const Date& d) {
         QL_REQUIRE(impl_, "no calendar implementation provided");
@@ -59,6 +76,11 @@ namespace QuantLib {
             impl_->removedHolidays.insert(_d);
     }
 
+    void Calendar::resetAddedAndRemovedHolidays() {
+        impl_->addedHolidays.clear();
+        impl_->removedHolidays.clear();
+    }
+
     Date Calendar::adjust(const Date& d,
                           BusinessDayConvention c) const {
         QL_REQUIRE(d != Date(), "null date");
@@ -70,7 +92,7 @@ namespace QuantLib {
         if (c == Following || c == ModifiedFollowing 
             || c == HalfMonthModifiedFollowing) {
             while (isHoliday(d1))
-                d1++;
+                ++d1;
             if (c == ModifiedFollowing 
                 || c == HalfMonthModifiedFollowing) {
                 if (d1.month() != d.month()) {
@@ -84,7 +106,7 @@ namespace QuantLib {
             }
         } else if (c == Preceding || c == ModifiedPreceding) {
             while (isHoliday(d1))
-                d1--;
+                --d1;
             if (c == ModifiedPreceding && d1.month() != d.month()) {
                 return adjust(d,Following);
             }
@@ -92,8 +114,8 @@ namespace QuantLib {
             Date d2 = d;
             while (isHoliday(d1) && isHoliday(d2))
             {
-                d1++;
-                d2--;
+                ++d1;
+                --d2;
             }
             if (isHoliday(d1))
                 return d2;
@@ -116,17 +138,17 @@ namespace QuantLib {
             Date d1 = d;
             if (n > 0) {
                 while (n > 0) {
-                    d1++;
+                    ++d1;
                     while (isHoliday(d1))
-                        d1++;
-                    n--;
+                        ++d1;
+                    --n;
                 }
             } else {
                 while (n < 0) {
-                    d1--;
+                    --d1;
                     while(isHoliday(d1))
-                        d1--;
-                    n++;
+                        --d1;
+                    ++n;
                 }
             }
             return d1;
@@ -155,38 +177,9 @@ namespace QuantLib {
                                                     const Date& to,
                                                     bool includeFirst,
                                                     bool includeLast) const {
-        Date::serial_type wd = 0;
-        if (from != to) {
-            if (from < to) {
-                // the last one is treated separately to avoid
-                // incrementing Date::maxDate()
-                for (Date d = from; d < to; ++d) {
-                    if (isBusinessDay(d))
-                        ++wd;
-                }
-                if (isBusinessDay(to))
-                    ++wd;
-            } else if (from > to) {
-                for (Date d = to; d < from; ++d) {
-                    if (isBusinessDay(d))
-                        ++wd;
-                }
-                if (isBusinessDay(from))
-                    ++wd;
-            }
-
-            if (isBusinessDay(from) && !includeFirst)
-                wd--;
-            if (isBusinessDay(to) && !includeLast)
-                wd--;
-
-            if (from > to)
-                wd = -wd;
-        } else if (includeFirst && includeLast && isBusinessDay(from)) {
-            wd = 1;
-        }
-
-        return wd;
+        return (from < to) ? daysBetweenImpl(*this, from, to, includeFirst, includeLast) :
+               (from > to) ? -daysBetweenImpl(*this, to, from, includeLast, includeFirst) :
+               Date::serial_type(includeFirst && includeLast && isBusinessDay(from));
     }
 
 
@@ -275,20 +268,31 @@ namespace QuantLib {
         return EasterMonday[y-1901];
     }
 
+    std::vector<Date> Calendar::holidayList(
+        const Date& from, const Date& to, bool includeWeekEnds) const {
 
-    std::vector<Date> Calendar::holidayList(const Calendar& calendar,
-        const Date& from, const Date& to, bool includeWeekEnds) {
-
-        QL_REQUIRE(to>from, "'from' date ("
-            << from << ") must be earlier than 'to' date ("
+        QL_REQUIRE(to>=from, "'from' date ("
+            << from << ") must be equal to or earlier than 'to' date ("
             << to << ")");
         std::vector<Date> result;
         for (Date d = from; d <= to; ++d) {
-            if (calendar.isHoliday(d)
-                && (includeWeekEnds || !calendar.isWeekend(d.weekday())))
+            if (isHoliday(d) && (includeWeekEnds || !isWeekend(d.weekday())))
                 result.push_back(d);
        }
        return result;
     }
 
+    std::vector<Date> Calendar::businessDayList(
+        const Date& from, const Date& to) const {
+
+        QL_REQUIRE(to>=from, "'from' date ("
+            << from << ") must be equal to or earlier than 'to' date ("
+            << to << ")");
+        std::vector<Date> result;
+        for (Date d = from; d <= to; ++d) {
+            if (isBusinessDay(d))
+                result.push_back(d);
+       }
+       return result;
+    }
 }

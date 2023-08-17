@@ -27,6 +27,7 @@
 
 #include <ql/termstructures/yield/ratehelpers.hpp>
 #include <ql/instruments/overnightindexedswap.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
@@ -38,81 +39,92 @@ namespace QuantLib {
                       const Handle<Quote>& fixedRate,
                       const ext::shared_ptr<OvernightIndex>& overnightIndex,
                       // exogenous discounting curve
-                      const Handle<YieldTermStructure>& discountingCurve
-                                               = Handle<YieldTermStructure>(),
+                      Handle<YieldTermStructure> discountingCurve = {},
                       bool telescopicValueDates = false,
                       Natural paymentLag = 0,
                       BusinessDayConvention paymentConvention = Following,
                       Frequency paymentFrequency = Annual,
-                      const Calendar& paymentCalendar = Calendar(),
-                      const Period& forwardStart = 0 * Days, 
-                      const Spread overnightSpread = 0.0,
+                      Calendar paymentCalendar = Calendar(),
+                      const Period& forwardStart = 0 * Days,
+                      Spread overnightSpread = 0.0,
                       Pillar::Choice pillar = Pillar::LastRelevantDate,
-                      Date customPillarDate = Date());
+                      Date customPillarDate = Date(),
+                      RateAveraging::Type averagingMethod = RateAveraging::Compound,
+                      ext::optional<bool> endOfMonth = ext::nullopt);
         //! \name RateHelper interface
         //@{
-        Real impliedQuote() const;
-        void setTermStructure(YieldTermStructure*);
+        Real impliedQuote() const override;
+        void setTermStructure(YieldTermStructure*) override;
         //@}
         //! \name inspectors
         //@{
+        // NOLINTNEXTLINE(cppcoreguidelines-noexcept-swap,performance-noexcept-swap)
         ext::shared_ptr<OvernightIndexedSwap> swap() const { return swap_; }
         //@}
         //! \name Visitability
         //@{
-        void accept(AcyclicVisitor&);
+        void accept(AcyclicVisitor&) override;
         //@}
     protected:
-        void initializeDates();
-        Pillar::Choice pillarChoice_;
+      void initializeDates() override;
+      Pillar::Choice pillarChoice_;
 
-        Natural settlementDays_;
-        Period tenor_;
-        ext::shared_ptr<OvernightIndex> overnightIndex_;
+      Natural settlementDays_;
+      Period tenor_;
+      ext::shared_ptr<OvernightIndex> overnightIndex_;
 
-        ext::shared_ptr<OvernightIndexedSwap> swap_;
-        RelinkableHandle<YieldTermStructure> termStructureHandle_;
+      ext::shared_ptr<OvernightIndexedSwap> swap_;
+      RelinkableHandle<YieldTermStructure> termStructureHandle_;
 
-        Handle<YieldTermStructure> discountHandle_;
-        bool telescopicValueDates_;
-        RelinkableHandle<YieldTermStructure> discountRelinkableHandle_;
+      Handle<YieldTermStructure> discountHandle_;
+      bool telescopicValueDates_;
+      RelinkableHandle<YieldTermStructure> discountRelinkableHandle_;
 
-        Natural paymentLag_;
-        BusinessDayConvention paymentConvention_;
-        Frequency paymentFrequency_;
-        Calendar paymentCalendar_;
-        Period forwardStart_;
-        Spread overnightSpread_;
+      Natural paymentLag_;
+      BusinessDayConvention paymentConvention_;
+      Frequency paymentFrequency_;
+      Calendar paymentCalendar_;
+      Period forwardStart_;
+      Spread overnightSpread_;
+      RateAveraging::Type averagingMethod_;
+      ext::optional<bool> endOfMonth_;
     };
 
     //! Rate helper for bootstrapping over Overnight Indexed Swap rates
     class DatedOISRateHelper : public RateHelper {
       public:
-        DatedOISRateHelper(
-                    const Date& startDate,
-                    const Date& endDate,
-                    const Handle<Quote>& fixedRate,
-                    const ext::shared_ptr<OvernightIndex>& overnightIndex,
-                      // exogenous discounting curve
-                    const Handle<YieldTermStructure>& discountingCurve
-                                              = Handle<YieldTermStructure>(),
-                    bool telescopicValueDates = false);
+        DatedOISRateHelper(const Date& startDate,
+                           const Date& endDate,
+                           const Handle<Quote>& fixedRate,
+                           const ext::shared_ptr<OvernightIndex>& overnightIndex,
+                           // exogenous discounting curve
+                           Handle<YieldTermStructure> discountingCurve = {},
+                           bool telescopicValueDates = false,
+                           RateAveraging::Type averagingMethod = RateAveraging::Compound,
+                           Natural paymentLag = 0,
+                           BusinessDayConvention paymentConvention = Following,
+                           Frequency paymentFrequency = Annual,
+                           const Calendar& paymentCalendar = Calendar(),
+                           const Period& forwardStart = 0 * Days,
+                           Spread overnightSpread = 0.0,
+                           ext::optional<bool> endOfMonth = ext::nullopt);
         //! \name RateHelper interface
         //@{
-        Real impliedQuote() const;
-        void setTermStructure(YieldTermStructure*);
+        Real impliedQuote() const override;
+        void setTermStructure(YieldTermStructure*) override;
         //@}
         //! \name Visitability
         //@{
-        void accept(AcyclicVisitor&);
+        void accept(AcyclicVisitor&) override;
         //@}
-    protected:
+      protected:
         ext::shared_ptr<OvernightIndexedSwap> swap_;
         RelinkableHandle<YieldTermStructure> termStructureHandle_;
 
         Handle<YieldTermStructure> discountHandle_;
         bool telescopicValueDates_;
         RelinkableHandle<YieldTermStructure> discountRelinkableHandle_;
+        RateAveraging::Type averagingMethod_;
     };
 
 }

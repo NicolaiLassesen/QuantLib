@@ -28,13 +28,18 @@ using namespace boost::unit_test_framework;
 
 namespace {
 
-    class TestCaseCleaner {
+    class TestCaseCleaner { // NOLINT(cppcoreguidelines-special-member-functions)
       public:
-        TestCaseCleaner() {}
+        TestCaseCleaner() = default;
         ~TestCaseCleaner() {
             QL_TRACE_ON(std::cerr);
         }
     };
+
+#if defined(__clang__) && __clang_major__ >= 14
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#endif
 
     void testTraceOutput(bool enable,
 #if defined(QL_ENABLE_TRACING)
@@ -58,7 +63,7 @@ namespace {
         #if defined(QL_ENABLE_TRACING)
         std::string expected = result;
         #else
-        std::string expected = "";
+        std::string expected;
         #endif
         if (output.str() != expected) {
             BOOST_FAIL("wrong trace:\n"
@@ -68,6 +73,10 @@ namespace {
                        "\""+ output.str() + "\"");
         }
     }
+
+#if defined(__clang__) && __clang_major__ >= 14
+#pragma clang diagnostic pop
+#endif
 
 }
 
@@ -82,9 +91,8 @@ void TracingTest::testOutput() {
 
 
 test_suite* TracingTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Tracing tests");
+    auto* suite = BOOST_TEST_SUITE("Tracing tests");
 
     suite->add(QUANTLIB_TEST_CASE(&TracingTest::testOutput));
     return suite;
 }
-

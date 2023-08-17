@@ -2,6 +2,7 @@
 
 /*
  Copyright (C) 2009, 2011 Chris Kenyon
+ Copyright (C) 2022 Quaternion Risk Management Ltd
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -18,29 +19,29 @@
  */
 
 #include <ql/cashflows/cpicouponpricer.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    CPICouponPricer::CPICouponPricer() {}
+    QL_DEPRECATED_DISABLE_WARNING
 
-    CPICouponPricer::CPICouponPricer(
-                       const Handle<CPIVolatilitySurface>& capletVol)
-    : capletVol_(capletVol) {
-        registerWith(capletVol_);
+    CPICouponPricer::CPICouponPricer(Handle<YieldTermStructure> nominalTermStructure)
+    : nominalTermStructure_(std::move(nominalTermStructure)) {
+        registerWith(nominalTermStructure_);
     }
 
-    CPICouponPricer::CPICouponPricer(
-                       const Handle<CPIVolatilitySurface>& capletVol,
-                       const Handle<YieldTermStructure>& nominalTermStructure)
-    : capletVol_(capletVol), nominalTermStructure_(nominalTermStructure) {
+    CPICouponPricer::CPICouponPricer(Handle<CPIVolatilitySurface> capletVol,
+                                     Handle<YieldTermStructure> nominalTermStructure)
+    : capletVol_(std::move(capletVol)), nominalTermStructure_(std::move(nominalTermStructure)) {
         registerWith(capletVol_);
         registerWith(nominalTermStructure_);
     }
 
+    QL_DEPRECATED_ENABLE_WARNING
 
     void CPICouponPricer::setCapletVolatility(
        const Handle<CPIVolatilitySurface>& capletVol) {
-        QL_REQUIRE(!capletVol.empty(),"empty capletVol handle")
+        QL_REQUIRE(!capletVol.empty(),"empty capletVol handle");
         capletVol_ = capletVol;
         registerWith(capletVol_);
     }
@@ -102,47 +103,42 @@ namespace QuantLib {
             Real stdDev =
             std::sqrt(capletVolatility()->totalVariance(fixingDate,
                                                         effStrike));
+            QL_DEPRECATED_DISABLE_WARNING
             return optionletPriceImp(optionType,
                                      effStrike,
                                      adjustedFixing(),
                                      stdDev);
+            QL_DEPRECATED_ENABLE_WARNING
         }
     }
 
 
     Rate CPICouponPricer::adjustedFixing(Rate fixing) const {
+        if (fixing != Null<Rate>())
+            return fixing;
 
-        if (fixing == Null<Rate>())
-            fixing = coupon_->indexFixing() / coupon_->baseCPI();
-        //std::cout << " adjustedFixing " << fixing << std::endl;
-        // no adjustment
-        return fixing;
+        return coupon_->indexRatio(coupon_->accrualEndDate());
     }
 
 
     void CPICouponPricer::initialize(const InflationCoupon& coupon) {
         coupon_ = dynamic_cast<const CPICoupon*>(&coupon);
         gearing_ = coupon_->fixedRate();
+        QL_DEPRECATED_DISABLE_WARNING
         spread_ = coupon_->spread();
+        QL_DEPRECATED_ENABLE_WARNING
         paymentDate_ = coupon_->date();
-        rateCurve_ =
-            !nominalTermStructure_.empty() ?
-            nominalTermStructure_ :
-            ext::dynamic_pointer_cast<ZeroInflationIndex>(coupon.index())
-            ->zeroInflationTermStructure()
-            ->nominalTermStructure();
 
         // past or future fixing is managed in YoYInflationIndex::fixing()
         // use yield curve from index (which sets discount)
 
         discount_ = 1.0;
-        if (paymentDate_ > rateCurve_->referenceDate()) {
-            if (rateCurve_.empty()) {
-                // allow to extract rates, but mark the discount as invalid for prices
-                discount_ = Null<Real>();
-            } else {
-                discount_ = rateCurve_->discount(paymentDate_);
-            }
+        if (nominalTermStructure_.empty()) {
+            // allow to extract rates, but mark the discount as invalid for prices
+            discount_ = Null<Real>();
+        } else {
+            if (paymentDate_ > nominalTermStructure_->referenceDate())
+                discount_ = nominalTermStructure_->discount(paymentDate_);
         }
     }
 
@@ -154,20 +150,18 @@ namespace QuantLib {
 
 
     Rate CPICouponPricer::swapletRate() const {
-        // This way we do not require the index to have
-        // a yield curve, i.e. we do not get the problem
-        // that a discounting-instrument-pricer is used
-        // with a different yield curve
+        QL_DEPRECATED_DISABLE_WARNING
         return gearing_ * adjustedFixing() + spread_;
+        QL_DEPRECATED_ENABLE_WARNING
+        // after deprecating and removing adjustedFixing:
+        // return accruedRate(coupon_->accrualEndDate());
     }
 
 
-    //=========================================================================
-    // vol-dependent pricers, note that these do not discount
-    //=========================================================================
-
-/*
-    NOT IMPLEMENTED
-*/
+    Rate CPICouponPricer::accruedRate(Date settlementDate) const {
+        QL_DEPRECATED_DISABLE_WARNING
+        return gearing_ * coupon_->indexRatio(settlementDate) + spread_;
+        QL_DEPRECATED_ENABLE_WARNING
+    }
 
 }

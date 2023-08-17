@@ -21,6 +21,7 @@
 #include <ql/cashflows/averagebmacoupon.hpp>
 #include <ql/cashflows/couponpricer.hpp>
 #include <ql/utilities/vectors.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -30,11 +31,11 @@ namespace QuantLib {
 
         class AverageBMACouponPricer : public FloatingRateCouponPricer {
           public:
-            void initialize(const FloatingRateCoupon& coupon) {
+            void initialize(const FloatingRateCoupon& coupon) override {
                 coupon_ = dynamic_cast<const AverageBMACoupon*>(&coupon);
                 QL_ENSURE(coupon_, "wrong coupon type");
             }
-            Rate swapletRate() const {
+            Rate swapletRate() const override {
                 const std::vector<Date>& fixingDates = coupon_->fixingDates();
                 const ext::shared_ptr<InterestRateIndex>& index =
                     coupon_->index();
@@ -45,7 +46,7 @@ namespace QuantLib {
                      d1 = startDate,
                      d2 = startDate;
 
-                QL_REQUIRE (fixingDates.size() > 0, "fixing date list empty");
+                QL_REQUIRE(!fixingDates.empty(), "fixing date list empty");
                 QL_REQUIRE (index->valueDate(fixingDates.front()) <= startDate,
                             "first fixing date valid after period start");
                 QL_REQUIRE (index->valueDate(fixingDates.back()) >= endDate,
@@ -79,27 +80,24 @@ namespace QuantLib {
                 return coupon_->gearing()*avgBMA + coupon_->spread();
             }
 
-            Real swapletPrice() const {
-                QL_FAIL("not available");
-            }
-            Real capletPrice(Rate) const {
-                QL_FAIL("not available");
-            }
-            Rate capletRate(Rate) const {
-                QL_FAIL("not available");
-            }
-            Real floorletPrice(Rate) const {
-                QL_FAIL("not available");
-            }
-            Rate floorletRate(Rate) const {
-                QL_FAIL("not available");
-            }
+            Real swapletPrice() const override { QL_FAIL("not available"); }
+            Real capletPrice(Rate) const override { QL_FAIL("not available"); }
+            Rate capletRate(Rate) const override { QL_FAIL("not available"); }
+            Real floorletPrice(Rate) const override { QL_FAIL("not available"); }
+            Rate floorletRate(Rate) const override { QL_FAIL("not available"); }
+
           private:
             const AverageBMACoupon* coupon_;
         };
 
     }
 
+    namespace {
+    void adjustToPreviousValidFixingDate(Date& d, const ext::shared_ptr<BMAIndex>& index) {
+        while (!index->isValidFixingDate(d) && d > Date::minDate())
+            d--;
+    }
+    } // namespace
 
     AverageBMACoupon::AverageBMACoupon(const Date& paymentDate,
                                        Real nominal,
@@ -115,9 +113,16 @@ namespace QuantLib {
                          refPeriodStart, refPeriodEnd, dayCounter, false)
     {
         Calendar cal = index->fixingCalendar();
-        Integer fixingDays = Integer(index->fixingDays());
+        auto fixingDays = Integer(index->fixingDays());
         fixingDays += bmaCutoffDays;
         Date fixingStart = cal.advance(startDate, -fixingDays*Days, Preceding);
+
+        // make sure that the value date associated to fixingStart is <= startDate
+        adjustToPreviousValidFixingDate(fixingStart, index);
+        while (index->valueDate(fixingStart) > startDate && fixingStart > Date::minDate()) {
+            adjustToPreviousValidFixingDate(--fixingStart, index);
+        }
+
         fixingSchedule_ = index->fixingSchedule(fixingStart, endDate);
 
         setPricer(ext::shared_ptr<FloatingRateCouponPricer>(
@@ -148,9 +153,8 @@ namespace QuantLib {
     }
 
     void AverageBMACoupon::accept(AcyclicVisitor& v) {
-        Visitor<AverageBMACoupon>* v1 =
-            dynamic_cast<Visitor<AverageBMACoupon>*>(&v);
-        if (v1 != 0) {
+        auto* v1 = dynamic_cast<Visitor<AverageBMACoupon>*>(&v);
+        if (v1 != nullptr) {
             v1->visit(*this);
         } else {
             FloatingRateCoupon::accept(v);
@@ -158,10 +162,8 @@ namespace QuantLib {
     }
 
 
-
-    AverageBMALeg::AverageBMALeg(const Schedule& schedule,
-                                 const ext::shared_ptr<BMAIndex>& index)
-    : schedule_(schedule), index_(index), paymentAdjustment_(Following) {}
+    AverageBMALeg::AverageBMALeg(Schedule schedule, ext::shared_ptr<BMAIndex> index)
+    : schedule_(std::move(schedule)), index_(std::move(index)) {}
 
     AverageBMALeg& AverageBMALeg::withNotionals(Real notional) {
         notionals_ = std::vector<Real>(1,notional);

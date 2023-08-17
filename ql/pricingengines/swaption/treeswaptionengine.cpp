@@ -18,39 +18,33 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/swaption/treeswaptionengine.hpp>
 #include <ql/pricingengines/swaption/discretizedswaption.hpp>
-#include <ql/math/functional.hpp>
+#include <ql/pricingengines/swaption/treeswaptionengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    TreeSwaptionEngine::TreeSwaptionEngine(
-                               const ext::shared_ptr<ShortRateModel>& model,
-                              Size timeSteps,
-                              const Handle<YieldTermStructure>& termStructure)
-    : LatticeShortRateModelEngine<Swaption::arguments,
-                                  Swaption::results>(model, timeSteps),
-      termStructure_(termStructure) {
+    TreeSwaptionEngine::TreeSwaptionEngine(const ext::shared_ptr<ShortRateModel>& model,
+                                           Size timeSteps,
+                                           Handle<YieldTermStructure> termStructure)
+    : LatticeShortRateModelEngine<Swaption::arguments, Swaption::results>(model, timeSteps),
+      termStructure_(std::move(termStructure)) {
         registerWith(termStructure_);
     }
 
-    TreeSwaptionEngine::TreeSwaptionEngine(
-                              const ext::shared_ptr<ShortRateModel>& model,
-                              const TimeGrid& timeGrid,
-                              const Handle<YieldTermStructure>& termStructure)
-    : LatticeShortRateModelEngine<Swaption::arguments,
-                                  Swaption::results>(model, timeGrid),
-      termStructure_(termStructure) {
+    TreeSwaptionEngine::TreeSwaptionEngine(const ext::shared_ptr<ShortRateModel>& model,
+                                           const TimeGrid& timeGrid,
+                                           Handle<YieldTermStructure> termStructure)
+    : LatticeShortRateModelEngine<Swaption::arguments, Swaption::results>(model, timeGrid),
+      termStructure_(std::move(termStructure)) {
         registerWith(termStructure_);
     }
 
-    TreeSwaptionEngine::TreeSwaptionEngine(
-                              const Handle<ShortRateModel>& model,
-                              Size timeSteps,
-                              const Handle<YieldTermStructure>& termStructure)
-    : LatticeShortRateModelEngine<Swaption::arguments,
-                                  Swaption::results>(model, timeSteps),
-      termStructure_(termStructure) {
+    TreeSwaptionEngine::TreeSwaptionEngine(const Handle<ShortRateModel>& model,
+                                           Size timeSteps,
+                                           Handle<YieldTermStructure> termStructure)
+    : LatticeShortRateModelEngine<Swaption::arguments, Swaption::results>(model, timeSteps),
+      termStructure_(std::move(termStructure)) {
         registerWith(termStructure_);
     }
 
@@ -66,7 +60,7 @@ namespace QuantLib {
 
         ext::shared_ptr<TermStructureConsistentModel> tsmodel =
             ext::dynamic_pointer_cast<TermStructureConsistentModel>(*model_);
-        if (tsmodel) {
+        if (tsmodel != nullptr) {
             referenceDate = tsmodel->termStructure()->referenceDate();
             dayCounter = tsmodel->termStructure()->dayCounter();
         } else {
@@ -77,7 +71,7 @@ namespace QuantLib {
         DiscretizedSwaption swaption(arguments_, referenceDate, dayCounter);
         ext::shared_ptr<Lattice> lattice;
 
-        if (lattice_) {
+        if (lattice_ != nullptr) {
             lattice = lattice_;
         } else {
             std::vector<Time> times = swaption.mandatoryTimes();
@@ -94,9 +88,8 @@ namespace QuantLib {
         swaption.initialize(lattice, stoppingTimes.back());
 
         Time nextExercise =
-            *std::find_if(stoppingTimes.begin(),
-                          stoppingTimes.end(),
-                          greater_or_equal_to<Time>(0.0));
+            *std::find_if(stoppingTimes.begin(), stoppingTimes.end(),
+                          [](Time t){ return t >= 0.0; });
         swaption.rollback(nextExercise);
 
         results_.value = swaption.presentValue();

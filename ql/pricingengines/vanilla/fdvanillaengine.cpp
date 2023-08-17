@@ -40,8 +40,7 @@ namespace QuantLib {
 
     void FDVanillaEngine::setupArguments(
                                     const PricingEngine::arguments* a) const {
-        const OneAssetOption::arguments * args =
-            dynamic_cast<const OneAssetOption::arguments *>(a);
+        const auto* args = dynamic_cast<const OneAssetOption::arguments*>(a);
         QL_REQUIRE(args, "incorrect argument type");
         exerciseDate_ = args->exercise->lastDate();
         payoff_ = args->payoff;
@@ -52,9 +51,11 @@ namespace QuantLib {
         QL_REQUIRE(t > 0.0, "negative or zero residual time");
         center_ = center;
         Size newGridPoints = safeGridPoints(gridPoints_, t);
+        QL_DEPRECATED_DISABLE_WARNING
         if (newGridPoints > intrinsicValues_.size()) {
             intrinsicValues_ = SampledCurve(newGridPoints);
         }
+        QL_DEPRECATED_ENABLE_WARNING
 
         Real volSqrtTime = std::sqrt(process_->blackVolatility()
                                      ->blackVariance(t, center_));
@@ -87,11 +88,14 @@ namespace QuantLib {
     }
 
     void FDVanillaEngine::initializeInitialCondition() const {
+        QL_DEPRECATED_DISABLE_WARNING
         intrinsicValues_.setLogGrid(sMin_, sMax_);
         intrinsicValues_.sample(*payoff_);
+        QL_DEPRECATED_ENABLE_WARNING
     }
 
     void FDVanillaEngine::initializeOperator() const {
+        QL_DEPRECATED_DISABLE_WARNING
         if (timeDependent_) {
             finiteDifferenceOperator_ = BSMTermOperator(intrinsicValues_.grid(),
                                                         process_, getResidualTime());
@@ -103,16 +107,18 @@ namespace QuantLib {
 
             ext::shared_ptr<StrikedTypePayoff> striked_payoff =
                 ext::dynamic_pointer_cast<StrikedTypePayoff>(payoff_);
-            Real K = striked_payoff ? striked_payoff->strike() : process_->x0();
+            Real K = striked_payoff != nullptr ? striked_payoff->strike() : process_->x0();
             Volatility sigma =
                 process_->blackVolatility()->blackVol(exerciseDate_, K);
 
             finiteDifferenceOperator_ = BSMOperator(intrinsicValues_.grid(),
                                                     r, q, sigma);
         }
+        QL_DEPRECATED_ENABLE_WARNING
     }
 
     void FDVanillaEngine::initializeBoundaryConditions() const {
+        QL_DEPRECATED_DISABLE_WARNING
         BCs_[0] = ext::shared_ptr<bc_type>(new NeumannBC(
                                       intrinsicValues_.value(1)-
                                       intrinsicValues_.value(0),
@@ -121,6 +127,7 @@ namespace QuantLib {
                        intrinsicValues_.value(intrinsicValues_.size()-1) -
                        intrinsicValues_.value(intrinsicValues_.size()-2),
                        NeumannBC::Upper));
+        QL_DEPRECATED_ENABLE_WARNING
     }
 
     Time FDVanillaEngine::getResidualTime() const {

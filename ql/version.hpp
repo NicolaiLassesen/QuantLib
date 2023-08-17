@@ -31,16 +31,10 @@
 /*! @{ */
 
 //! version string
-#ifdef QL_DEBUG
-    #define QL_VERSION "1.22-debug"
-#else
-    #define QL_VERSION "1.22"
-#endif
+#define QL_VERSION "1.32-dev"
 
 //! version hexadecimal number
-#define QL_HEX_VERSION 0x012200f0
-//! version string for output lib name
-#define QL_LIB_VERSION "1_22"
+#define QL_HEX_VERSION 0x01320000
 
 /*! @}  */
 

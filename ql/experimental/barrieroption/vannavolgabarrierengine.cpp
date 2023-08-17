@@ -20,12 +20,13 @@
 #include <ql/experimental/barrieroption/vannavolgabarrierengine.hpp>
 #include <ql/experimental/barrieroption/vannavolgainterpolation.hpp>
 #include <ql/experimental/fx/blackdeltacalculator.hpp>
+#include <ql/math/matrix.hpp>
 #include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
+#include <ql/pricingengines/blackformula.hpp>
 #include <ql/quotes/simplequote.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
-#include <ql/pricingengines/blackformula.hpp>
-#include <ql/math/matrix.hpp>
 #include <ql/time/calendars/nullcalendar.hpp>
+#include <utility>
 
 using std::pow;
 using std::log;
@@ -33,38 +34,35 @@ using std::sqrt;
 
 namespace QuantLib {
 
-    VannaVolgaBarrierEngine::VannaVolgaBarrierEngine(
-            const Handle<DeltaVolQuote>& atmVol,
-            const Handle<DeltaVolQuote>& vol25Put,
-            const Handle<DeltaVolQuote>& vol25Call,
-            const Handle<Quote>& spotFX,
-            const Handle<YieldTermStructure>& domesticTS,
-            const Handle<YieldTermStructure>& foreignTS,
-            const bool adaptVanDelta,
-            const Real bsPriceWithSmile
-            )
-    : GenericEngine<DividendBarrierOption::arguments,
-                    DividendBarrierOption::results>(),
-      atmVol_(atmVol), vol25Put_(vol25Put), vol25Call_(vol25Call), T_(atmVol_->maturity()),
-      spotFX_(spotFX), domesticTS_(domesticTS), foreignTS_(foreignTS),
-      adaptVanDelta_(adaptVanDelta), bsPriceWithSmile_(bsPriceWithSmile)
-      {
-          QL_REQUIRE(vol25Put_->delta() == -0.25, "25 delta put is required by vanna volga method");
-          QL_REQUIRE(vol25Call_->delta() == 0.25, "25 delta call is required by vanna volga method");
+    VannaVolgaBarrierEngine::VannaVolgaBarrierEngine(Handle<DeltaVolQuote> atmVol,
+                                                     Handle<DeltaVolQuote> vol25Put,
+                                                     Handle<DeltaVolQuote> vol25Call,
+                                                     Handle<Quote> spotFX,
+                                                     Handle<YieldTermStructure> domesticTS,
+                                                     Handle<YieldTermStructure> foreignTS,
+                                                     const bool adaptVanDelta,
+                                                     const Real bsPriceWithSmile)
+    : atmVol_(std::move(atmVol)), vol25Put_(std::move(vol25Put)), vol25Call_(std::move(vol25Call)),
+      T_(atmVol_->maturity()), spotFX_(std::move(spotFX)), domesticTS_(std::move(domesticTS)),
+      foreignTS_(std::move(foreignTS)), adaptVanDelta_(adaptVanDelta),
+      bsPriceWithSmile_(bsPriceWithSmile) {
+        QL_REQUIRE(vol25Put_->delta() == -0.25, "25 delta put is required by vanna volga method");
+        QL_REQUIRE(vol25Call_->delta() == 0.25, "25 delta call is required by vanna volga method");
 
-          QL_REQUIRE(vol25Put_->maturity() == vol25Call_->maturity() && vol25Put_->maturity() == atmVol_->maturity(),
-              "Maturity of 3 vols are not the same");
+        QL_REQUIRE(vol25Put_->maturity() == vol25Call_->maturity() &&
+                       vol25Put_->maturity() == atmVol_->maturity(),
+                   "Maturity of 3 vols are not the same");
 
-          QL_REQUIRE(!domesticTS_.empty(), "domestic yield curve is not defined");
-          QL_REQUIRE(!foreignTS_.empty(), "foreign yield curve is not defined");
+        QL_REQUIRE(!domesticTS_.empty(), "domestic yield curve is not defined");
+        QL_REQUIRE(!foreignTS_.empty(), "foreign yield curve is not defined");
 
-          registerWith(atmVol_);
-          registerWith(vol25Put_);
-          registerWith(vol25Call_);
-          registerWith(spotFX_);
-          registerWith(domesticTS_);
-          registerWith(foreignTS_);
-      }
+        registerWith(atmVol_);
+        registerWith(vol25Put_);
+        registerWith(vol25Call_);
+        registerWith(spotFX_);
+        registerWith(domesticTS_);
+        registerWith(foreignTS_);
+    }
 
     void VannaVolgaBarrierEngine::calculate() const {
 
@@ -132,38 +130,41 @@ namespace QuantLib {
         Real strikeVol = interpolation(payoff->strike());
 
         //vanilla option price
+        Real forward = x0Quote->value() * foreignTS_->discount(T_) / domesticTS_->discount(T_);
         Real vanillaOption = blackFormula(payoff->optionType(), payoff->strike(), 
-                                      x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_), 
+                                      forward, 
                                       strikeVol * sqrt(T_),
                                       domesticTS_->discount(T_));
+        results_.additionalResults["Forward"] = forward;
+        results_.additionalResults["StrikeVol"] = strikeVol;
 
         //spot > barrier up&out 0
         if(x0Quote->value() >= arguments_.barrier && arguments_.barrierType == Barrier::UpOut){
             results_.value = 0.0;
             results_.additionalResults["VanillaPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
             results_.additionalResults["BarrierInPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
-            results_.additionalResults["BarrierOutPrice"] = 0.0;
+            results_.additionalResults["BarrierOutPrice"] = Real(0.0);
         }
         //spot > barrier up&in vanilla
         else if(x0Quote->value() >= arguments_.barrier && arguments_.barrierType == Barrier::UpIn){
             results_.value = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
             results_.additionalResults["VanillaPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
             results_.additionalResults["BarrierInPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
-            results_.additionalResults["BarrierOutPrice"] = 0.0;
+            results_.additionalResults["BarrierOutPrice"] = Real(0.0);
         }
         //spot < barrier down&out 0
         else if(x0Quote->value() <= arguments_.barrier && arguments_.barrierType == Barrier::DownOut){
             results_.value = 0.0;
             results_.additionalResults["VanillaPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
             results_.additionalResults["BarrierInPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
-            results_.additionalResults["BarrierOutPrice"] = 0.0;
+            results_.additionalResults["BarrierOutPrice"] = Real(0.0);
         }
         //spot < barrier down&in vanilla
         else if(x0Quote->value() <= arguments_.barrier && arguments_.barrierType == Barrier::DownIn){
             results_.value = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
             results_.additionalResults["VanillaPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
             results_.additionalResults["BarrierInPrice"] = adaptVanDelta_? bsPriceWithSmile_ : vanillaOption;
-            results_.additionalResults["BarrierOutPrice"] = 0.0;
+            results_.additionalResults["BarrierOutPrice"] = Real(0.0);
         }
         else{
 
@@ -192,49 +193,49 @@ namespace QuantLib {
             Real priceBS = barrierOption.NPV();
 
             Real priceAtmCallBS = blackFormula(Option::Call,atmStrike,
-                                              x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_), 
+                                              forward, 
                                               atmVol_->value() * sqrt(T_),
                                               domesticTS_->discount(T_));
             Real price25CallBS = blackFormula(Option::Call,call25Strike,
-                                              x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_), 
+                                              forward, 
                                               atmVol_->value() * sqrt(T_),
                                               domesticTS_->discount(T_));
             Real price25PutBS = blackFormula(Option::Put,put25Strike,
-                                              x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_),
+                                              forward,
                                               atmVol_->value() * sqrt(T_),
                                               domesticTS_->discount(T_));
 
             //market price
             Real priceAtmCallMkt = blackFormula(Option::Call,atmStrike,
-                                              x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_), 
+                                              forward, 
                                               atmVol_->value() * sqrt(T_),
                                               domesticTS_->discount(T_));
 
             Real price25CallMkt = blackFormula(Option::Call,call25Strike,
-                                              x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_), 
+                                              forward, 
                                               call25Vol * sqrt(T_),
                                               domesticTS_->discount(T_));
             Real price25PutMkt = blackFormula(Option::Put,put25Strike,
-                                              x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_),
+                                              forward,
                                               put25Vol * sqrt(T_),
                                               domesticTS_->discount(T_));
 
 
             //Analytical Black Scholes formula for vanilla option
             NormalDistribution norm;
-            Real d1atm = (std::log(x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_)/atmStrike) 
+            Real d1atm = (std::log(forward/atmStrike) 
                            + 0.5*std::pow(atmVolQuote->value(),2.0) * T_)/(atmVolQuote->value() * sqrt(T_));
             Real vegaAtm_Analytical = x0Quote->value() * norm(d1atm) * sqrt(T_) * foreignTS_->discount(T_);
             Real vannaAtm_Analytical = vegaAtm_Analytical/x0Quote->value() *(1.0 - d1atm/(atmVolQuote->value()*sqrt(T_)));
             Real volgaAtm_Analytical = vegaAtm_Analytical * d1atm * (d1atm - atmVolQuote->value() * sqrt(T_))/atmVolQuote->value();
 
-            Real d125call = (std::log(x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_)/call25Strike) 
+            Real d125call = (std::log(forward/call25Strike) 
                            + 0.5*std::pow(atmVolQuote->value(),2.0) * T_)/(atmVolQuote->value() * sqrt(T_));
             Real vega25Call_Analytical = x0Quote->value() * norm(d125call) * sqrt(T_) * foreignTS_->discount(T_);
             Real vanna25Call_Analytical = vega25Call_Analytical/x0Quote->value() *(1.0 - d125call/(atmVolQuote->value()*sqrt(T_)));
             Real volga25Call_Analytical = vega25Call_Analytical * d125call * (d125call - atmVolQuote->value() * sqrt(T_))/atmVolQuote->value();
 
-            Real d125Put = (std::log(x0Quote->value()* foreignTS_->discount(T_)/ domesticTS_->discount(T_)/put25Strike) 
+            Real d125Put = (std::log(forward/put25Strike) 
                            + 0.5*std::pow(atmVolQuote->value(),2.0) * T_)/(atmVolQuote->value() * sqrt(T_));
             Real vega25Put_Analytical = x0Quote->value() * norm(d125Put) * sqrt(T_) * foreignTS_->discount(T_);
             Real vanna25Put_Analytical = vega25Put_Analytical/x0Quote->value() *(1.0 - d125Put/(atmVolQuote->value()*sqrt(T_)));
@@ -319,7 +320,7 @@ namespace QuantLib {
 
             //touch probability
             CumulativeNormalDistribution cnd;
-            Real mu = domesticTS_->zeroRate(T_, Continuous) - foreignTS_->zeroRate(T_, Continuous) - pow(atmVol_->value(), 2.0)/2.0;
+            Real mu = domesticTS_->zeroRate(T_, Continuous).rate() - foreignTS_->zeroRate(T_, Continuous).rate() - pow(atmVol_->value(), 2.0)/2.0;
             Real h2 = (log(arguments_.barrier/x0Quote->value()) + mu*T_)/(atmVol_->value()*sqrt(T_));
             Real h2Prime = (log(x0Quote->value()/arguments_.barrier) + mu*T_)/(atmVol_->value()*sqrt(T_));
             Real probTouch = 0.0;
@@ -337,7 +338,7 @@ namespace QuantLib {
             Real inPrice;
 
             //adapt Vanilla delta
-            if(adaptVanDelta_ == true){
+            if (adaptVanDelta_) {
                 outPrice += lambda*(bsPriceWithSmile_ - vanillaOption);
                 //capfloored by (0, vanilla)
                 outPrice = std::max(0.0, std::min(bsPriceWithSmile_, outPrice));

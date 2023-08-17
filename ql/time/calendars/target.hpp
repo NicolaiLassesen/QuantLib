@@ -49,10 +49,10 @@ namespace QuantLib {
     */
     class TARGET : public Calendar {
       private:
-        class Impl : public Calendar::WesternImpl {
+        class Impl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "TARGET"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "TARGET"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         TARGET();

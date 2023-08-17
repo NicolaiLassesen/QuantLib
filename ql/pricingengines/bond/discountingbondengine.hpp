@@ -28,22 +28,22 @@
 #include <ql/instruments/bond.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
 #include <ql/handle.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
     class DiscountingBondEngine : public Bond::engine {
       public:
         DiscountingBondEngine(
-              const Handle<YieldTermStructure>& discountCurve =
-                                                Handle<YieldTermStructure>(),
-              boost::optional<bool> includeSettlementDateFlows = boost::none);
-        void calculate() const;
+            Handle<YieldTermStructure> discountCurve = Handle<YieldTermStructure>(),
+            const ext::optional<bool>& includeSettlementDateFlows = ext::nullopt);
+        void calculate() const override;
         Handle<YieldTermStructure> discountCurve() const {
             return discountCurve_;
         }
       private:
         Handle<YieldTermStructure> discountCurve_;
-        boost::optional<bool> includeSettlementDateFlows_;
+        ext::optional<bool> includeSettlementDateFlows_;
     };
 
 }

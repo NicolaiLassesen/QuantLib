@@ -22,27 +22,24 @@
 
 #include <ql/exercise.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmmesher.hpp>
-#include <ql/methods/finitedifferences/utilities/fdmdividendhandler.hpp>
-#include <ql/methods/finitedifferences/stepconditions/fdmsnapshotcondition.hpp>
-#include <ql/methods/finitedifferences/utilities/fdminnervaluecalculator.hpp>
-#include <ql/methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp>
 #include <ql/methods/finitedifferences/stepconditions/fdmamericanstepcondition.hpp>
 #include <ql/methods/finitedifferences/stepconditions/fdmbermudanstepcondition.hpp>
-
+#include <ql/methods/finitedifferences/stepconditions/fdmsnapshotcondition.hpp>
+#include <ql/methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp>
+#include <ql/methods/finitedifferences/utilities/fdmdividendhandler.hpp>
+#include <ql/methods/finitedifferences/utilities/fdminnervaluecalculator.hpp>
 #include <set>
+#include <utility>
 
 namespace QuantLib {
 
     FdmStepConditionComposite::FdmStepConditionComposite(
-        const std::list<std::vector<Time> > & stoppingTimes,
-        const Conditions & conditions)
-    : conditions_(conditions) {
+        const std::list<std::vector<Time> >& stoppingTimes, Conditions conditions)
+    : conditions_(std::move(conditions)) {
 
         std::set<Real> allStoppingTimes;
-        for (std::list<std::vector<Time> >::const_iterator
-             iter = stoppingTimes.begin(); iter != stoppingTimes.end();
-             ++iter) {
-            allStoppingTimes.insert(iter->begin(), iter->end());
+        for (const auto& stoppingTime : stoppingTimes) {
+            allStoppingTimes.insert(stoppingTime.begin(), stoppingTime.end());
         }
         stoppingTimes_ = std::vector<Time>(allStoppingTimes.begin(),
                                            allStoppingTimes.end());
@@ -58,9 +55,8 @@ namespace QuantLib {
     }
 
     void FdmStepConditionComposite::applyTo(Array& a, Time t) const {
-        for (Conditions::const_iterator iter = conditions_.begin();
-             iter != conditions_.end(); ++iter) {
-            (*iter)->applyTo(a, t);
+        for (const auto& condition : conditions_) {
+            condition->applyTo(a, t);
         }
     }
     
@@ -71,7 +67,7 @@ namespace QuantLib {
 
         std::list<std::vector<Time> > stoppingTimes;
         stoppingTimes.push_back(c2->stoppingTimes());
-        stoppingTimes.push_back(std::vector<Time>(1, c1->getTime()));
+        stoppingTimes.emplace_back(1, c1->getTime());
 
         FdmStepConditionComposite::Conditions conditions;
         conditions.push_back(c2);
@@ -93,12 +89,24 @@ namespace QuantLib {
         std::list<std::vector<Time> > stoppingTimes;
         std::list<ext::shared_ptr<StepCondition<Array> > > stepConditions;
 
-        if(!cashFlow.empty()) {
-            ext::shared_ptr<FdmDividendHandler> dividendCondition(
-                new FdmDividendHandler(cashFlow, mesher,
-                                       refDate, dayCounter, 0));
+        if (!cashFlow.empty()) {
+            auto dividendCondition =
+                ext::make_shared<FdmDividendHandler>(cashFlow, mesher,
+                                                     refDate, dayCounter, 0);
             stepConditions.push_back(dividendCondition);
-            stoppingTimes.push_back(dividendCondition->dividendTimes());
+
+            std::vector<Time> dividendTimes = dividendCondition->dividendTimes();
+            const Time maturityTime = dayCounter.yearFraction(refDate, exercise->lastDate());
+
+            // this effectively excludes times after maturity
+            for (auto& t: dividendTimes)
+                t = std::min(maturityTime, t);
+            stoppingTimes.push_back(dividendTimes);
+
+            // smoother convergence behavior with number of time steps
+            for (auto& t: dividendTimes)
+                t = std::min(maturityTime, t+1e-5);
+            stoppingTimes.push_back(dividendTimes);
         }
 
         QL_REQUIRE(   exercise->type() == Exercise::American

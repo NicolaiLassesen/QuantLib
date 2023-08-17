@@ -33,7 +33,7 @@ namespace QuantLib {
     //! Cms-spread-rate coupon with digital digital call/put option
     class DigitalCmsSpreadCoupon : public DigitalCoupon {
       public:
-        DigitalCmsSpreadCoupon(
+        explicit DigitalCmsSpreadCoupon(
             const ext::shared_ptr<CmsSpreadCoupon> &underlying,
             Rate callStrike = Null<Rate>(),
             Position::Type callPosition = Position::Long,
@@ -44,12 +44,12 @@ namespace QuantLib {
             bool isPutATMIncluded = false,
             Rate putDigitalPayoff = Null<Rate>(),
             const ext::shared_ptr<DigitalReplication> &replication =
-                ext::shared_ptr<DigitalReplication>(new DigitalReplication),
+                ext::make_shared<DigitalReplication>(),
             bool nakedOption = false);
 
         //! \name Visitability
         //@{
-        virtual void accept(AcyclicVisitor&);
+        void accept(AcyclicVisitor&) override;
         //@}
     };
 
@@ -57,8 +57,7 @@ namespace QuantLib {
     //! helper class building a sequence of digital ibor-rate coupons
     class DigitalCmsSpreadLeg {
       public:
-        DigitalCmsSpreadLeg(const Schedule& schedule,
-                      const ext::shared_ptr<SwapSpreadIndex>& index);
+        DigitalCmsSpreadLeg(Schedule schedule, ext::shared_ptr<SwapSpreadIndex> index);
         DigitalCmsSpreadLeg& withNotionals(Real notional);
         DigitalCmsSpreadLeg& withNotionals(const std::vector<Real>& notionals);
         DigitalCmsSpreadLeg& withPaymentDayCounter(const DayCounter&);
@@ -84,7 +83,7 @@ namespace QuantLib {
         DigitalCmsSpreadLeg& withPutPayoffs(const std::vector<Rate>& payoffs);
         DigitalCmsSpreadLeg& withReplication(
             const ext::shared_ptr<DigitalReplication> &replication =
-                ext::shared_ptr<DigitalReplication>(new DigitalReplication));
+                ext::make_shared<DigitalReplication>());
         DigitalCmsSpreadLeg& withNakedOption(bool nakedOption = true);
 
         operator Leg() const;
@@ -93,17 +92,17 @@ namespace QuantLib {
         ext::shared_ptr<SwapSpreadIndex> index_;
         std::vector<Real> notionals_;
         DayCounter paymentDayCounter_;
-        BusinessDayConvention paymentAdjustment_;
+        BusinessDayConvention paymentAdjustment_ = Following;
         std::vector<Natural> fixingDays_;
         std::vector<Real> gearings_;
         std::vector<Spread> spreads_;
-        bool inArrears_;
+        bool inArrears_ = false;
         std::vector<Rate> callStrikes_, callPayoffs_;
-        Position::Type longCallOption_;
-        bool callATM_;
+        Position::Type longCallOption_ = Position::Long;
+        bool callATM_ = false;
         std::vector<Rate> putStrikes_, putPayoffs_;
-        Position::Type longPutOption_;
-        bool putATM_;
+        Position::Type longPutOption_ = Position::Long;
+        bool putATM_ = false;
         ext::shared_ptr<DigitalReplication> replication_;
         bool nakedOption_;
     };

@@ -28,7 +28,6 @@
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
-using ext::shared_ptr;
 
 void InstrumentTest::testObservable() {
 
@@ -71,28 +70,26 @@ void InstrumentTest::testCompositeWhenShiftingDates() {
     BOOST_TEST_MESSAGE(
         "Testing reaction of composite instrument to date changes...");
 
-    SavedSettings backup;
-
     Date today = Date::todaysDate();
     DayCounter dc = Actual360();
 
-    shared_ptr<StrikedTypePayoff> payoff(
+    ext::shared_ptr<StrikedTypePayoff> payoff(
                                  new PlainVanillaPayoff(Option::Call, 100.0));
-    shared_ptr<Exercise> exercise(new EuropeanExercise(today+30));
+    ext::shared_ptr<Exercise> exercise(new EuropeanExercise(today+30));
 
-    shared_ptr<Instrument> option(new EuropeanOption(payoff, exercise));
+    ext::shared_ptr<Instrument> option(new EuropeanOption(payoff, exercise));
 
-    shared_ptr<SimpleQuote> spot(new SimpleQuote(100.0));
-    shared_ptr<YieldTermStructure> qTS = flatRate(0.0, dc);
-    shared_ptr<YieldTermStructure> rTS = flatRate(0.01, dc);
-    shared_ptr<BlackVolTermStructure> volTS = flatVol(0.1, dc);
+    ext::shared_ptr<SimpleQuote> spot(new SimpleQuote(100.0));
+    ext::shared_ptr<YieldTermStructure> qTS = flatRate(0.0, dc);
+    ext::shared_ptr<YieldTermStructure> rTS = flatRate(0.01, dc);
+    ext::shared_ptr<BlackVolTermStructure> volTS = flatVol(0.1, dc);
 
-    shared_ptr<BlackScholesMertonProcess> process(
+    ext::shared_ptr<BlackScholesMertonProcess> process(
         new BlackScholesMertonProcess(Handle<Quote>(spot),
                                       Handle<YieldTermStructure>(qTS),
                                       Handle<YieldTermStructure>(rTS),
                                       Handle<BlackVolTermStructure>(volTS)));
-    shared_ptr<PricingEngine> engine(new AnalyticEuropeanEngine(process));
+    ext::shared_ptr<PricingEngine> engine(new AnalyticEuropeanEngine(process));
 
     option->setPricingEngine(engine);
 
@@ -115,7 +112,7 @@ void InstrumentTest::testCompositeWhenShiftingDates() {
 }
 
 test_suite* InstrumentTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Instrument tests");
+    auto* suite = BOOST_TEST_SUITE("Instrument tests");
     suite->add(QUANTLIB_TEST_CASE(&InstrumentTest::testObservable));
     suite->add(QUANTLIB_TEST_CASE(
                             &InstrumentTest::testCompositeWhenShiftingDates));

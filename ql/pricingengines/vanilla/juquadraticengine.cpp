@@ -19,12 +19,13 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/vanilla/juquadraticengine.hpp>
-#include <ql/pricingengines/vanilla/baroneadesiwhaleyengine.hpp>
+#include <ql/exercise.hpp>
+#include <ql/math/distributions/normaldistribution.hpp>
 #include <ql/pricingengines/blackcalculator.hpp>
 #include <ql/pricingengines/blackformula.hpp>
-#include <ql/math/distributions/normaldistribution.hpp>
-#include <ql/exercise.hpp>
+#include <ql/pricingengines/vanilla/baroneadesiwhaleyengine.hpp>
+#include <ql/pricingengines/vanilla/juquadraticengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -35,8 +36,8 @@ namespace QuantLib {
 
 
     JuQuadraticApproximationEngine::JuQuadraticApproximationEngine(
-              const ext::shared_ptr<GeneralizedBlackScholesProcess>& process)
-    : process_(process) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process)
+    : process_(std::move(process)) {
         registerWith(process_);
     }
 
@@ -123,7 +124,6 @@ namespace QuantLib {
                   QL_FAIL("unknown option type");
             }
             //it can throw: to be fixed
-            // FLOATING_POINT_EXCEPTION
             Real temp_root = std::sqrt ((beta-1)*(beta-1) + (4*alpha)/h);
             Real lambda = (-(beta-1) + phi * temp_root) / 2;
             Real lambda_prime = - phi * alpha / (h*h * temp_root);

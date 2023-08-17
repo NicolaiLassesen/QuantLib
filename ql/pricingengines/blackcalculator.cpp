@@ -34,11 +34,11 @@ namespace QuantLib {
         BlackCalculator& black_;
       public:
         explicit Calculator(BlackCalculator& black) : black_(black) {}
-        void visit(Payoff&);
-        void visit(PlainVanillaPayoff&);
-        void visit(CashOrNothingPayoff&);
-        void visit(AssetOrNothingPayoff&);
-        void visit(GapPayoff&);
+        void visit(Payoff&) override;
+        void visit(PlainVanillaPayoff&) override;
+        void visit(CashOrNothingPayoff&) override;
+        void visit(AssetOrNothingPayoff&) override;
+        void visit(GapPayoff&) override;
     };
 
 
@@ -350,4 +350,20 @@ namespace QuantLib {
         return discount_ * temp2;
     }
 
+
+    Real BlackCalculator::strikeGamma() const {
+
+        Real temp = stdDev_*strike_;
+        Real DalphaDstrike = -DalphaDd1_/temp;
+        Real DbetaDstrike  = -DbetaDd2_/temp;
+
+        Real D2alphaD2strike = -DalphaDstrike/strike_*(1-d1_/stdDev_);
+        Real D2betaD2strike  = -DbetaDstrike /strike_*(1-d2_/stdDev_);
+
+        Real temp2 =
+                D2alphaD2strike * forward_ + D2betaD2strike * x_
+                + 2.0*DbetaDstrike *DxDstrike_;
+
+        return discount_ * temp2;
+    }
 }

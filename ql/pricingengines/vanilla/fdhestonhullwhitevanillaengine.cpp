@@ -17,63 +17,87 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/vanilla/fdhestonvanillaengine.hpp>
-#include <ql/pricingengines/vanilla/analytichestonengine.hpp>
-#include <ql/pricingengines/vanilla/fdhestonhullwhitevanillaengine.hpp>
-#include <ql/methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp>
-#include <ql/methods/finitedifferences/meshers/uniform1dmesher.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmblackscholesmesher.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmblackscholesmultistrikemesher.hpp>
-#include <ql/methods/finitedifferences/meshers/fdmsimpleprocess1dmesher.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmhestonvariancemesher.hpp>
-#include <ql/methods/finitedifferences/utilities/fdminnervaluecalculator.hpp>
-#include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmmeshercomposite.hpp>
+#include <ql/methods/finitedifferences/meshers/fdmsimpleprocess1dmesher.hpp>
+#include <ql/methods/finitedifferences/meshers/uniform1dmesher.hpp>
+#include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
+#include <ql/methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp>
+#include <ql/methods/finitedifferences/utilities/fdminnervaluecalculator.hpp>
+#include <ql/pricingengines/vanilla/analytichestonengine.hpp>
+#include <ql/pricingengines/vanilla/fdhestonhullwhitevanillaengine.hpp>
+#include <ql/pricingengines/vanilla/fdhestonvanillaengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
+    QL_DEPRECATED_DISABLE_WARNING
+
     FdHestonHullWhiteVanillaEngine::FdHestonHullWhiteVanillaEngine(
-            const ext::shared_ptr<HestonModel>& hestonModel,
-            const ext::shared_ptr<HullWhiteProcess>& hwProcess,
-            Real corrEquityShortRate,
-            Size tGrid, Size xGrid, 
-            Size vGrid, Size rGrid,
-            Size dampingSteps,
-            bool controlVariate,
-            const FdmSchemeDesc& schemeDesc)
+        const ext::shared_ptr<HestonModel>& hestonModel,
+        ext::shared_ptr<HullWhiteProcess> hwProcess,
+        Real corrEquityShortRate,
+        Size tGrid,
+        Size xGrid,
+        Size vGrid,
+        Size rGrid,
+        Size dampingSteps,
+        bool controlVariate,
+        const FdmSchemeDesc& schemeDesc)
     : GenericModelEngine<HestonModel,
                          DividendVanillaOption::arguments,
                          DividendVanillaOption::results>(hestonModel),
-      hwProcess_(hwProcess),
-      corrEquityShortRate_(corrEquityShortRate),
-      tGrid_(tGrid), xGrid_(xGrid), 
-      vGrid_(vGrid), rGrid_(rGrid),
-      dampingSteps_(dampingSteps),
-      schemeDesc_(schemeDesc),
-      controlVariate_(controlVariate) {
-    }
+      hwProcess_(std::move(hwProcess)), explicitDividends_(false),
+      corrEquityShortRate_(corrEquityShortRate), tGrid_(tGrid),
+      xGrid_(xGrid), vGrid_(vGrid), rGrid_(rGrid), dampingSteps_(dampingSteps),
+      schemeDesc_(schemeDesc), controlVariate_(controlVariate) {}
+
+    FdHestonHullWhiteVanillaEngine::FdHestonHullWhiteVanillaEngine(
+        const ext::shared_ptr<HestonModel>& hestonModel,
+        ext::shared_ptr<HullWhiteProcess> hwProcess,
+        DividendSchedule dividends,
+        Real corrEquityShortRate,
+        Size tGrid,
+        Size xGrid,
+        Size vGrid,
+        Size rGrid,
+        Size dampingSteps,
+        bool controlVariate,
+        const FdmSchemeDesc& schemeDesc)
+    : GenericModelEngine<HestonModel,
+                         DividendVanillaOption::arguments,
+                         DividendVanillaOption::results>(hestonModel),
+      hwProcess_(std::move(hwProcess)), dividends_(std::move(dividends)), explicitDividends_(true),
+      corrEquityShortRate_(corrEquityShortRate), tGrid_(tGrid),
+      xGrid_(xGrid), vGrid_(vGrid), rGrid_(rGrid), dampingSteps_(dampingSteps),
+      schemeDesc_(schemeDesc), controlVariate_(controlVariate) {}
+
+    QL_DEPRECATED_ENABLE_WARNING
 
     void FdHestonHullWhiteVanillaEngine::calculate() const {
+
+        // dividends will eventually be moved out of arguments, but for now we need the switch
+        QL_DEPRECATED_DISABLE_WARNING
+        const DividendSchedule& passedDividends = explicitDividends_ ? dividends_ : arguments_.cashFlow;
+        QL_DEPRECATED_ENABLE_WARNING
   
         // 1. cache lookup for precalculated results
-        for (Size i=0; i < cachedArgs2results_.size(); ++i) {
-            if (   cachedArgs2results_[i].first.exercise->type()
-                        == arguments_.exercise->type()
-                && cachedArgs2results_[i].first.exercise->dates()
-                        == arguments_.exercise->dates()) {
+        for (auto& cachedArgs2result : cachedArgs2results_) {
+            if (cachedArgs2result.first.exercise->type() == arguments_.exercise->type() &&
+                cachedArgs2result.first.exercise->dates() == arguments_.exercise->dates()) {
                 ext::shared_ptr<PlainVanillaPayoff> p1 =
                     ext::dynamic_pointer_cast<PlainVanillaPayoff>(
                                                             arguments_.payoff);
                 ext::shared_ptr<PlainVanillaPayoff> p2 =
-                    ext::dynamic_pointer_cast<PlainVanillaPayoff>(
-                                          cachedArgs2results_[i].first.payoff);
+                    ext::dynamic_pointer_cast<PlainVanillaPayoff>(cachedArgs2result.first.payoff);
 
-                if (p1 && p1->strike()     == p2->strike()
-                       && p1->optionType() == p2->optionType()) {
-                    QL_REQUIRE(arguments_.cashFlow.empty(),
-                               "multiple strikes engine does "
-                               "not work with discrete dividends");
-                    results_ = cachedArgs2results_[i].second;
+                if ((p1 != nullptr) && p1->strike() == p2->strike() &&
+                    p1->optionType() == p2->optionType()) {
+                    QL_REQUIRE(passedDividends.empty(),
+                               "multiple strikes engine does not work with discrete dividends");
+                    results_ = cachedArgs2result.second;
                     return;
                 }
             }
@@ -106,11 +130,11 @@ namespace QuantLib {
                       maturity, payoff->strike(),
                       Null<Real>(), Null<Real>(), 0.0001, 1.5, 
                       std::pair<Real, Real>(payoff->strike(), 0.1),
-                      arguments_.cashFlow));
+                      passedDividends));
         }
         else {
-            QL_REQUIRE(arguments_.cashFlow.empty(),"multiple strikes engine "
-                       "does not work with discrete dividends");
+            QL_REQUIRE(passedDividends.empty(),
+                       "multiple strikes engine does not work with discrete dividends");
             equityMesher = ext::shared_ptr<Fdm1dMesher>(
                 new FdmBlackScholesMultiStrikeMesher(
                     xGrid_,
@@ -139,7 +163,7 @@ namespace QuantLib {
         // 4. Step conditions
         const ext::shared_ptr<FdmStepConditionComposite> conditions = 
             FdmStepConditionComposite::vanillaComposite(
-                                arguments_.cashFlow, arguments_.exercise, 
+                                passedDividends, arguments_.exercise, 
                                 mesher, calculator, 
                                 hestonProcess->riskFreeRate()->referenceDate(),
                                 hestonProcess->riskFreeRate()->dayCounter());
@@ -172,9 +196,11 @@ namespace QuantLib {
                 ext::make_shared<PlainVanillaPayoff>(
                     payoff->optionType(), strikes_[i]);
             const Real d = payoff->strike()/strikes_[i];
-            
+
+            QL_DEPRECATED_DISABLE_WARNING
             DividendVanillaOption::results& 
                                 results = cachedArgs2results_[i].second;
+            QL_DEPRECATED_ENABLE_WARNING
             results.value = solver->valueAt(spot*d, v0, 0)/d;
             results.delta = solver->deltaAt(spot*d, v0, 0, spot*d*0.01);
             results.gamma = solver->gammaAt(spot*d, v0, 0, spot*d*0.01)*d;
@@ -192,7 +218,7 @@ namespace QuantLib {
             Real analyticNPV = option.NPV();
 
             ext::shared_ptr<FdHestonVanillaEngine> fdEngine(
-                    new FdHestonVanillaEngine(*model_, tGrid_, xGrid_, 
+                    new FdHestonVanillaEngine(*model_, tGrid_, xGrid_,
                                               vGrid_, dampingSteps_, 
                                               schemeDesc_));
             fdEngine->enableMultipleStrikesCaching(strikes_);
@@ -217,12 +243,17 @@ namespace QuantLib {
     
     void FdHestonHullWhiteVanillaEngine::update() {
         cachedArgs2results_.clear();
-        GenericModelEngine<HestonModel, DividendVanillaOption::arguments,
+        QL_DEPRECATED_DISABLE_WARNING
+        GenericModelEngine<HestonModel,
+                           DividendVanillaOption::arguments,
                            DividendVanillaOption::results>::update();
+        QL_DEPRECATED_ENABLE_WARNING
     }
+
     void FdHestonHullWhiteVanillaEngine::enableMultipleStrikesCaching(
                                         const std::vector<Real>& strikes) {
         strikes_ = strikes;
         update();
     }
+
 }

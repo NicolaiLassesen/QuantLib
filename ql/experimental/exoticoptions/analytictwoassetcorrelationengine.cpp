@@ -17,19 +17,20 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/exercise.hpp>
 #include <ql/experimental/exoticoptions/analytictwoassetcorrelationengine.hpp>
 #include <ql/math/distributions/bivariatenormaldistribution.hpp>
-#include <ql/exercise.hpp>
+#include <utility>
 
 using std::log;
 
 namespace QuantLib {
 
     AnalyticTwoAssetCorrelationEngine::AnalyticTwoAssetCorrelationEngine(
-        const ext::shared_ptr<GeneralizedBlackScholesProcess>& p1,
-        const ext::shared_ptr<GeneralizedBlackScholesProcess>& p2,
-        const Handle<Quote>& correlation)
-    : p1_(p1), p2_(p2), correlation_(correlation) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> p1,
+        ext::shared_ptr<GeneralizedBlackScholesProcess> p2,
+        Handle<Quote> correlation)
+    : p1_(std::move(p1)), p2_(std::move(p2)), correlation_(std::move(correlation)) {
         registerWith(p1_);
         registerWith(p2_);
         registerWith(correlation_);
@@ -45,7 +46,7 @@ namespace QuantLib {
         ext::shared_ptr<Exercise> exercise = arguments_.exercise;
         Real strike = payoff->strike();//X1
         Real spot = p1_->x0();
-        QL_REQUIRE(spot >= 0.0, "negative or null underlying given");
+        QL_REQUIRE(spot > 0.0, "negative or null underlying given");
 
         Volatility sigma1 =
             p1_->blackVolatility()->blackVol(p1_->time(exercise->lastDate()),

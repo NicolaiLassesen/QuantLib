@@ -33,7 +33,7 @@ namespace QuantLib {
     //! Turkish calendar
     /*! Holidays for the Istanbul Stock Exchange:
         (data from
-         <http://borsaistanbul.com/en/products-and-markets/official-holidays>
+         <https://borsaistanbul.com/en/sayfa/3631/official-holidays>
 		 and
 		 <https://feiertagskalender.ch/index.php?geo=3539&hl=en>):
         <ul>
@@ -43,20 +43,21 @@ namespace QuantLib {
         <li>National Sovereignty and Children’s Day, April 23rd</li>
         <li>Labour and Solidarity Day, May 1st</li>
         <li>Youth and Sports Day, May 19th</li>
+        <li>Democracy and National Unity Day, July 15th</li>
         <li>Victory Day, August 30th</li>
         <li>Republic Day, October 29th</li>
-        <li>Local Holidays (Kurban, Ramadan - dates need further validation for >= 2019) </li>
+        <li>Local Holidays (Kurban, Ramadan - dates need further validation for >= 2024) </li>
         </ul>
 
         \ingroup calendars
     */
     class Turkey : public Calendar {
       private:
-        class Impl : public Calendar::Impl {
+        class Impl final : public Calendar::Impl {
           public:
-            std::string name() const { return "Turkey"; }
-            bool isWeekend(Weekday) const;
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Turkey"; }
+            bool isWeekend(Weekday) const override;
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         Turkey();

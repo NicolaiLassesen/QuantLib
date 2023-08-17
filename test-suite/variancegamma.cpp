@@ -33,6 +33,7 @@ FOR A PARTICULAR PURPOSE.  See the license for more details.
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
+#undef REPORT_FAILURE
 #define REPORT_FAILURE(greekName, payoff, exercise, s, q, r, today, sigma, \
     nu, theta, expected, calculated, \
     error, tolerance) \
@@ -76,8 +77,6 @@ namespace {
 void VarianceGammaTest::testVarianceGamma() {
 
     BOOST_TEST_MESSAGE("Testing variance-gamma model for European options...");
-
-    SavedSettings backup;
 
     VarianceGammaProcessData processes[] = {
     //    spot,    q,    r,sigma,   nu, theta
@@ -158,7 +157,7 @@ void VarianceGammaTest::testVarianceGamma() {
         std::vector<ext::shared_ptr<StrikedTypePayoff> > payoffs;
         for (Size j=0; j<LENGTH(options); j++)
         {
-            Date exDate = today + Integer(options[j].t*360+0.5);
+            Date exDate = today + timeToDays(options[j].t);
             ext::shared_ptr<Exercise> exercise(new EuropeanExercise(exDate));
 
             ext::shared_ptr<StrikedTypePayoff> payoff(new
@@ -212,8 +211,6 @@ void VarianceGammaTest::testSingularityAtZero() {
     BOOST_TEST_MESSAGE(
         "Testing variance-gamma model integration around zero...");
 
-    SavedSettings backup;
-
     Real stock = 100;
     Real strike = 98;
     Volatility sigma = 0.12;
@@ -222,7 +219,7 @@ void VarianceGammaTest::testSingularityAtZero() {
 
     Date valuation(1,Jan,2017);
     Date maturity(10,Jan,2017);
-    DayCounter discountCounter = Thirty360();
+    DayCounter discountCounter = Thirty360(Thirty360::BondBasis);
 
     Settings::instance().evaluationDate() = valuation;
 
@@ -250,7 +247,7 @@ void VarianceGammaTest::testSingularityAtZero() {
 
 
 test_suite* VarianceGammaTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Variance Gamma tests");
+    auto* suite = BOOST_TEST_SUITE("Variance Gamma tests");
 
     suite->add(QUANTLIB_TEST_CASE(&VarianceGammaTest::testVarianceGamma));
     suite->add(QUANTLIB_TEST_CASE(&VarianceGammaTest::testSingularityAtZero));

@@ -37,20 +37,21 @@
 #include <ql/time/calendars/unitedstates.hpp>
 #include <ql/time/calendars/weekendsonly.hpp>
 #include <ql/currencies/america.hpp>
+#include <ql/currencies/europe.hpp>
 #include <ql/time/daycounters/actual360.hpp>
 #include <ql/time/daycounters/thirty360.hpp>
-
+#include <ql/optional.hpp>
+#include <map>
 #include <iomanip>
 #include <iostream>
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
+using std::map;
 
 void CreditDefaultSwapTest::testCachedValue() {
 
     BOOST_TEST_MESSAGE("Testing credit-default swap against cached values...");
-
-    SavedSettings backup;
 
     // Initialize curves
     Settings::instance().evaluationDate() = Date(9,June,2006);
@@ -165,49 +166,49 @@ void CreditDefaultSwapTest::testCachedMarketValue() {
     BOOST_TEST_MESSAGE(
         "Testing credit-default swap against cached market values...");
 
-    SavedSettings backup;
-
     Settings::instance().evaluationDate() = Date(9,June,2006);
     Date evalDate = Settings::instance().evaluationDate();
-    Calendar calendar = UnitedStates();
+    Calendar calendar = UnitedStates(UnitedStates::GovernmentBond);
 
-    std::vector<Date> discountDates;
-    discountDates.push_back(evalDate);
-    discountDates.push_back(calendar.advance(evalDate, 1, Weeks,  ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 1, Months, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 2, Months, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 3, Months, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 6, Months, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate,12, Months, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 2, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 3, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 4, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 5, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 6, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 7, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 8, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate, 9, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate,10, Years, ModifiedFollowing));
-    discountDates.push_back(calendar.advance(evalDate,15, Years, ModifiedFollowing));
-
-    std::vector<DiscountFactor> dfs;
-    dfs.push_back(1.0);
-    dfs.push_back(0.9990151375768731);
-    dfs.push_back(0.99570502636871183);
-    dfs.push_back(0.99118260474528685);
-    dfs.push_back(0.98661167950906203);
-    dfs.push_back(0.9732592953359388 );
-    dfs.push_back(0.94724424481038083);
-    dfs.push_back(0.89844996737120875  );
-    dfs.push_back(0.85216647839921411  );
-    dfs.push_back(0.80775477692556874  );
-    dfs.push_back(0.76517289234200347  );
-    dfs.push_back(0.72401019553182933  );
-    dfs.push_back(0.68503909569219212  );
-    dfs.push_back(0.64797499814013748  );
-    dfs.push_back(0.61263171936255534  );
-    dfs.push_back(0.5791942350748791   );
-    dfs.push_back(0.43518868769953606  );
+    std::vector<Date> discountDates = {
+        evalDate,
+        calendar.advance(evalDate, 1, Weeks,  ModifiedFollowing),
+        calendar.advance(evalDate, 1, Months, ModifiedFollowing),
+        calendar.advance(evalDate, 2, Months, ModifiedFollowing),
+        calendar.advance(evalDate, 3, Months, ModifiedFollowing),
+        calendar.advance(evalDate, 6, Months, ModifiedFollowing),
+        calendar.advance(evalDate,12, Months, ModifiedFollowing),
+        calendar.advance(evalDate, 2, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 3, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 4, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 5, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 6, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 7, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 8, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 9, Years, ModifiedFollowing),
+        calendar.advance(evalDate,10, Years, ModifiedFollowing),
+        calendar.advance(evalDate,15, Years, ModifiedFollowing)
+    };
+    
+    std::vector<DiscountFactor> dfs = {
+        1.0,
+        0.9990151375768731,
+        0.99570502636871183,
+        0.99118260474528685,
+        0.98661167950906203,
+        0.9732592953359388,
+        0.94724424481038083,
+        0.89844996737120875,
+        0.85216647839921411,
+        0.80775477692556874,
+        0.76517289234200347,
+        0.72401019553182933,
+        0.68503909569219212,
+        0.64797499814013748,
+        0.61263171936255534,
+        0.5791942350748791,
+        0.43518868769953606
+    };
 
     const DayCounter& curveDayCounter=Actual360();
 
@@ -216,28 +217,30 @@ void CreditDefaultSwapTest::testCachedMarketValue() {
         ext::shared_ptr<YieldTermStructure>(
             new DiscountCurve(discountDates, dfs, curveDayCounter)));
 
-    DayCounter dayCounter = Thirty360();
-    std::vector<Date> dates;
-    dates.push_back(evalDate);
-    dates.push_back(calendar.advance(evalDate, 6, Months, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate, 1, Years, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate, 2, Years, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate, 3, Years, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate, 4, Years, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate, 5, Years, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate, 7, Years, ModifiedFollowing));
-    dates.push_back(calendar.advance(evalDate,10, Years, ModifiedFollowing));
+    DayCounter dayCounter = Thirty360(Thirty360::BondBasis);
+    std::vector<Date> dates = {
+        evalDate,
+        calendar.advance(evalDate, 6, Months, ModifiedFollowing),
+        calendar.advance(evalDate, 1, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 2, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 3, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 4, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 5, Years, ModifiedFollowing),
+        calendar.advance(evalDate, 7, Years, ModifiedFollowing),
+        calendar.advance(evalDate,10, Years, ModifiedFollowing)
+    };
 
-    std::vector<Probability> defaultProbabilities;
-    defaultProbabilities.push_back(0.0000);
-    defaultProbabilities.push_back(0.0047);
-    defaultProbabilities.push_back(0.0093);
-    defaultProbabilities.push_back(0.0286);
-    defaultProbabilities.push_back(0.0619);
-    defaultProbabilities.push_back(0.0953);
-    defaultProbabilities.push_back(0.1508);
-    defaultProbabilities.push_back(0.2288);
-    defaultProbabilities.push_back(0.3666);
+    std::vector<Probability> defaultProbabilities = {
+        0.0000,
+        0.0047,
+        0.0093,
+        0.0286,
+        0.0619,
+        0.0953,
+        0.1508,
+        0.2288,
+        0.3666
+    };
 
     std::vector<Real> hazardRates;
     hazardRates.push_back(0.0);
@@ -254,7 +257,7 @@ void CreditDefaultSwapTest::testCachedMarketValue() {
         ext::shared_ptr<DefaultProbabilityTermStructure>(
                new InterpolatedHazardRateCurve<BackwardFlat>(dates,
                                                              hazardRates,
-                                                             Thirty360())));
+                                                             Thirty360(Thirty360::BondBasis))));
 
     // Testing credit default swap
 
@@ -307,8 +310,6 @@ void CreditDefaultSwapTest::testCachedMarketValue() {
 void CreditDefaultSwapTest::testImpliedHazardRate() {
 
     BOOST_TEST_MESSAGE("Testing implied hazard-rate for credit-default swaps...");
-
-    SavedSettings backup;
 
     // Initialize curves
     Calendar calendar = TARGET();
@@ -416,8 +417,6 @@ void CreditDefaultSwapTest::testFairSpread() {
     BOOST_TEST_MESSAGE(
         "Testing fair-spread calculation for credit-default swaps...");
 
-    SavedSettings backup;
-
     // Initialize curves
     Calendar calendar = TARGET();
     Date today = calendar.adjust(Date::todaysDate());
@@ -480,8 +479,6 @@ void CreditDefaultSwapTest::testFairUpfront() {
 
     BOOST_TEST_MESSAGE(
         "Testing fair-upfront calculation for credit-default swaps...");
-
-    SavedSettings backup;
 
     // Initialize curves
     Calendar calendar = TARGET();
@@ -570,7 +567,7 @@ void CreditDefaultSwapTest::testIsdaEngine() {
     BOOST_TEST_MESSAGE(
         "Testing ISDA engine calculations for credit-default swaps...");
 
-    SavedSettings backup;
+    bool usingAtParCoupons  = IborCoupon::Settings::instance().usingAtParCoupons();
 
     Date tradeDate(21, May, 2009);
     Settings::instance().evaluationDate() = tradeDate;
@@ -619,7 +616,7 @@ void CreditDefaultSwapTest::testIsdaEngine() {
                                       swap_quotes[i], swap_tenors[i] * Years,
                                       WeekendsOnly(),
                                       Semiannual,
-                                      ModifiedFollowing, Thirty360(), isda_ibor
+                                      ModifiedFollowing, Thirty360(Thirty360::BondBasis), isda_ibor
                                       )
             );
     }
@@ -640,89 +637,335 @@ void CreditDefaultSwapTest::testIsdaEngine() {
     Rate spreads[] = {0.001, 0.1};
     Rate recoveries[] = {0.2, 0.4};
 
-    double markitValues[] = {97798.29358, //0.001
-                             97776.11889, //0.001
-                             -914971.5977, //0.1
-                             -894985.6298, //0.1
-                             186921.3594, //0.001
-                             186839.8148, //0.001
-                             -1646623.672, //0.1
-                             -1579803.626, //0.1
-                             274298.9203,
-                             274122.4725,
-                             -2279730.93,
-                             -2147972.527,
-                             592420.2297,
-                             591571.2294,
-                             -3993550.206,
-                             -3545843.418,
-                             797501.1422,
-                             795915.9787,
-                             -4702034.688,
-                             -4042340.999};
-    Real tolerance;
-    if (IborCoupon::usingAtParCoupons()) {
-        tolerance = 1.0e-6;
-    } else {
-        /* The risk-free curve is a bit off. We might skip the tests
-           altogether and rely on running them with indexed coupons
-           disabled, but leaving them can be useful anyway. */
-        tolerance = 1.0e-3;
-    }
+    double markitValues[] = {
+         -97798.29358, //0.001
+         -97776.11889, //0.001
+         914971.5977,  //0.1
+         894985.6298,  //0.1
+        -186921.3594,  //0.001
+        -186839.8148,  //0.001
+        1646623.672,   //0.1
+        1579803.626,   //0.1
+        -274298.9203,
+        -274122.4725,
+        2279730.93,
+        2147972.527,
+        -592420.2297,
+        -591571.2294,
+        3993550.206,
+        3545843.418,
+        -797501.1422,
+        -795915.9787,
+        4702034.688,
+        4042340.999
+    };
+
+    /* When using indexes coupons, the risk-free curve is a bit off.
+       We might skip the tests altogether and rely on running them
+       with indexed coupons disabled, but leaving them can be useful anyway. */
+    Real tolerance = usingAtParCoupons ? 1.0e-6 : 1.0e-3;
 
     size_t l = 0;
 
-    for(size_t i = 0; i < sizeof(termDates) / sizeof(Date); i++) {
-        for(size_t j = 0; j < 2; j++) {
-            for(size_t k = 0; k < 2; k++) {
+    for (auto termDate : termDates) {
+        for (Real spread : spreads) {
+            for (Real& recovery : recoveries) {
 
-            ext::shared_ptr<CreditDefaultSwap> quotedTrade =
-                MakeCreditDefaultSwap(termDates[i], spreads[j])
-                .withNominal(10000000.);
+                ext::shared_ptr<CreditDefaultSwap> quotedTrade =
+                    MakeCreditDefaultSwap(termDate, spread).withNominal(10000000.);
 
-            Rate h = quotedTrade->impliedHazardRate(0.,
-                                                    discountCurve,
-                                                    Actual365Fixed(),
-                                                    recoveries[k],
-                                                    1e-10,
-                                                    CreditDefaultSwap::ISDA);
+                Rate h = quotedTrade->impliedHazardRate(0., discountCurve, Actual365Fixed(),
+                                                        recovery, 1e-10, CreditDefaultSwap::ISDA);
 
-            probabilityCurve.linkTo(
-                ext::make_shared<FlatHazardRate>(
-                    0, WeekendsOnly(), h, Actual365Fixed())
-                );
+                probabilityCurve.linkTo(
+                    ext::make_shared<FlatHazardRate>(0, WeekendsOnly(), h, Actual365Fixed()));
 
-            ext::shared_ptr<IsdaCdsEngine> engine = ext::make_shared<IsdaCdsEngine>(
-                probabilityCurve, recoveries[k], discountCurve,
-                boost::none, IsdaCdsEngine::Taylor, IsdaCdsEngine::HalfDayBias,
-                IsdaCdsEngine::Piecewise);
+                ext::shared_ptr<IsdaCdsEngine> engine = ext::make_shared<IsdaCdsEngine>(
+                    probabilityCurve, recovery, discountCurve, ext::nullopt, IsdaCdsEngine::Taylor,
+                    IsdaCdsEngine::HalfDayBias, IsdaCdsEngine::Piecewise);
 
-            ext::shared_ptr<CreditDefaultSwap> conventionalTrade =
-                MakeCreditDefaultSwap(termDates[i], 0.01)
-                .withNominal(10000000.)
-                .withPricingEngine(engine);
+                ext::shared_ptr<CreditDefaultSwap> conventionalTrade =
+                    MakeCreditDefaultSwap(termDate, 0.01)
+                        .withNominal(10000000.)
+                        .withPricingEngine(engine);
 
-            BOOST_CHECK_CLOSE(conventionalTrade->notional() * conventionalTrade->fairUpfront(),
-                              markitValues[l],
-                              tolerance);
+                QL_CHECK_CLOSE(conventionalTrade->notional() * conventionalTrade->fairUpfront(),
+                               markitValues[l], tolerance);
 
-            l++;
+                // Now testing that with the calculated fair-upfront, both Buyer and Seller sides
+                // price close to zero
+                ext::shared_ptr<CreditDefaultSwap> conventionalTradeBuy =
+                    MakeCreditDefaultSwap(termDate, 0.01)
+                        .withNominal(10000000.)
+                        .withUpfrontRate(conventionalTrade->fairUpfront())
+                        .withSide(Protection::Buyer)
+                        .withPricingEngine(engine);
 
+                QL_CHECK_SMALL(conventionalTradeBuy->NPV(), tolerance);
+
+                ext::shared_ptr<CreditDefaultSwap> conventionalTradeSell =
+                    MakeCreditDefaultSwap(termDate, 0.01)
+                        .withNominal(10000000.)
+                        .withUpfrontRate(conventionalTrade->fairUpfront())
+                        .withSide(Protection::Seller)
+                        .withPricingEngine(engine);
+
+                QL_CHECK_SMALL(conventionalTradeSell->NPV(), tolerance);
+
+                l++;
             }
         }
     }
+}
+
+void CreditDefaultSwapTest::testAccrualRebateAmounts() {
+
+    BOOST_TEST_MESSAGE("Testing accrual rebate amounts on credit default swaps...");
+
+    // The accrual values are taken from various test results on the ISDA CDS model website
+    // https://www.cdsmodel.com/cdsmodel/documentation.html.
+
+    // Inputs
+    Real notional = 10000000;
+    Real spread = 0.0100;
+    Date maturity(20, Jun, 2014);
+
+    // key is trade date and value is expected accrual
+    typedef map<Date, Real> InputData;
+    InputData inputs = {
+        {Date(18, Mar, 2009), 24166.67},
+        {Date(19, Mar, 2009), 0.00},
+        {Date(20, Mar, 2009), 277.78},
+        {Date(23, Mar, 2009), 1111.11},
+        {Date(19, Jun, 2009), 25555.56},
+        {Date(20, Jun, 2009), 25833.33},
+        {Date(21, Jun, 2009), 0.00},
+        {Date(22, Jun, 2009), 277.78},
+        {Date(18, Jun, 2014), 25277.78},
+        {Date(19, Jun, 2014), 25555.56}
+    };
+
+    for (auto& input: inputs) {
+        Settings::instance().evaluationDate() = input.first;
+        CreditDefaultSwap cds = MakeCreditDefaultSwap(maturity, spread)
+            .withNominal(notional);
+        QL_CHECK_SMALL(input.second - cds.accrualRebate()->amount(), 0.01);
+    }
+}
+
+void CreditDefaultSwapTest::testIsdaCalculatorReconcileSingleQuote ()
+{
+    BOOST_TEST_MESSAGE(
+        "Testing ISDA engine calculations for a single credit-default swap record (reconciliation)...");
+
+    Date tradeDate(26, July, 2021);
+    Settings::instance().evaluationDate() = tradeDate;
+
+    //build an ISDA compliant yield curve
+    //data comes from Markit published rates
+    std::vector<ext::shared_ptr<RateHelper> > isdaRateHelpers;
+    int dep_tenors[] = {1, 3, 6, 12};
+    double dep_quotes[] = {-0.0056,-0.005440,-0.005190,-0.004930};
+
+    for(size_t i = 0; i < sizeof(dep_tenors) / sizeof(int); i++) {
+        isdaRateHelpers.push_back(ext::make_shared<DepositRateHelper>(
+                                     dep_quotes[i], dep_tenors[i] * Months, 2,
+                                     WeekendsOnly(), ModifiedFollowing,
+                                     false, Actual360()
+                                     )
+            );
+    }
+    int swap_tenors[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 30};
+    double swap_quotes[] = {-0.004820,
+                            -0.004420,
+                            -0.003990,
+                            -0.003520,
+                            -0.002970,
+                            -0.002370,
+                            -0.001760,
+                            -0.001140,
+                            -0.000540,
+                            0.000570,
+                            0.001880,
+                            0.002940,
+                            0.002820};
+
+    ext::shared_ptr<IborIndex> isda_ibor = ext::make_shared<IborIndex>(
+        "IsdaIbor", 6 * Months, 2, EURCurrency(), WeekendsOnly(),
+        ModifiedFollowing, false, Actual360());
+    for(size_t i = 0; i < sizeof(swap_tenors) / sizeof(int); i++) {
+        isdaRateHelpers.push_back(ext::make_shared<SwapRateHelper>(
+                                      swap_quotes[i], swap_tenors[i] * Years,
+                                      WeekendsOnly(),
+                                      Annual,
+                                      ModifiedFollowing, Thirty360(Thirty360::BondBasis), isda_ibor
+                                      )
+            );
+    }
+
+    RelinkableHandle<YieldTermStructure> discountCurve;
+    discountCurve.linkTo(
+            ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear> >(
+                0, WeekendsOnly(), isdaRateHelpers, Actual365Fixed())
+        );
+
+    RelinkableHandle<DefaultProbabilityTermStructure> probabilityCurve;
+    Date instrumentMaturity = Date(20, June, 2026);
+    Rate coupon = 0.01, conventionalSpread = 0.006713, recovery = 0.4;
+    double nominal = 1e6, markitValue = -16070.7, expected_accrual = 1000, tolerance = 1.0e-3;
+
+    ext::shared_ptr<CreditDefaultSwap> quotedTrade =
+        MakeCreditDefaultSwap(instrumentMaturity, conventionalSpread).withNominal(nominal);
+
+    Rate h = quotedTrade->impliedHazardRate(0., discountCurve, Actual365Fixed(),
+                                            recovery, 1e-10, CreditDefaultSwap::ISDA);
+
+    probabilityCurve.linkTo(
+        ext::make_shared<FlatHazardRate>(0, WeekendsOnly(), h, Actual365Fixed()));
+
+    ext::shared_ptr<IsdaCdsEngine> engine = ext::make_shared<IsdaCdsEngine>(
+        probabilityCurve, recovery, discountCurve, ext::nullopt, IsdaCdsEngine::Taylor,
+        IsdaCdsEngine::HalfDayBias, IsdaCdsEngine::Piecewise);
+
+    ext::shared_ptr<CreditDefaultSwap> conventionalTrade =
+        MakeCreditDefaultSwap(instrumentMaturity, coupon)
+            .withNominal(nominal)
+            .withPricingEngine(engine);
+
+
+    Real npv = conventionalTrade->NPV();
+    Real calculated_upfront = conventionalTrade->notional() * conventionalTrade->fairUpfront();
+    Real df = calculated_upfront / npv; // to take into account of the discount to cash settlement
+    Real derived_accrual =
+        df * (npv -
+                                   conventionalTrade->defaultLegNPV() -
+                                   conventionalTrade->couponLegNPV());
+
+    Real calculated_accrual = conventionalTrade->accrualRebate()->amount();
+
+    auto settlement_date = conventionalTrade->accrualRebate()->date();
+
+    QL_CHECK_CLOSE(npv, markitValue, tolerance);
+
+    QL_CHECK_CLOSE(calculated_upfront, df * markitValue, tolerance);
+
+    QL_CHECK_CLOSE(derived_accrual, expected_accrual, tolerance);
+
+    QL_CHECK_CLOSE(calculated_accrual, expected_accrual, tolerance);
+
+    BOOST_CHECK_EQUAL(settlement_date, WeekendsOnly().advance(tradeDate,3, TimeUnit::Days));
 
 }
 
+void CreditDefaultSwapTest::testIsdaCalculatorReconcileSingleWithIssueDateInThePast ()
+{
+    BOOST_TEST_MESSAGE(
+        "Testing ISDA engine calculations for a single credit-default swap with issue date in the past...");
+
+    Date valueDate(26, July, 2021);
+    Settings::instance().evaluationDate() = valueDate;
+
+    //this is not IMM date but the settlement date is in the past so the accrual rebate
+    //should not be part of the NPV
+    Date tradeDate(20, July, 2019);
+
+    //build an ISDA compliant yield curve
+    //data comes from Markit published rates
+    std::vector<ext::shared_ptr<RateHelper> > isdaRateHelpers;
+    int dep_tenors[] = {1, 3, 6, 12};
+    double dep_quotes[] = {-0.0056,-0.005440,-0.005190,-0.004930};
+
+    for(size_t i = 0; i < sizeof(dep_tenors) / sizeof(int); i++) {
+        isdaRateHelpers.push_back(ext::make_shared<DepositRateHelper>(
+                                     dep_quotes[i], dep_tenors[i] * Months, 2,
+                                     WeekendsOnly(), ModifiedFollowing,
+                                     false, Actual360()
+                                     )
+            );
+    }
+    int swap_tenors[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 30};
+    double swap_quotes[] = {-0.004820,
+                            -0.004420,
+                            -0.003990,
+                            -0.003520,
+                            -0.002970,
+                            -0.002370,
+                            -0.001760,
+                            -0.001140,
+                            -0.000540,
+                            0.000570,
+                            0.001880,
+                            0.002940,
+                            0.002820};
+
+    ext::shared_ptr<IborIndex> isda_ibor = ext::make_shared<IborIndex>(
+        "IsdaIbor", 6 * Months, 2, EURCurrency(), WeekendsOnly(),
+        ModifiedFollowing, false, Actual360());
+    for(size_t i = 0; i < sizeof(swap_tenors) / sizeof(int); i++) {
+        isdaRateHelpers.push_back(ext::make_shared<SwapRateHelper>(
+                                      swap_quotes[i], swap_tenors[i] * Years,
+                                      WeekendsOnly(),
+                                      Annual,
+                                      ModifiedFollowing, Thirty360(Thirty360::BondBasis), isda_ibor
+                                      )
+            );
+    }
+
+    RelinkableHandle<YieldTermStructure> discountCurve;
+    discountCurve.linkTo(
+            ext::make_shared<PiecewiseYieldCurve<Discount, LogLinear> >(
+                0, WeekendsOnly(), isdaRateHelpers, Actual365Fixed())
+        );
+
+    RelinkableHandle<DefaultProbabilityTermStructure> probabilityCurve;
+    Date instrumentMaturity = Date(20, June, 2026);
+    Rate coupon = 0.01, conventionalSpread = 0.006713, recovery = 0.4;
+
+    //because there is no accrual involved, the markit value is decreased as compared to the
+    //previous test (old_markit_value - old_accrual or -16070.7 - 1000)
+    double nominal = 1e6, markitValue = -17070.77, expected_accrual = 0, tolerance = 1.0e-3;
+
+    ext::shared_ptr<CreditDefaultSwap> quotedTrade =
+        MakeCreditDefaultSwap(instrumentMaturity, conventionalSpread)
+        .withNominal(nominal);
+
+    Rate h = quotedTrade->impliedHazardRate(0., discountCurve, Actual365Fixed(),
+                                            recovery, 1e-10, CreditDefaultSwap::ISDA);
+
+    probabilityCurve.linkTo(
+        ext::make_shared<FlatHazardRate>(0, WeekendsOnly(), h, Actual365Fixed()));
+
+    ext::shared_ptr<IsdaCdsEngine> engine = ext::make_shared<IsdaCdsEngine>(
+        probabilityCurve, recovery, discountCurve, ext::nullopt, IsdaCdsEngine::Taylor,
+        IsdaCdsEngine::HalfDayBias, IsdaCdsEngine::Piecewise);
+
+    ext::shared_ptr<CreditDefaultSwap> conventionalTrade =
+        MakeCreditDefaultSwap(instrumentMaturity, coupon)
+            .withNominal(nominal)
+            .withPricingEngine(engine)
+            .withTradeDate(tradeDate);
+
+
+    Real npv = conventionalTrade->NPV();
+    Real calculated_accrual = npv -
+                                conventionalTrade->defaultLegNPV() -
+                                conventionalTrade->couponLegNPV();
+
+    QL_CHECK_CLOSE(npv, markitValue, tolerance);
+
+    QL_CHECK_CLOSE(calculated_accrual, expected_accrual, tolerance);
+}
+
 test_suite* CreditDefaultSwapTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Credit-default swap tests");
+    auto* suite = BOOST_TEST_SUITE("Credit-default swap tests");
     suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testCachedValue));
-    suite->add(QUANTLIB_TEST_CASE(
-                              &CreditDefaultSwapTest::testCachedMarketValue));
-    suite->add(QUANTLIB_TEST_CASE(
-                              &CreditDefaultSwapTest::testImpliedHazardRate));
+    suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testCachedMarketValue));
+    suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testImpliedHazardRate));
     suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testFairSpread));
     suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testFairUpfront));
     suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testIsdaEngine));
+    suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testAccrualRebateAmounts));
+    suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testIsdaCalculatorReconcileSingleQuote));
+    suite->add(QUANTLIB_TEST_CASE(&CreditDefaultSwapTest::testIsdaCalculatorReconcileSingleWithIssueDateInThePast));
     return suite;
 }

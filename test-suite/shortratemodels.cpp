@@ -44,7 +44,7 @@
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-namespace {
+namespace short_rate_models_test {
 
     struct CalibrationData {
         Integer start;
@@ -58,8 +58,9 @@ namespace {
 void ShortRateModelTest::testCachedHullWhite() {
     BOOST_TEST_MESSAGE("Testing Hull-White calibration against cached values using swaptions with start delay...");
 
-    SavedSettings backup;
-    IndexHistoryCleaner cleaner;
+    using namespace short_rate_models_test;
+
+    bool usingAtParCoupons  = IborCoupon::Settings::instance().usingAtParCoupons();
 
     Date today(15, February, 2002);
     Date settlement(19, February, 2002);
@@ -78,15 +79,11 @@ void ShortRateModelTest::testCachedHullWhite() {
                                          new JamshidianSwaptionEngine(model));
 
     std::vector<ext::shared_ptr<CalibrationHelper> > swaptions;
-    for (Size i=0; i<LENGTH(data); i++) {
-        ext::shared_ptr<Quote> vol(new SimpleQuote(data[i].volatility));
+    for (auto& i : data) {
+        ext::shared_ptr<Quote> vol(new SimpleQuote(i.volatility));
         ext::shared_ptr<BlackCalibrationHelper> helper(
-                             new SwaptionHelper(Period(data[i].start, Years),
-                                                Period(data[i].length, Years),
-                                                Handle<Quote>(vol),
-                                                index,
-                                                Period(1, Years), Thirty360(),
-                                                Actual360(), termStructure));
+            new SwaptionHelper(Period(i.start, Years), Period(i.length, Years), Handle<Quote>(vol),
+                               index, Period(1, Years), Thirty360(Thirty360::BondBasis), Actual360(), termStructure));
         helper->setPricingEngine(engine);
         swaptions.push_back(helper);
     }
@@ -103,7 +100,7 @@ void ShortRateModelTest::testCachedHullWhite() {
 
     // Check and print out results
     Real cachedA, cachedSigma;
-    if (!IborCoupon::usingAtParCoupons()) {
+    if (!usingAtParCoupons) {
         cachedA = 0.0463679, cachedSigma = 0.00579831;
     } else {
         cachedA = 0.0464041, cachedSigma = 0.00579912;
@@ -135,8 +132,9 @@ void ShortRateModelTest::testCachedHullWhite() {
 void ShortRateModelTest::testCachedHullWhiteFixedReversion() {
     BOOST_TEST_MESSAGE("Testing Hull-White calibration with fixed reversion against cached values...");
 
-    SavedSettings backup;
-    IndexHistoryCleaner cleaner;
+    using namespace short_rate_models_test;
+
+    bool usingAtParCoupons = IborCoupon::Settings::instance().usingAtParCoupons();
 
     Date today(15, February, 2002);
     Date settlement(19, February, 2002);
@@ -155,15 +153,12 @@ void ShortRateModelTest::testCachedHullWhiteFixedReversion() {
                                          new JamshidianSwaptionEngine(model));
 
     std::vector<ext::shared_ptr<CalibrationHelper> > swaptions;
-    for (Size i=0; i<LENGTH(data); i++) {
-        ext::shared_ptr<Quote> vol(new SimpleQuote(data[i].volatility));
+    for (auto& i : data) {
+        ext::shared_ptr<Quote> vol(new SimpleQuote(i.volatility));
         ext::shared_ptr<BlackCalibrationHelper> helper(
-                             new SwaptionHelper(Period(data[i].start, Years),
-                                                Period(data[i].length, Years),
-                                                Handle<Quote>(vol),
-                                                index,
-                                                Period(1, Years), Thirty360(),
-                                                Actual360(), termStructure));
+            new SwaptionHelper(Period(i.start, Years), Period(i.length, Years), Handle<Quote>(vol),
+                               index, Period(1, Years), Thirty360(Thirty360::BondBasis),
+                               Actual360(), termStructure));
         helper->setPricingEngine(engine);
         swaptions.push_back(helper);
     }
@@ -181,10 +176,11 @@ void ShortRateModelTest::testCachedHullWhiteFixedReversion() {
 
     // Check and print out results
     Real cachedA, cachedSigma;
-    if (!IborCoupon::usingAtParCoupons())
+    if (!usingAtParCoupons) {
         cachedA = 0.05, cachedSigma = 0.00585835;
-    else
+    } else {
         cachedA = 0.05, cachedSigma = 0.00585858;
+    }
 
     Real tolerance = 1.0e-5;
     Array xMinCalculated = model->params();
@@ -214,8 +210,9 @@ void ShortRateModelTest::testCachedHullWhite2() {
     BOOST_TEST_MESSAGE("Testing Hull-White calibration against cached "
                        "values using swaptions without start delay...");
 
-    SavedSettings backup;
-    IndexHistoryCleaner cleaner;
+    using namespace short_rate_models_test;
+
+    bool usingAtParCoupons = IborCoupon::Settings::instance().usingAtParCoupons();
 
     Date today(15, February, 2002);
     Date settlement(19, February, 2002);
@@ -237,15 +234,12 @@ void ShortRateModelTest::testCachedHullWhite2() {
                                          new JamshidianSwaptionEngine(model));
 
     std::vector<ext::shared_ptr<CalibrationHelper> > swaptions;
-    for (Size i=0; i<LENGTH(data); i++) {
-        ext::shared_ptr<Quote> vol(new SimpleQuote(data[i].volatility));
+    for (auto& i : data) {
+        ext::shared_ptr<Quote> vol(new SimpleQuote(i.volatility));
         ext::shared_ptr<BlackCalibrationHelper> helper(
-                             new SwaptionHelper(Period(data[i].start, Years),
-                                                Period(data[i].length, Years),
-                                                Handle<Quote>(vol),
-                                                index0,
-                                                Period(1, Years), Thirty360(),
-                                                Actual360(), termStructure));
+            new SwaptionHelper(Period(i.start, Years), Period(i.length, Years), Handle<Quote>(vol),
+                               index0, Period(1, Years), Thirty360(Thirty360::BondBasis),
+                               Actual360(), termStructure));
         helper->setPricingEngine(engine);
         swaptions.push_back(helper);
     }
@@ -265,7 +259,7 @@ void ShortRateModelTest::testCachedHullWhite2() {
     // JamshidianEngine not accounting for the delay between option
     // expiry and underlying start
     Real cachedA, cachedSigma;
-    if (!IborCoupon::usingAtParCoupons())
+    if (!usingAtParCoupons)
         cachedA = 0.0481608, cachedSigma = 0.00582493;
     else
         cachedA = 0.0482063, cachedSigma = 0.00582687;
@@ -296,8 +290,7 @@ void ShortRateModelTest::testCachedHullWhite2() {
 void ShortRateModelTest::testSwaps() {
     BOOST_TEST_MESSAGE("Testing Hull-White swap pricing against known values...");
 
-    SavedSettings backup;
-    IndexHistoryCleaner cleaner;
+    bool usingAtParCoupons = IborCoupon::Settings::instance().usingAtParCoupons();
 
     Date today = Settings::instance().evaluationDate();
     Calendar calendar = TARGET();
@@ -306,7 +299,7 @@ void ShortRateModelTest::testSwaps() {
 
     Date settlement = calendar.advance(today,2,Days);
 
-    Date dates[] = {
+    std::vector<Date> dates = {
         settlement,
         calendar.advance(settlement,1,Weeks),
         calendar.advance(settlement,1,Months),
@@ -320,7 +313,7 @@ void ShortRateModelTest::testSwaps() {
         calendar.advance(settlement,10,Years),
         calendar.advance(settlement,15,Years)
     };
-    DiscountFactor discounts[] = {
+    std::vector<DiscountFactor> discounts = {
         1.0,
         0.999258,
         0.996704,
@@ -337,11 +330,7 @@ void ShortRateModelTest::testSwaps() {
 
     Handle<YieldTermStructure> termStructure(
        ext::shared_ptr<YieldTermStructure>(
-           new DiscountCurve(
-               std::vector<Date>(dates,dates+LENGTH(dates)),
-               std::vector<DiscountFactor>(discounts,
-                                           discounts+LENGTH(discounts)),
-               Actual365Fixed())));
+           new DiscountCurve(dates, discounts, Actual365Fixed())));
 
     ext::shared_ptr<HullWhite> model(new HullWhite(termStructure));
 
@@ -353,11 +342,7 @@ void ShortRateModelTest::testSwaps() {
     ext::shared_ptr<PricingEngine> engine(
                                         new TreeVanillaSwapEngine(model,120));
 
-    Real tolerance;
-    if (!IborCoupon::usingAtParCoupons())
-        tolerance = 4.0e-3;
-    else
-        tolerance = 1.0e-8;
+    Real tolerance = usingAtParCoupons ? 1.0e-8 : 4.0e-3;
 
     for (Size i=0; i<LENGTH(start); i++) {
 
@@ -379,10 +364,10 @@ void ShortRateModelTest::testSwaps() {
             Schedule floatSchedule(startDate, maturity, Period(Semiannual),
                                    calendar, Following, Following,
                                    DateGeneration::Forward, false);
-            for (Size k=0; k<LENGTH(rates); k++) {
+            for (Real rate : rates) {
 
-                VanillaSwap swap(VanillaSwap::Payer, 1000000.0,
-                                 fixedSchedule, rates[k], Thirty360(),
+                VanillaSwap swap(Swap::Payer, 1000000.0, fixedSchedule, rate,
+                                 Thirty360(Thirty360::BondBasis),
                                  floatSchedule, euribor, 0.0, Actual360());
                 swap.setPricingEngine(ext::shared_ptr<PricingEngine>(
                                    new DiscountingSwapEngine(termStructure)));
@@ -436,7 +421,6 @@ void ShortRateModelTest::testFuturesConvexityBias() {
 void ShortRateModelTest::testExtendedCoxIngersollRossDiscountFactor() {
     BOOST_TEST_MESSAGE("Testing zero-bond pricing for extended CIR model...");
 
-    SavedSettings backup;
     const Date today = Settings::instance().evaluationDate();
 
     const Rate rate = 0.1;
@@ -464,19 +448,15 @@ void ShortRateModelTest::testExtendedCoxIngersollRossDiscountFactor() {
     }
 }
 
-test_suite* ShortRateModelTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("Short-rate model tests");
+test_suite* ShortRateModelTest::suite(SpeedLevel) {
+    auto* suite = BOOST_TEST_SUITE("Short-rate model tests");
 
     suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testCachedHullWhite));
     suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testCachedHullWhiteFixedReversion));
     suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testCachedHullWhite2));
     suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testFuturesConvexityBias));
-    suite->add(QUANTLIB_TEST_CASE(
-        &ShortRateModelTest::testExtendedCoxIngersollRossDiscountFactor));
-
-    if (speed == Slow) {
-        suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testSwaps));
-    }
+    suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testExtendedCoxIngersollRossDiscountFactor));
+    suite->add(QUANTLIB_TEST_CASE(&ShortRateModelTest::testSwaps));
 
     return suite;
 }

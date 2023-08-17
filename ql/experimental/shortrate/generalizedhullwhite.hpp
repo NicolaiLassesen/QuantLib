@@ -25,29 +25,27 @@
 #ifndef quantlib_generalized_hull_white_hpp
 #define quantlib_generalized_hull_white_hpp
 
-#include <ql/models/shortrate/onefactormodel.hpp>
 #include <ql/experimental/shortrate/generalizedornsteinuhlenbeckprocess.hpp>
-#include <ql/processes/ornsteinuhlenbeckprocess.hpp>
 #include <ql/math/interpolation.hpp>
+#include <ql/models/shortrate/onefactormodel.hpp>
+#include <ql/processes/ornsteinuhlenbeckprocess.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     //! Parameter that holds an interpolation object
     class InterpolationParameter : public Parameter {
     private:
-        class Impl : public Parameter::Impl {
+        class Impl final : public Parameter::Impl {
         public:
-            virtual Real value(const Array&, Time t) const {
-                return interpolator_(t);
-            }
-            void reset(const Interpolation &interp) {
-                interpolator_ = interp;
-            }
+          Real value(const Array&, Time t) const override { return interpolator_(t); }
+          void reset(const Interpolation& interp) { interpolator_ = interp; }
         private:
             Interpolation interpolator_;
         };
     public:
-        InterpolationParameter(Size count,
+        explicit InterpolationParameter(
+            Size count,
             const Constraint& constraint = NoConstraint())
         : Parameter(count,
             ext::shared_ptr<Parameter::Impl>(
@@ -57,7 +55,8 @@ namespace QuantLib {
         void reset(const Interpolation &interp) {
             ext::shared_ptr<InterpolationParameter::Impl> impl =
                 ext::dynamic_pointer_cast<InterpolationParameter::Impl>(impl_);
-            if (impl) impl->reset(interp);
+            if (impl != nullptr)
+                impl->reset(interp);
         }
     };
 
@@ -80,10 +79,8 @@ namespace QuantLib {
             const std::vector<Date>& volstructure,
             const std::vector<Real>& speed,
             const std::vector<Real>& vol,
-            const ext::function<Real(Real)>& f =
-                                            ext::function<Real(Real)>(),
-            const ext::function<Real(Real)>& fInverse =
-                                            ext::function<Real(Real)>());
+            const ext::function<Real(Real)>& f = {},
+            const ext::function<Real(Real)>& fInverse = {});
 
         template <class SpeedInterpolationTraits,class VolInterpolationTraits>
         GeneralizedHullWhite(
@@ -94,10 +91,8 @@ namespace QuantLib {
             const std::vector<Real>& vol,
             const SpeedInterpolationTraits &speedtraits,
             const VolInterpolationTraits &voltraits,
-            const ext::function<Real(Real)>& f =
-                                            ext::function<Real(Real)>(),
-            const ext::function<Real(Real)>& fInverse =
-                                            ext::function<Real(Real)>()) :
+            const ext::function<Real(Real)>& f = {},
+            const ext::function<Real(Real)>& fInverse = {}) :
             OneFactorAffineModel(2), TermStructureConsistentModel(yieldtermStructure),
             speedstructure_(speedstructure), volstructure_(volstructure),
             a_(arguments_[0]), sigma_(arguments_[1]),
@@ -107,12 +102,12 @@ namespace QuantLib {
                 speed,vol,speedtraits,voltraits,f,fInverse);
         }
 
-        ext::shared_ptr<ShortRateDynamics> dynamics() const {
+        ext::shared_ptr<ShortRateDynamics> dynamics() const override {
             QL_FAIL("no defined process for generalized Hull-White model, "
                     "use HWdynamics()");
         }
 
-        ext::shared_ptr<Lattice> tree(const TimeGrid& grid)const;
+        ext::shared_ptr<Lattice> tree(const TimeGrid& grid) const override;
 
         //Analytical calibration of HW
 
@@ -127,7 +122,7 @@ namespace QuantLib {
         Real discountBondOption(Option::Type type,
                                 Real strike,
                                 Time maturity,
-                                Time bondMaturity) const;
+                                Time bondMaturity) const override;
 
         //! vector to pass to 'calibrate' to fit only volatility
         std::vector<bool> fixedReversion() const;
@@ -136,9 +131,9 @@ namespace QuantLib {
         //Analytical calibration of HW
         Real a() const { return a_(0.0); }
         Real sigma() const { return sigma_(0.0); }
-        void generateArguments();
-        virtual Real A(Time t, Time T) const;
-        virtual Real B(Time t, Time T) const;
+        void generateArguments() override;
+        Real A(Time t, Time T) const override;
+        Real B(Time t, Time T) const override;
         Real V(Time t, Time T) const;
 
       private:
@@ -190,10 +185,10 @@ namespace QuantLib {
 
             DayCounter dc = yieldtermStructure->dayCounter();
             Date ref = yieldtermStructure->referenceDate();
-            for (Size i=0;i<speedstructure.size();i++)
-                speedperiods_.push_back(dc.yearFraction(ref,speedstructure[i]));
-            for (Size i=0;i<volstructure.size();i++)
-                volperiods_.push_back(dc.yearFraction(ref,volstructure[i]));
+            for (auto i : speedstructure)
+                speedperiods_.push_back(dc.yearFraction(ref, i));
+            for (auto i : volstructure)
+                volperiods_.push_back(dc.yearFraction(ref, i));
 
             // interpolator x points to *periods_ vector, y points to
             // the internal Array in the parameter
@@ -237,36 +232,24 @@ namespace QuantLib {
     class GeneralizedHullWhite::Dynamics
         : public GeneralizedHullWhite::ShortRateDynamics {
       public:
-        Dynamics(const Parameter& fitting,
-                 const ext::function<Real (Time)>& alpha,
-                 const ext::function<Real (Time)>& sigma,
-                 const ext::function<Real(Real)>& f,
-                 const ext::function<Real(Real)>& fInverse)
+        Dynamics(Parameter fitting,
+                 const ext::function<Real(Time)>& alpha,
+                 const ext::function<Real(Time)>& sigma,
+                 ext::function<Real(Real)> f,
+                 ext::function<Real(Real)> fInverse)
         : ShortRateDynamics(ext::shared_ptr<StochasticProcess1D>(
-                      new GeneralizedOrnsteinUhlenbeckProcess(alpha, sigma))),
-          fitting_(fitting),
-          _f_(f), _fInverse_(fInverse) {}
+              new GeneralizedOrnsteinUhlenbeckProcess(alpha, sigma))),
+          fitting_(std::move(fitting)), _f_(std::move(f)), _fInverse_(std::move(fInverse)) {}
 
         //classical HW dynamics
-        Dynamics(const Parameter& fitting,
-                 Real a,
-                 Real sigma)
+        Dynamics(Parameter fitting, Real a, Real sigma)
         : GeneralizedHullWhite::ShortRateDynamics(
-              ext::shared_ptr<StochasticProcess1D>(
-                      new OrnsteinUhlenbeckProcess(a, sigma))),
-          fitting_(fitting) {
+              ext::shared_ptr<StochasticProcess1D>(new OrnsteinUhlenbeckProcess(a, sigma))),
+          fitting_(std::move(fitting)), _f_(identity()), _fInverse_(identity()) {}
 
-            _f_=identity();
-            _fInverse_=identity();
-        }
+        Real variable(Time t, Rate r) const override { return _f_(r) - fitting_(t); }
 
-        Real variable(Time t, Rate r) const {
-            return _f_(r) - fitting_(t);
-        }
-
-        Real shortRate(Time t, Real x) const {
-            return _fInverse_(x + fitting_(t));
-        }
+        Real shortRate(Time t, Real x) const override { return _fInverse_(x + fitting_(t)); }
 
       private:
         Parameter fitting_;
@@ -287,20 +270,20 @@ namespace QuantLib {
     class GeneralizedHullWhite::FittingParameter
         : public TermStructureFittingParameter {
       private:
-        class Impl : public Parameter::Impl {
+        class Impl final : public Parameter::Impl {
           public:
-            Impl(const Handle<YieldTermStructure>& termStructure,
-                 Real a, Real sigma)
-            : termStructure_(termStructure), a_(a), sigma_(sigma) {}
+            Impl(Handle<YieldTermStructure> termStructure, Real a, Real sigma)
+            : termStructure_(std::move(termStructure)), a_(a), sigma_(sigma) {}
 
-            Real value(const Array&, Time t) const {
+            Real value(const Array&, Time t) const override {
                 Rate forwardRate =
                     termStructure_->forwardRate(t, t, Continuous, NoFrequency);
                 Real temp = a_ < std::sqrt(QL_EPSILON) ?
-                            sigma_*t :
-                            sigma_*(1.0 - std::exp(-a_*t))/a_;
+                            Real(sigma_*t) :
+                            Real(sigma_*(1.0 - std::exp(-a_*t))/a_);
                 return (forwardRate + 0.5*temp*temp);
             }
+
           private:
             Handle<YieldTermStructure> termStructure_;
             Real a_, sigma_;
@@ -362,7 +345,7 @@ namespace QuantLib {
             : Interpolation::templateImpl<I1,I2>(xBegin, xEnd, yBegin,
                                     LinearFlat::requiredPoints),
               primitiveConst_(xEnd-xBegin), s_(xEnd-xBegin) {}
-            void update() {
+            void update() override {
                 primitiveConst_[0] = 0.0;
                 for (Size i=1; i<Size(this->xEnd_-this->xBegin_); ++i) {
                     Real dx = this->xBegin_[i]-this->xBegin_[i-1];
@@ -371,7 +354,7 @@ namespace QuantLib {
                         + dx*(this->yBegin_[i-1] +0.5*dx*s_[i-1]);
                 }
             }
-            Real value(Real x) const {
+            Real value(Real x) const override {
                 if (x <= this->xMin())
                     return this->yBegin_[0];
                 if (x >= this->xMax())
@@ -379,21 +362,20 @@ namespace QuantLib {
                 Size i = this->locate(x);
                 return this->yBegin_[i] + (x-this->xBegin_[i])*s_[i];
             }
-            Real primitive(Real x) const {
+            Real primitive(Real x) const override {
                 Size i = this->locate(x);
                 Real dx = x-this->xBegin_[i];
                 return primitiveConst_[i] +
                     dx*(this->yBegin_[i] + 0.5*dx*s_[i]);
             }
-            Real derivative(Real x) const {
+            Real derivative(Real x) const override {
                 if (!this->isInRange(x))
                     return 0;
                 Size i = this->locate(x);
                 return s_[i];
             }
-            Real secondDerivative(Real) const {
-                return 0.0;
-            }
+            Real secondDerivative(Real) const override { return 0.0; }
+
           private:
             std::vector<Real> primitiveConst_, s_;
         };

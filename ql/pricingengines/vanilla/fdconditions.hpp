@@ -17,60 +17,11 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-/*! \file fdconditions.hpp
-    \brief Finite-difference templates to generate engines
-*/
-
 #ifndef quantlib_fd_conditions_hpp
 #define quantlib_fd_conditions_hpp
 
-#include <ql/methods/finitedifferences/fdtypedefs.hpp>
-#include <ql/methods/finitedifferences/americancondition.hpp>
-#include <ql/methods/finitedifferences/shoutcondition.hpp>
-#include <ql/processes/blackscholesprocess.hpp>
-#include <ql/interestrate.hpp>
-
-namespace QuantLib {
-
-    template <typename baseEngine>
-    class FDAmericanCondition : public baseEngine {
-      public:
-        FDAmericanCondition(
-             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
-             Size timeSteps = 100, Size gridPoints = 100,
-             bool timeDependent = false)
-        : baseEngine(process, timeSteps, gridPoints, timeDependent) {}
-      protected:
-        void initializeStepCondition() const {
-            baseEngine::stepCondition_ =
-                ext::shared_ptr<StandardStepCondition>(
-                  new AmericanCondition(baseEngine::intrinsicValues_.values()));
-        }
-    };
-
-    template <typename baseEngine>
-    class FDShoutCondition : public baseEngine {
-      public:
-        FDShoutCondition(
-             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
-             Size timeSteps = 100, Size gridPoints = 100,
-             bool timeDependent = false)
-        : baseEngine(process, timeSteps, gridPoints, timeDependent) {}
-      protected:
-        void initializeStepCondition() const {
-            Time residualTime = baseEngine::getResidualTime();
-            Rate riskFreeRate = baseEngine::process_->riskFreeRate()
-                ->zeroRate(residualTime, Continuous);
-
-            baseEngine::stepCondition_ =
-                ext::shared_ptr<StandardStepCondition>(
-                     new ShoutCondition(baseEngine::intrinsicValues_.values(),
-                                        residualTime,
-                                        riskFreeRate));
-        }
-    };
-
-}
+// Deprecated in version 1.32
+#pragma message("Warning: this file is empty and will disappear in a future release; do not include it.")
 
 
 #endif

@@ -29,7 +29,7 @@
 #include <ql/instruments/swap.hpp>
 #include <ql/time/daycounter.hpp>
 #include <ql/time/schedule.hpp>
-#include <boost/optional.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
@@ -64,22 +64,20 @@ namespace QuantLib {
     */
     class VanillaSwap : public Swap {
       public:
-        enum Type { Receiver = -1, Payer = 1 };
         class arguments;
         class results;
         class engine;
-        VanillaSwap(
-            Type type,
-            Real nominal,
-            const Schedule& fixedSchedule,
-            Rate fixedRate,
-            const DayCounter& fixedDayCount,
-            const Schedule& floatSchedule,
-            const ext::shared_ptr<IborIndex>& iborIndex,
-            Spread spread,
-            const DayCounter& floatingDayCount,
-            boost::optional<BusinessDayConvention> paymentConvention =
-                                                                 boost::none);
+        VanillaSwap(Type type,
+                    Real nominal,
+                    Schedule fixedSchedule,
+                    Rate fixedRate,
+                    DayCounter fixedDayCount,
+                    Schedule floatSchedule,
+                    ext::shared_ptr<IborIndex> iborIndex,
+                    Spread spread,
+                    DayCounter floatingDayCount,
+                    ext::optional<BusinessDayConvention> paymentConvention = ext::nullopt,
+                    ext::optional<bool> useIndexedCoupons = ext::nullopt);
         //! \name Inspectors
         //@{
         Type type() const;
@@ -111,10 +109,11 @@ namespace QuantLib {
         Spread fairSpread() const;
         //@}
         // other
-        void setupArguments(PricingEngine::arguments* args) const;
-        void fetchResults(const PricingEngine::results*) const;
+        void setupArguments(PricingEngine::arguments* args) const override;
+        void fetchResults(const PricingEngine::results*) const override;
+
       private:
-        void setupExpired() const;
+        void setupExpired() const override;
         Type type_;
         Real nominal_;
         Schedule fixedSchedule_;
@@ -134,9 +133,8 @@ namespace QuantLib {
     //! %Arguments for simple swap calculation
     class VanillaSwap::arguments : public Swap::arguments {
       public:
-        arguments() : type(Receiver),
-                      nominal(Null<Real>()) {}
-        Type type;
+        arguments() : nominal(Null<Real>()) {}
+        Type type = Receiver;
         Real nominal;
 
         std::vector<Date> fixedResetDates;
@@ -149,7 +147,7 @@ namespace QuantLib {
         std::vector<Real> fixedCoupons;
         std::vector<Spread> floatingSpreads;
         std::vector<Real> floatingCoupons;
-        void validate() const;
+        void validate() const override;
     };
 
     //! %Results from simple swap calculation
@@ -157,7 +155,7 @@ namespace QuantLib {
       public:
         Rate fairRate;
         Spread fairSpread;
-        void reset();
+        void reset() override;
     };
 
     class VanillaSwap::engine : public GenericEngine<VanillaSwap::arguments,
@@ -166,7 +164,7 @@ namespace QuantLib {
 
     // inline definitions
 
-    inline VanillaSwap::Type VanillaSwap::type() const {
+    inline Swap::Type VanillaSwap::type() const {
         return type_;
     }
 
@@ -213,9 +211,6 @@ namespace QuantLib {
     inline const Leg& VanillaSwap::floatingLeg() const {
         return legs_[1];
     }
-
-    std::ostream& operator<<(std::ostream& out,
-                             VanillaSwap::Type t);
 
 }
 

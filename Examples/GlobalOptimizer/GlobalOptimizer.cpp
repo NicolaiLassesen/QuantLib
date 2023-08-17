@@ -18,30 +18,21 @@
 */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
-#include <ql/math/optimization/differentialevolution.hpp>
-#include <ql/math/optimization/simulatedannealing.hpp>
 #include <ql/experimental/math/fireflyalgorithm.hpp>
 #include <ql/experimental/math/hybridsimulatedannealing.hpp>
 #include <ql/experimental/math/particleswarmoptimization.hpp>
 #include <ql/functional.hpp>
-
-
-#include <boost/tuple/tuple.hpp>
-#include <iostream>
+#include <ql/math/optimization/differentialevolution.hpp>
+#include <ql/math/optimization/simulatedannealing.hpp>
+#include <ql/tuple.hpp>
 #include <iomanip>
+#include <iostream>
+#include <utility>
 
 using namespace QuantLib;
-
-#if defined(QL_ENABLE_SESSIONS)
-namespace QuantLib {
-
-    Integer sessionId() { return 0; }
-
-}
-#endif
 
 unsigned long seed = 127;
 
@@ -57,16 +48,16 @@ Real ackley(const Array& x) {
     //Minimum is found at 0
     Real p1 = 0.0, p2 = 0.0;
 
-    for (Size i = 0; i < x.size(); i++) {
-        p1 += x[i] * x[i];
-        p2 += std::cos(M_TWOPI*x[i]);
+    for (Real i : x) {
+        p1 += i * i;
+        p2 += std::cos(M_TWOPI * i);
     }
     p1 = -0.2*std::sqrt(0.5*p1);
     p2 *= 0.5;
     return M_E + 20.0 - 20.0*std::exp(p1)-std::exp(p2);
 }
 
-Disposable<Array> ackleyValues(const Array& x) {
+Array ackleyValues(const Array& x) {
     Array y(x.size());
     for (Size i = 0; i < x.size(); i++) {
         Real p1 = x[i] * x[i];
@@ -82,7 +73,7 @@ Real sphere(const Array& x) {
     return DotProduct(x, x);
 }
 
-Disposable<Array> sphereValues(const Array& x) {
+Array sphereValues(const Array& x) {
     Array y(x.size());
     for (Size i = 0; i < x.size(); i++) {
         y[i] = x[i]*x[i];
@@ -104,14 +95,14 @@ Real rosenbrock(const Array& x) {
 Real easom(const Array& x) {
     //Minimum is found at f(\pi, \pi, ...)
     Real p1 = 1.0, p2 = 0.0;
-    for (Size i = 0; i < x.size(); i++) {
-        p1 *= std::cos(x[i]);
-        p2 += (x[i] - M_PI)*(x[i] - M_PI);
+    for (Real i : x) {
+        p1 *= std::cos(i);
+        p2 += (i - M_PI) * (i - M_PI);
     }
     return -p1*std::exp(-p2);
 }
 
-Disposable<Array> easomValues(const Array& x) {
+Array easomValues(const Array& x) {
     Array y(x.size());
     for (Size i = 0; i < x.size(); i++) {
         Real p1 = std::cos(x[i]);
@@ -142,18 +133,19 @@ Real printFunction(Problem& p, const Array& x) {
 class TestFunction : public CostFunction {
 public:
     typedef ext::function<Real(const Array&)> RealFunc;
-    typedef ext::function<Disposable<Array>(const Array&)> ArrayFunc;
-    TestFunction(const RealFunc & f, const ArrayFunc & fs = ArrayFunc()) : f_(f), fs_(fs) {}
-    TestFunction(Real(*f)(const Array&), Disposable<Array>(*fs)(const Array&) = NULL) : f_(f), fs_(fs) {}
-    virtual ~TestFunction(){}
-    virtual Real value(const Array& x) const {
-        return f_(x);
-    }
-    virtual Disposable<Array> values(const Array& x) const {
+    typedef ext::function<Array(const Array&)> ArrayFunc;
+    explicit TestFunction(RealFunc f, ArrayFunc fs = ArrayFunc())
+    : f_(std::move(f)), fs_(std::move(fs)) {}
+    explicit TestFunction(Real (*f)(const Array&), Array (*fs)(const Array&) = nullptr)
+    : f_(f), fs_(fs) {}
+    ~TestFunction() override = default;
+    Real value(const Array& x) const override { return f_(x); }
+    Array values(const Array& x) const override {
         if(!fs_)
             throw std::runtime_error("Invalid function");
         return fs_(x);
     }
+
 private:
     RealFunc f_;
     ArrayFunc fs_;
@@ -162,7 +154,7 @@ private:
 int test(OptimizationMethod& method, CostFunction& f, const EndCriteria& endCriteria,
           const Array& start, const Constraint& constraint = Constraint(),
           const Array& optimum = Array()) {
-    QL_REQUIRE(start.size() > 0, "Input size needs to be at least 1");
+    QL_REQUIRE(!start.empty(), "Input size needs to be at least 1");
     std::cout << "Starting point: ";
     Constraint c;
     if (!constraint.empty())
@@ -177,9 +169,9 @@ int test(OptimizationMethod& method, CostFunction& f, const EndCriteria& endCrit
         std::cout << "Global optimum: ";
         Real optimVal = printFunction(p, optimum);
         if(std::abs(optimVal) < 1e-13)
-            return std::abs(val-optimVal) < 1e-6;
+            return static_cast<int>(std::abs(val - optimVal) < 1e-6);
         else
-            return std::abs((val-optimVal)/optimVal) < 1e-6;
+            return static_cast<int>(std::abs((val - optimVal) / optimVal) < 1e-6);
     }
     return 1;
 }
@@ -198,10 +190,8 @@ void testFirefly() {
     Size agents = 150;
     Real vola = 1.5;
     Real intense = 1.0;
-    ext::shared_ptr<FireflyAlgorithm::Intensity> intensity =
-        ext::make_shared<ExponentialIntensity>(10.0, 1e-8, intense);
-    ext::shared_ptr<FireflyAlgorithm::RandomWalk> randomWalk =
-        ext::make_shared<LevyFlightWalk>(vola, 0.5, 1.0, seed);
+    auto intensity = ext::make_shared<ExponentialIntensity>(10.0, 1e-8, intense);
+    auto randomWalk = ext::make_shared<LevyFlightWalk>(vola, 0.5, 1.0, seed);
     std::cout << "Function eggholder, Agents: " << agents
             << ", Vola: " << vola << ", Intensity: " << intense << std::endl;
     TestFunction f(eggholder);
@@ -251,12 +241,18 @@ void testSimulatedAnnealing(Size dimension, Size maxSteps, Size staticSteps){
     std::cout << "================================================================" << std::endl;
 }
 
-void testGaussianSA(Size dimension, Size maxSteps, Size staticSteps, Real initialTemp,
+void testGaussianSA(Size dimension,
+                    Size maxSteps,
+                    Size staticSteps,
+                    Real initialTemp,
                     Real finalTemp,
-                    GaussianSimulatedAnnealing::ResetScheme resetScheme = GaussianSimulatedAnnealing::ResetToBestPoint,
+                    GaussianSimulatedAnnealing::ResetScheme resetScheme =
+                        GaussianSimulatedAnnealing::ResetToBestPoint,
                     Size resetSteps = 150,
-                    GaussianSimulatedAnnealing::LocalOptimizeScheme optimizeScheme = GaussianSimulatedAnnealing::EveryBestPoint,
-                    ext::shared_ptr<OptimizationMethod> localOptimizer = ext::make_shared<LevenbergMarquardt>()){
+                    GaussianSimulatedAnnealing::LocalOptimizeScheme optimizeScheme =
+                        GaussianSimulatedAnnealing::EveryBestPoint,
+                    const ext::shared_ptr<OptimizationMethod>& localOptimizer =
+                        ext::make_shared<LevenbergMarquardt>()) {
 
     /*The ackley function has a large amount of local minima, but the
      * structure is symmetric, so if one could simply just ignore the
@@ -307,10 +303,8 @@ void testPSO(Size n){
     std::cout << "Function: rosenbrock, Dimensions: " << n
             << ", Agents: " << agents << ", K-neighbors: " << kneighbor
             << ", Threshold: " << threshold << std::endl;
-    ext::shared_ptr<ParticleSwarmOptimization::Topology> topology =
-        ext::make_shared<KNeighbors>(kneighbor);
-    ext::shared_ptr<ParticleSwarmOptimization::Inertia> inertia =
-        ext::make_shared<LevyFlightInertia>(1.5, threshold, seed);
+    auto topology = ext::make_shared<KNeighbors>(kneighbor);
+    auto inertia = ext::make_shared<LevyFlightInertia>(1.5, threshold, seed);
     TestFunction f(rosenbrock);
     ParticleSwarmOptimization pso(agents, topology, inertia, 2.05, 2.05, seed);
     EndCriteria ec(10000, 1000, 1.0e-8, 1.0e-8, 1.0e-8);

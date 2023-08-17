@@ -23,14 +23,17 @@ Copyright (C) 2015 Thema Consulting SA
 #include <ql/time/calendars/target.hpp>
 #include <ql/time/daycounters/actual360.hpp>
 #include <ql/quotes/simplequote.hpp>
-#include <ql/experimental/barrieroption/doublebarrieroption.hpp>
-#include <ql/experimental/barrieroption/analyticdoublebarrierbinaryengine.hpp>
+#include <ql/instruments/doublebarrieroption.hpp>
+#include <ql/models/equity/hestonmodel.hpp>
+#include <ql/pricingengines/barrier/analyticdoublebarrierbinaryengine.hpp>
+#include <ql/pricingengines/barrier/fdhestondoublebarrierengine.hpp>
 #include <ql/experimental/barrieroption/binomialdoublebarrierengine.hpp>
 #include <ql/utilities/dataformatters.hpp>
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
+#undef REPORT_FAILURE
 #define REPORT_FAILURE(greekName, payoff, exercise, barrierType, barrier_lo, \
                         barrier_hi, s, q, r, today, v, expected, calculated, \
                         error, tolerance) \
@@ -182,23 +185,22 @@ void DoubleBinaryOptionTest::testHaugValues() {
     ext::shared_ptr<SimpleQuote> vol(new SimpleQuote(0.25));
     ext::shared_ptr<BlackVolTermStructure> volTS = flatVol(today, vol, dc);
 
-    for (Size i=0; i<LENGTH(values); i++) {
+    for (auto& value : values) {
 
-        ext::shared_ptr<StrikedTypePayoff> payoff(new CashOrNothingPayoff(
-            Option::Call, 0, values[i].cash));
+        ext::shared_ptr<StrikedTypePayoff> payoff(
+            new CashOrNothingPayoff(Option::Call, 0, value.cash));
 
-        Date exDate = today + Integer(values[i].t*360+0.5);
+        Date exDate = today + timeToDays(value.t);
         ext::shared_ptr<Exercise> exercise;
-        if (values[i].barrierType == DoubleBarrier::KIKO ||
-            values[i].barrierType == DoubleBarrier::KOKI)
+        if (value.barrierType == DoubleBarrier::KIKO || value.barrierType == DoubleBarrier::KOKI)
             exercise.reset(new AmericanExercise(today, exDate));
         else
             exercise.reset(new EuropeanExercise(exDate));
 
-        spot ->setValue(values[i].s);
-        qRate->setValue(values[i].q);
-        rRate->setValue(values[i].r);
-        vol  ->setValue(values[i].v);
+        spot->setValue(value.s);
+        qRate->setValue(value.q);
+        rRate->setValue(value.r);
+        vol->setValue(value.v);
 
         ext::shared_ptr<BlackScholesMertonProcess> stochProcess(new
             BlackScholesMertonProcess(Handle<Quote>(spot),
@@ -209,22 +211,17 @@ void DoubleBinaryOptionTest::testHaugValues() {
         // checking with analytic engine
         ext::shared_ptr<PricingEngine> engine(
                              new AnalyticDoubleBarrierBinaryEngine(stochProcess));
-        DoubleBarrierOption opt(values[i].barrierType, 
-                          values[i].barrier_lo, 
-                          values[i].barrier_hi, 
-                          0,
-                          payoff,
-                          exercise);
+        DoubleBarrierOption opt(value.barrierType, value.barrier_lo, value.barrier_hi, 0, payoff,
+                                exercise);
         opt.setPricingEngine(engine);
 
         Real calculated = opt.NPV();
-        Real expected = values[i].result;
+        Real expected = value.result;
         Real error = std::fabs(calculated-expected);
-        if (error > values[i].tol) {
-            REPORT_FAILURE("value", payoff, exercise, values[i].barrierType, 
-                           values[i].barrier_lo, values[i].barrier_hi, values[i].s,
-                           values[i].q, values[i].r, today, values[i].v,
-                           values[i].result, calculated, error, values[i].tol);
+        if (error > value.tol) {
+            REPORT_FAILURE("value", payoff, exercise, value.barrierType, value.barrier_lo,
+                           value.barrier_hi, value.s, value.q, value.r, today, value.v,
+                           value.result, calculated, error, value.tol);
         }
 
         Size steps = 500;
@@ -235,22 +232,101 @@ void DoubleBinaryOptionTest::testHaugValues() {
                                                                  steps));
         opt.setPricingEngine(engine);
         calculated = opt.NPV();
-        expected = values[i].result;
+        expected = value.result;
         error = std::fabs(calculated-expected);
         double tol = 0.22;
         if (error>tol) {
-            REPORT_FAILURE("Binomial value", payoff, exercise, values[i].barrierType, 
-                           values[i].barrier_lo, values[i].barrier_hi, values[i].s,
-                           values[i].q, values[i].r, today, values[i].v,
-                           values[i].result, calculated, error, tol);
+            REPORT_FAILURE("Binomial value", payoff, exercise, value.barrierType, value.barrier_lo,
+                           value.barrier_hi, value.s, value.q, value.r, today, value.v,
+                           value.result, calculated, error, tol);
         }
-
     }
 } 
 
+void DoubleBinaryOptionTest::testPdeDoubleBarrierWithAnalytical() {
+    BOOST_TEST_MESSAGE("Testing cash-or-nothing double barrier options "
+            "against PDE Heston version...");
+
+    const DayCounter dc = Actual360();
+    const Date todaysDate(30, Jan, 2023);
+    const Date maturityDate = todaysDate + Period(1, Years);
+    Settings::instance().evaluationDate() = todaysDate;
+
+    const Handle<Quote> spot(ext::make_shared<SimpleQuote>(100));
+    const Rate r = 0.075;
+    const Rate q = 0.03;
+    const Volatility vol = 0.4;
+
+    const Real kappa =   1.0;
+    const Real theta =   vol*vol;
+    const Real rho   =   0.0;
+    const Real sigma =   1e-4;
+    const Real v0    =   theta;
+
+    const Handle<YieldTermStructure> rTS(flatRate(r, dc));
+    const Handle<YieldTermStructure> qTS(flatRate(q, dc));
+
+    const ext::shared_ptr<HestonModel> hestonModel =
+        ext::make_shared<HestonModel>(
+            ext::make_shared<HestonProcess>(
+                rTS, qTS, spot, v0, kappa, theta, sigma, rho));
+
+    const ext::shared_ptr<BlackScholesMertonProcess> bsProcess =
+        ext::make_shared<BlackScholesMertonProcess>(
+            Handle<Quote>(spot),
+            Handle<YieldTermStructure>(qTS),
+            Handle<YieldTermStructure>(rTS),
+            Handle<BlackVolTermStructure>(flatVol(todaysDate, vol, dc)));
+
+    const ext::shared_ptr<PricingEngine> analyticEngine =
+        ext::make_shared<AnalyticDoubleBarrierBinaryEngine>(bsProcess);
+
+    const ext::shared_ptr<PricingEngine> fdEngine =
+        ext::make_shared<FdHestonDoubleBarrierEngine>(
+            hestonModel, 201, 101, 3, 0,
+            FdmSchemeDesc::Hundsdorfer());
+
+    const ext::shared_ptr<Exercise> europeanExercise(
+        ext::make_shared<EuropeanExercise>(maturityDate));
+
+    const Real tol = 5e-3;
+    for (Size i=5; i < 18; i+=2) {
+        const Real dist = 10.0+5.0*i;
+
+        const Real barrier_lo = std::max(spot->value() - dist, 1e-2);
+        const Real barrier_hi = spot->value() + dist;
+        DoubleBarrierOption doubleBarrier(
+            DoubleBarrier::KnockOut, barrier_lo, barrier_hi, 0.0,
+            ext::make_shared<CashOrNothingPayoff>(
+                Option::Call, 0.0, 1.0),
+            europeanExercise);
+
+        doubleBarrier.setPricingEngine(analyticEngine);
+        const Real bsNPV = doubleBarrier.NPV();
+
+        doubleBarrier.setPricingEngine(fdEngine);
+        const Real slvNPV = doubleBarrier.NPV();
+
+        const Real diff = slvNPV - bsNPV;
+        if (std::fabs(diff) > tol) {
+            BOOST_ERROR(
+                "Failed to reproduce price difference for a Double-No-Touch "
+                << "option between Black-Scholes and "
+                << "Heston Stochastic Local Volatility model"
+                << "\n Barrier Low        : " << barrier_lo
+                << "\n Barrier High       : " << barrier_hi
+                << "\n Black-Scholes Price: " << bsNPV
+                << "\n Heston SLV Price   : " << slvNPV
+                << "\n diff               : " << diff
+                << "\n tolerance          : " << tol);
+        }
+    }
+}
+
 
 test_suite* DoubleBinaryOptionTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("DoubleBinary");
+    auto* suite = BOOST_TEST_SUITE("DoubleBinary");
     suite->add(QUANTLIB_TEST_CASE(&DoubleBinaryOptionTest::testHaugValues));
+    suite->add(QUANTLIB_TEST_CASE(&DoubleBinaryOptionTest::testPdeDoubleBarrierWithAnalytical));
     return suite;
 }

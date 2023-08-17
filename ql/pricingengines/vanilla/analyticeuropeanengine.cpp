@@ -18,22 +18,23 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/vanilla/analyticeuropeanengine.hpp>
-#include <ql/pricingengines/blackcalculator.hpp>
 #include <ql/exercise.hpp>
+#include <ql/pricingengines/blackcalculator.hpp>
+#include <ql/pricingengines/vanilla/analyticeuropeanengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     AnalyticEuropeanEngine::AnalyticEuropeanEngine(
-             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process)
-    : process_(process) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process)
+    : process_(std::move(process)) {
         registerWith(process_);
     }
 
     AnalyticEuropeanEngine::AnalyticEuropeanEngine(
-             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
-             const Handle<YieldTermStructure>& discountCurve)
-    : process_(process), discountCurve_(discountCurve) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+        Handle<YieldTermStructure> discountCurve)
+    : process_(std::move(process)), discountCurve_(std::move(discountCurve)) {
         registerWith(process_);
         registerWith(discountCurve_);
     }
@@ -102,6 +103,15 @@ namespace QuantLib {
 
         results_.strikeSensitivity  = black.strikeSensitivity();
         results_.itmCashProbability = black.itmCashProbability();
+
+        Real tte = process_->blackVolatility()->timeFromReference(arguments_.exercise->lastDate());
+        results_.additionalResults["spot"] = spot;
+        results_.additionalResults["dividendDiscount"] = dividendDiscount;
+        results_.additionalResults["riskFreeDiscount"] = riskFreeDiscountForFwdEstimation;
+        results_.additionalResults["forward"] = forwardPrice;
+        results_.additionalResults["strike"] = payoff->strike();
+        results_.additionalResults["volatility"] = Real(std::sqrt(variance / tte));
+        results_.additionalResults["timeToExpiry"] = tte;
     }
 
 }

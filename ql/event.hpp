@@ -27,7 +27,7 @@
 
 #include <ql/time/date.hpp>
 #include <ql/patterns/observable.hpp>
-#include <boost/optional.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
@@ -37,9 +37,9 @@ namespace QuantLib {
     /*! This class acts as a base class for the actual
         event implementations.
     */
-    class Event : public Observable {
+    class Event : public virtual Observable {
       public:
-        virtual ~Event() {}
+        ~Event() override = default;
         //! \name Event interface
         //@{
         //! returns the date at which the event occurs
@@ -52,7 +52,7 @@ namespace QuantLib {
         */
         virtual bool hasOccurred(
                     const Date& refDate = Date(),
-                    boost::optional<bool> includeRefDate = boost::none) const;
+                    ext::optional<bool> includeRefDate = ext::nullopt) const;
         //@}
 
         //! \name Visitability
@@ -69,7 +69,8 @@ namespace QuantLib {
         class simple_event : public Event {
           public:
             explicit simple_event(const Date& date) : date_(date) {}
-            Date date() const { return date_; }
+            Date date() const override { return date_; }
+
           private:
             Date date_;
         };

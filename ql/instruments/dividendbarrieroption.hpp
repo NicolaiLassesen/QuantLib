@@ -33,8 +33,11 @@
 namespace QuantLib {
 
     //! Single-asset barrier option with discrete dividends
-    /*! \ingroup instruments */
-    class DividendBarrierOption : public BarrierOption {
+    /*! \deprecated Use BarrierOption instead and pass the dividends
+                    to the desired engine.
+                    Deprecated in version 1.30.
+    */
+    class QL_DEPRECATED DividendBarrierOption : public BarrierOption {
       public:
         class arguments;
         class engine;
@@ -47,24 +50,28 @@ namespace QuantLib {
                         const std::vector<Date>& dividendDates,
                         const std::vector<Real>& dividends);
       protected:
-        void setupArguments(PricingEngine::arguments*) const;
+        void setupArguments(PricingEngine::arguments*) const override;
+
       private:
         DividendSchedule cashFlow_;
     };
 
 
-    //! %Arguments for dividend barrier option calculation
     class DividendBarrierOption::arguments : public BarrierOption::arguments {
       public:
         DividendSchedule cashFlow;
-        arguments() {}
-        void validate() const;
+        arguments() = default;
+        void validate() const override;
     };
 
-    //! %Dividend-barrier-option %engine base class
+    QL_DEPRECATED_DISABLE_WARNING
     class DividendBarrierOption::engine
         : public GenericEngine<DividendBarrierOption::arguments,
-                               DividendBarrierOption::results> {};
+                               DividendBarrierOption::results> {
+      protected:
+        bool triggered(Real underlying) const;
+    };
+    QL_DEPRECATED_ENABLE_WARNING
 
 }
 

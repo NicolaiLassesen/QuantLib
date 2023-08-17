@@ -17,31 +17,34 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
  */
 
+#include <ql/cashflows/inflationcouponpricer.hpp>
 #include <ql/cashflows/yoyinflationcoupon.hpp>
 #include <ql/indexes/inflationindex.hpp>
-#include <ql/cashflows/inflationcouponpricer.hpp>
 #include <ql/termstructures/yieldtermstructure.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    InflationCoupon::InflationCoupon(
-                                    const Date& paymentDate,
-                                    Real nominal,
-                                    const Date& startDate,
-                                    const Date& endDate,
-                                    Natural fixingDays,
-                                    const ext::shared_ptr<InflationIndex>& index,
-                                    const Period& observationLag,
-                                    const DayCounter& dayCounter,
-                                    const Date& refPeriodStart,
-                                    const Date& refPeriodEnd,
-                                    const Date& exCouponDate
-                                    )
-    : Coupon(paymentDate, nominal,
-             startDate, endDate, refPeriodStart,refPeriodEnd,exCouponDate),  // ref period is before lag
-      index_(index), observationLag_(observationLag), dayCounter_(dayCounter),
-      fixingDays_(fixingDays)
-    {
+    InflationCoupon::InflationCoupon(const Date& paymentDate,
+                                     Real nominal,
+                                     const Date& startDate,
+                                     const Date& endDate,
+                                     Natural fixingDays,
+                                     ext::shared_ptr<InflationIndex> index,
+                                     const Period& observationLag,
+                                     DayCounter dayCounter,
+                                     const Date& refPeriodStart,
+                                     const Date& refPeriodEnd,
+                                     const Date& exCouponDate)
+    : Coupon(paymentDate,
+             nominal,
+             startDate,
+             endDate,
+             refPeriodStart,
+             refPeriodEnd,
+             exCouponDate), // ref period is before lag
+      index_(std::move(index)), observationLag_(observationLag), dayCounter_(std::move(dayCounter)),
+      fixingDays_(fixingDays) {
         registerWith(index_);
         registerWith(Settings::instance().evaluationDate());
     }
@@ -49,21 +52,26 @@ namespace QuantLib {
 
     void InflationCoupon::setPricer(const ext::shared_ptr<InflationCouponPricer>& pricer) {
         QL_REQUIRE(checkPricerImpl(pricer),"pricer given is wrong type");
-        if (pricer_)
+        if (pricer_ != nullptr)
             unregisterWith(pricer_);
         pricer_ = pricer;
-        if (pricer_)
+        if (pricer_ != nullptr)
             registerWith(pricer_);
         update();
     }
 
 
     Rate InflationCoupon::rate() const {
+        calculate();
+        return rate_;
+    }
+
+    void InflationCoupon::performCalculations() const {
         QL_REQUIRE(pricer_, "pricer not set");
         // we know it is the correct type because checkPricerImpl checks on setting
         // in general pricer_ will be a derived class, as will *this on calling
         pricer_->initialize(*this);
-        return pricer_->swapletRate();
+        rate_ = pricer_->swapletRate();
     }
 
 
@@ -71,11 +79,7 @@ namespace QuantLib {
         if (d <= accrualStartDate_ || d > paymentDate_) {
             return 0.0;
         } else {
-            return nominal() * rate() *
-            dayCounter().yearFraction(accrualStartDate_,
-                                      std::min(d, accrualEndDate_),
-                                      refPeriodStart_,
-                                      refPeriodEnd_);
+            return nominal() * rate() * accruedPeriod(d);
         }
     }
 

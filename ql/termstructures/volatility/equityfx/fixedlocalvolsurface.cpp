@@ -1,7 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2015 Johannes Goettker-Schnetmann
+ Copyright (C) 2015 Johannes Göttker-Schnetmann
  Copyright (C) 2015 Klaus Spanderen
 
  This file is part of QuantLib, a free-software/open-source library
@@ -18,41 +18,26 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/time/calendars/nullcalendar.hpp>
 #include <ql/math/interpolations/linearinterpolation.hpp>
 #include <ql/termstructures/volatility/equityfx/fixedlocalvolsurface.hpp>
+#include <ql/time/calendars/nullcalendar.hpp>
+#include <ql/time/daycounters/yearfractiontodate.hpp>
+#include <utility>
 
 
 namespace QuantLib {
 
-    namespace {
-        Date time2Date(const Date referenceDate, const DayCounter& dc, Time t) {
-            t-=1e4*QL_EPSILON; // add a small buffer for rounding errors
-            Date d(referenceDate);
-            while(dc.yearFraction(referenceDate, d+=Period(1, Years)) < t);
-            d-=Period(1, Years);
-            while(dc.yearFraction(referenceDate, d+=Period(1, Months)) < t);
-            d-=Period(1, Months);
-            while(dc.yearFraction(referenceDate, d++) < t);
-            return d;
-        }
-    }
-
-    FixedLocalVolSurface::FixedLocalVolSurface(
-        const Date& referenceDate,
-        const std::vector<Date>& dates,
-        const std::vector<Real>& strikes,
-        const ext::shared_ptr<Matrix>& localVolMatrix,
-        const DayCounter& dayCounter,
-        Extrapolation lowerExtrapolation,
-        Extrapolation upperExtrapolation)
-    : LocalVolTermStructure(
-          referenceDate, NullCalendar(), Following, dayCounter),
-      maxDate_(dates.back()),
-      localVolMatrix_(localVolMatrix),
-      strikes_(dates.size(),ext::make_shared<std::vector<Real> >(strikes)),
-      localVolInterpol_(dates.size()),
-      lowerExtrapolation_(lowerExtrapolation),
+    FixedLocalVolSurface::FixedLocalVolSurface(const Date& referenceDate,
+                                               const std::vector<Date>& dates,
+                                               const std::vector<Real>& strikes,
+                                               ext::shared_ptr<Matrix> localVolMatrix,
+                                               const DayCounter& dayCounter,
+                                               Extrapolation lowerExtrapolation,
+                                               Extrapolation upperExtrapolation)
+    : LocalVolTermStructure(referenceDate, NullCalendar(), Following, dayCounter),
+      maxDate_(dates.back()), localVolMatrix_(std::move(localVolMatrix)),
+      strikes_(dates.size(), ext::make_shared<std::vector<Real> >(strikes)),
+      localVolInterpol_(dates.size()), lowerExtrapolation_(lowerExtrapolation),
       upperExtrapolation_(upperExtrapolation) {
 
         QL_REQUIRE(dates[0]>=referenceDate,
@@ -66,22 +51,18 @@ namespace QuantLib {
         setInterpolation<Linear>();
     }
 
-    FixedLocalVolSurface::FixedLocalVolSurface(
-        const Date& referenceDate,
-        const std::vector<Time>& times,
-        const std::vector<Real>& strikes,
-        const ext::shared_ptr<Matrix>& localVolMatrix,
-        const DayCounter& dayCounter,
-        Extrapolation lowerExtrapolation,
-        Extrapolation upperExtrapolation)
-    : LocalVolTermStructure(
-          referenceDate, NullCalendar(), Following, dayCounter),
-      maxDate_(time2Date(referenceDate, dayCounter, times.back())),
-      times_(times),
-      localVolMatrix_(localVolMatrix),
-      strikes_(times.size(),ext::make_shared<std::vector<Real> >(strikes)),
-      localVolInterpol_(times.size()),
-      lowerExtrapolation_(lowerExtrapolation),
+    FixedLocalVolSurface::FixedLocalVolSurface(const Date& referenceDate,
+                                               const std::vector<Time>& times,
+                                               const std::vector<Real>& strikes,
+                                               ext::shared_ptr<Matrix> localVolMatrix,
+                                               const DayCounter& dayCounter,
+                                               Extrapolation lowerExtrapolation,
+                                               Extrapolation upperExtrapolation)
+    : LocalVolTermStructure(referenceDate, NullCalendar(), Following, dayCounter),
+      maxDate_(yearFractionToDate(dayCounter, referenceDate, times.back())), times_(times),
+      localVolMatrix_(std::move(localVolMatrix)),
+      strikes_(times.size(), ext::make_shared<std::vector<Real> >(strikes)),
+      localVolInterpol_(times.size()), lowerExtrapolation_(lowerExtrapolation),
       upperExtrapolation_(upperExtrapolation) {
 
         QL_REQUIRE(times_[0]>=0, "cannot have times[0] < 0");
@@ -93,19 +74,15 @@ namespace QuantLib {
     FixedLocalVolSurface::FixedLocalVolSurface(
         const Date& referenceDate,
         const std::vector<Time>& times,
-        const std::vector<ext::shared_ptr<std::vector<Real> > > & strikes,
-        const ext::shared_ptr<Matrix>& localVolMatrix,
+        const std::vector<ext::shared_ptr<std::vector<Real> > >& strikes,
+        ext::shared_ptr<Matrix> localVolMatrix,
         const DayCounter& dayCounter,
         Extrapolation lowerExtrapolation,
         Extrapolation upperExtrapolation)
-    : LocalVolTermStructure(
-              referenceDate, NullCalendar(), Following, dayCounter),
-      maxDate_(time2Date(referenceDate, dayCounter, times.back())),
-      times_(times),
-      localVolMatrix_(localVolMatrix),
-      strikes_(strikes),
-      localVolInterpol_(times.size()),
-      lowerExtrapolation_(lowerExtrapolation),
+    : LocalVolTermStructure(referenceDate, NullCalendar(), Following, dayCounter),
+      maxDate_(yearFractionToDate(dayCounter, referenceDate, times.back())), times_(times),
+      localVolMatrix_(std::move(localVolMatrix)), strikes_(strikes),
+      localVolInterpol_(times.size()), lowerExtrapolation_(lowerExtrapolation),
       upperExtrapolation_(upperExtrapolation) {
 
         QL_REQUIRE(times_[0]>=0, "cannot have times[0] < 0");
@@ -119,8 +96,8 @@ namespace QuantLib {
     void FixedLocalVolSurface::checkSurface() {
         QL_REQUIRE(times_.size()==localVolMatrix_->columns(),
                    "mismatch between date vector and vol matrix colums");
-        for (Size i=0; i < strikes_.size(); ++i) {
-            QL_REQUIRE(strikes_[i]->size() == localVolMatrix_->rows(),
+        for (const auto& strike : strikes_) {
+            QL_REQUIRE(strike->size() == localVolMatrix_->rows(),
                        "mismatch between money-strike vector and "
                        "vol matrix rows");
         }
@@ -130,10 +107,9 @@ namespace QuantLib {
                        "dates must be sorted unique!");
         }
 
-        for (Size i=0; i < strikes_.size(); ++i)
-            for (Size j=1; j<strikes_[i]->size(); j++) {
-                QL_REQUIRE((*strikes_[i])[j]>=(*strikes_[i])[j-1],
-                           "strikes must be sorted");
+        for (const auto& strike : strikes_)
+            for (Size j = 1; j < strike->size(); j++) {
+                QL_REQUIRE((*strike)[j] >= (*strike)[j - 1], "strikes must be sorted");
             }
     }
 

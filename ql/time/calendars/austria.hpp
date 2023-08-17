@@ -18,7 +18,7 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-/*! \file austrian.hpp
+/*! \file austria.hpp
     \brief Austrian calendars
 */
 
@@ -71,20 +71,20 @@ namespace QuantLib {
     */
     class Austria : public Calendar {
       private:
-        class SettlementImpl : public Calendar::WesternImpl {
+        class SettlementImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Austrian settlement"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Austrian settlement"; }
+            bool isBusinessDay(const Date&) const override;
         };
-        class ExchangeImpl : public Calendar::WesternImpl {
+        class ExchangeImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Vienna stock exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Vienna stock exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         //! Austrian calendars
         enum Market { Settlement,     //!< generic settlement calendar
-                      Exchange        //!< Paris stock-exchange calendar
+                      Exchange        //!< Vienna stock-exchange calendar
         };
         explicit Austria(Market market = Settlement);
     };

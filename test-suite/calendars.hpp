@@ -30,23 +30,24 @@ class CalendarTest {
   public:
     static void testRussia();
     static void testBrazil();
-//    static void testItalySettlement();
     static void testItalyExchange();
 
     static void testUKSettlement();
     static void testUKExchange();
     static void testUKMetals();
 
-//    static void testGermanySettlement();
     static void testGermanyFrankfurt();
     static void testGermanyXetra();
     static void testGermanyEurex();
 
     static void testTARGET();
 
+    static void testDenmark();
+
     static void testUSSettlement();
     static void testUSGovernmentBondMarket();
     static void testUSNewYorkStockExchange();
+    static void testSOFR();
 
     static void testSouthKoreanSettlement();
     static void testKoreaStockExchange();
@@ -62,6 +63,7 @@ class CalendarTest {
     static void testBusinessDaysBetween();
 
     static void testIntradayAddHolidays();
+    static void testDayLists();
 
     static boost::unit_test_framework::test_suite* suite();
 };

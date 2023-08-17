@@ -34,12 +34,7 @@ using namespace boost::unit_test_framework;
 
 using std::sqrt;
 
-namespace {
-
-    Integer timeToDays(Time t) {
-        // FLOATING_POINT_EXCEPTION
-        return Integer(t*360+0.5);
-    }
+namespace black_delta_calculator_test {
 
     struct DeltaData {
         Option::Type ot;
@@ -70,6 +65,8 @@ namespace {
 void BlackDeltaCalculatorTest::testDeltaValues(){
 
     BOOST_TEST_MESSAGE("Testing delta calculator values...");
+
+    using namespace black_delta_calculator_test;
 
     DeltaData values[] = {
         // Values taken from parallel implementation in R
@@ -154,11 +151,11 @@ void BlackDeltaCalculatorTest::testDeltaPriceConsistency() {
 
     BOOST_TEST_MESSAGE("Testing premium-adjusted delta price consistency...");
 
+    using namespace black_delta_calculator_test;
+
     // This function tests for price consistencies with the standard
     // Black Scholes calculator, since premium adjusted deltas can be calculated
     // from spot deltas by adding/subtracting the premium.
-
-    SavedSettings backup;
 
     // actually, value and tol won't be needed for testing
     EuropeanOptionData values[] = {
@@ -229,25 +226,24 @@ void BlackDeltaCalculatorTest::testDeltaPriceConsistency() {
 
     Real tolerance=1.0e-10;
 
-    for(Size i=0; i<LENGTH(values);++i){
+    for (auto& value : values) {
 
-        payoff = ext::shared_ptr<StrikedTypePayoff>(
-                    new PlainVanillaPayoff(values[i].type, values[i].strike));
-        exDate = today + timeToDays(values[i].t);
+        payoff =
+            ext::shared_ptr<StrikedTypePayoff>(new PlainVanillaPayoff(value.type, value.strike));
+        exDate = today + timeToDays(value.t);
         exercise = ext::shared_ptr<Exercise>(new EuropeanExercise(exDate));
 
-        spotQuote   ->setValue(values[i].s);
-        volQuote    ->setValue(values[i].v);
-        rQuote      ->setValue(values[i].r);
-        qQuote      ->setValue(values[i].q);
+        spotQuote->setValue(value.s);
+        volQuote->setValue(value.v);
+        rQuote->setValue(value.r);
+        qQuote->setValue(value.q);
 
         discDom =rTS->discount(exDate);
         discFor =qTS->discount(exDate);
         implVol =sqrt(volTS->blackVariance(exDate,0.0));
 
-        BlackDeltaCalculator myCalc(values[i].type, DeltaVolQuote::PaSpot,
-                                    spotQuote->value(),
-                                    discDom, discFor, implVol);
+        BlackDeltaCalculator myCalc(value.type, DeltaVolQuote::PaSpot, spotQuote->value(), discDom,
+                                    discFor, implVol);
 
         stochProcess=ext::make_shared<BlackScholesMertonProcess> (spotHandle,
                                       Handle<YieldTermStructure>(qTS),
@@ -260,7 +256,7 @@ void BlackDeltaCalculatorTest::testDeltaPriceConsistency() {
         EuropeanOption option(payoff, exercise);
         option.setPricingEngine(engine);
 
-        calculatedVal=myCalc.deltaFromStrike(values[i].strike);
+        calculatedVal = myCalc.deltaFromStrike(value.strike);
 
         Real delta = 0.0;
         if (implVol > 0.0) {
@@ -287,7 +283,7 @@ void BlackDeltaCalculatorTest::testDeltaPriceConsistency() {
 
         myCalc.setDeltaType(DeltaVolQuote::PaFwd);
 
-        calculatedVal=myCalc.deltaFromStrike(values[i].strike);
+        calculatedVal = myCalc.deltaFromStrike(value.strike);
         expectedVal=expectedVal/discFor; // Premium adjusted Fwd Delta is PA spot without discount
         error=std::fabs(expectedVal-calculatedVal);
 
@@ -302,7 +298,7 @@ void BlackDeltaCalculatorTest::testDeltaPriceConsistency() {
         // Test consistency with BlackScholes Calculator for Spot Delta
         myCalc.setDeltaType(DeltaVolQuote::Spot);
 
-        calculatedVal=myCalc.deltaFromStrike(values[i].strike);
+        calculatedVal = myCalc.deltaFromStrike(value.strike);
         expectedVal=delta;
         error=std::fabs(calculatedVal-expectedVal);
 
@@ -320,9 +316,9 @@ void BlackDeltaCalculatorTest::testPutCallParity(){
 
     BOOST_TEST_MESSAGE("Testing put-call parity for deltas...");
 
-    // Test for put call parity between put and call deltas.
+    using namespace black_delta_calculator_test;
 
-    SavedSettings backup;
+    // Test for put call parity between put and call deltas.
 
     /* The data below are from
        "Option pricing formulas", E.G. Haug, McGraw-Hill 1998
@@ -416,17 +412,17 @@ void BlackDeltaCalculatorTest::testPutCallParity(){
 
     Real tolerance=1.0e-10;
 
-    for(Size i=0; i<LENGTH(values);++i){
+    for (auto& value : values) {
 
-        payoff = ext::shared_ptr<StrikedTypePayoff>(new
-                            PlainVanillaPayoff(Option::Call, values[i].strike));
-        exDate = today + timeToDays(values[i].t);
+        payoff =
+            ext::shared_ptr<StrikedTypePayoff>(new PlainVanillaPayoff(Option::Call, value.strike));
+        exDate = today + timeToDays(value.t);
         exercise = ext::shared_ptr<Exercise>(new EuropeanExercise(exDate));
 
-        spotQuote->setValue(values[i].s);
-        volQuote->setValue(values[i].v);
-        rQuote->setValue(values[i].r);
-        qQuote->setValue(values[i].q);
+        spotQuote->setValue(value.s);
+        volQuote->setValue(value.v);
+        rQuote->setValue(value.r);
+        qQuote->setValue(value.q);
         discDom=rTS->discount(exDate);
         discFor=qTS->discount(exDate);
         implVol=sqrt(volTS->blackVariance(exDate,0.0));
@@ -436,9 +432,11 @@ void BlackDeltaCalculatorTest::testPutCallParity(){
                                     spotQuote->value(),
                                     discDom, discFor, implVol);
 
-        deltaCall=myCalc.deltaFromStrike(values[i].strike);;
+        deltaCall = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Put);
-        deltaPut=myCalc.deltaFromStrike(values[i].strike);;
+        deltaPut = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Call);
 
         expectedDiff=discFor;
@@ -454,9 +452,11 @@ void BlackDeltaCalculatorTest::testPutCallParity(){
         }
         myCalc.setDeltaType(DeltaVolQuote::Fwd);
 
-        deltaCall=myCalc.deltaFromStrike(values[i].strike);;
+        deltaCall = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Put);
-        deltaPut=myCalc.deltaFromStrike(values[i].strike);;
+        deltaPut = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Call);
 
         expectedDiff=1.0;
@@ -473,12 +473,14 @@ void BlackDeltaCalculatorTest::testPutCallParity(){
 
         myCalc.setDeltaType(DeltaVolQuote::PaSpot);
 
-        deltaCall=myCalc.deltaFromStrike(values[i].strike);;
+        deltaCall = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Put);
-        deltaPut=myCalc.deltaFromStrike(values[i].strike);;
+        deltaPut = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Call);
 
-        expectedDiff=discFor*values[i].strike/forward;
+        expectedDiff = discFor * value.strike / forward;
         calculatedDiff=deltaCall-deltaPut;
         error=std::fabs(expectedDiff-calculatedDiff);
 
@@ -493,12 +495,14 @@ void BlackDeltaCalculatorTest::testPutCallParity(){
 
         myCalc.setDeltaType(DeltaVolQuote::PaFwd);
 
-        deltaCall=myCalc.deltaFromStrike(values[i].strike);;
+        deltaCall = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Put);
-        deltaPut=myCalc.deltaFromStrike(values[i].strike);;
+        deltaPut = myCalc.deltaFromStrike(value.strike);
+        ;
         myCalc.setOptionType(Option::Call);
 
-        expectedDiff = values[i].strike/forward;
+        expectedDiff = value.strike / forward;
         calculatedDiff=deltaCall-deltaPut;
         error=std::fabs(expectedDiff-calculatedDiff);
 
@@ -517,7 +521,7 @@ void BlackDeltaCalculatorTest::testAtmCalcs(){
 
     BOOST_TEST_MESSAGE("Testing delta-neutral ATM quotations...");
 
-    SavedSettings backup;
+    using namespace black_delta_calculator_test;
 
     DeltaData values[] = {
         {Option::Call, DeltaVolQuote::Spot,     1.421, 0.997306, 0.992266,          0.1180654,  1.608080, 0.15},
@@ -679,7 +683,7 @@ void BlackDeltaCalculatorTest::testAtmCalcs(){
 
 
 test_suite* BlackDeltaCalculatorTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Black delta calculator tests");
+    auto* suite = BOOST_TEST_SUITE("Black delta calculator tests");
     suite->add(QUANTLIB_TEST_CASE(&BlackDeltaCalculatorTest::testDeltaValues));
     suite->add(QUANTLIB_TEST_CASE(
                        &BlackDeltaCalculatorTest::testDeltaPriceConsistency));

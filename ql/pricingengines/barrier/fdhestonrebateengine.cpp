@@ -19,33 +19,59 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/barrier/fdhestonrebateengine.hpp>
-#include <ql/methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp>
-#include <ql/methods/finitedifferences/solvers/fdmbackwardsolver.hpp>
+#include <ql/methods/finitedifferences/meshers/fdmblackscholesmesher.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmhestonvariancemesher.hpp>
+#include <ql/methods/finitedifferences/meshers/fdmmeshercomposite.hpp>
+#include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
+#include <ql/methods/finitedifferences/solvers/fdmbackwardsolver.hpp>
+#include <ql/methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp>
 #include <ql/methods/finitedifferences/utilities/fdmdirichletboundary.hpp>
 #include <ql/methods/finitedifferences/utilities/fdminnervaluecalculator.hpp>
-#include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
-#include <ql/methods/finitedifferences/meshers/fdmmeshercomposite.hpp>
-#include <ql/methods/finitedifferences/meshers/fdmblackscholesmesher.hpp>
+#include <ql/pricingengines/barrier/fdhestonrebateengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    FdHestonRebateEngine::FdHestonRebateEngine(
-            const ext::shared_ptr<HestonModel>& model,
-            Size tGrid, Size xGrid, Size vGrid, Size dampingSteps,
-            const FdmSchemeDesc& schemeDesc,
-            const ext::shared_ptr<LocalVolTermStructure>& leverageFct)
+    QL_DEPRECATED_DISABLE_WARNING
+
+    FdHestonRebateEngine::FdHestonRebateEngine(const ext::shared_ptr<HestonModel>& model,
+                                               Size tGrid,
+                                               Size xGrid,
+                                               Size vGrid,
+                                               Size dampingSteps,
+                                               const FdmSchemeDesc& schemeDesc,
+                                               ext::shared_ptr<LocalVolTermStructure> leverageFct,
+                                               const Real mixingFactor)
     : GenericModelEngine<HestonModel,
-                        DividendBarrierOption::arguments,
-                        DividendBarrierOption::results>(model),
-      tGrid_(tGrid), xGrid_(xGrid), vGrid_(vGrid), 
-      dampingSteps_(dampingSteps),
-      schemeDesc_(schemeDesc),
-      leverageFct_(leverageFct) {
-    }
+                         DividendBarrierOption::arguments,
+                         DividendBarrierOption::results>(model),
+      explicitDividends_(false), tGrid_(tGrid), xGrid_(xGrid), vGrid_(vGrid), dampingSteps_(dampingSteps),
+      schemeDesc_(schemeDesc), leverageFct_(std::move(leverageFct)), mixingFactor_(mixingFactor) {}
+
+    FdHestonRebateEngine::FdHestonRebateEngine(const ext::shared_ptr<HestonModel>& model,
+                                               DividendSchedule dividends,
+                                               Size tGrid,
+                                               Size xGrid,
+                                               Size vGrid,
+                                               Size dampingSteps,
+                                               const FdmSchemeDesc& schemeDesc,
+                                               ext::shared_ptr<LocalVolTermStructure> leverageFct,
+                                               const Real mixingFactor)
+    : GenericModelEngine<HestonModel,
+                         DividendBarrierOption::arguments,
+                         DividendBarrierOption::results>(model),
+      dividends_(std::move(dividends)), explicitDividends_(true),
+      tGrid_(tGrid), xGrid_(xGrid), vGrid_(vGrid), dampingSteps_(dampingSteps),
+      schemeDesc_(schemeDesc), leverageFct_(std::move(leverageFct)), mixingFactor_(mixingFactor) {}
+
+    QL_DEPRECATED_ENABLE_WARNING
 
     void FdHestonRebateEngine::calculate() const {
+
+        // dividends will eventually be moved out of arguments, but for now we need the switch
+        QL_DEPRECATED_DISABLE_WARNING
+        const DividendSchedule& dividendSchedule = explicitDividends_ ? dividends_ : arguments_.cashFlow;
+        QL_DEPRECATED_ENABLE_WARNING
 
         // 1. Mesher
         const ext::shared_ptr<HestonProcess>& process = model_->process();
@@ -57,7 +83,7 @@ namespace QuantLib {
 
         const ext::shared_ptr<FdmHestonLocalVolatilityVarianceMesher> vMesher
             = ext::make_shared<FdmHestonLocalVolatilityVarianceMesher>(
-                  vGrid_, process, leverageFct_, maturity, tGridAvgSteps);
+                  vGrid_, process, leverageFct_, maturity, tGridAvgSteps, 0.0001, mixingFactor_);
 
         // 1.2 The equity mesher
         const ext::shared_ptr<StrikedTypePayoff> payoff =
@@ -83,7 +109,7 @@ namespace QuantLib {
                 maturity, payoff->strike(),
                 xMin, xMax, 0.0001, 1.5,
                 std::make_pair(Null<Real>(), Null<Real>()),
-                arguments_.cashFlow));
+                dividendSchedule));
 
         const ext::shared_ptr<FdmMesher> mesher (
             new FdmMesherComposite(equityMesher, vMesher));
@@ -100,7 +126,7 @@ namespace QuantLib {
 
         const ext::shared_ptr<FdmStepConditionComposite> conditions = 
              FdmStepConditionComposite::vanillaComposite(
-                                 arguments_.cashFlow, arguments_.exercise, 
+                                 dividendSchedule, arguments_.exercise, 
                                  mesher, calculator, 
                                  process->riskFreeRate()->referenceDate(),
                                  process->riskFreeRate()->dayCounter());
@@ -128,7 +154,7 @@ namespace QuantLib {
 
         ext::shared_ptr<FdmHestonSolver> solver(new FdmHestonSolver(
                     Handle<HestonProcess>(process), solverDesc, schemeDesc_,
-                    Handle<FdmQuantoHelper>(), leverageFct_));
+                    Handle<FdmQuantoHelper>(), leverageFct_, mixingFactor_));
 
         const Real spot = process->s0()->value();
         results_.value = solver->valueAt(spot, process->v0());

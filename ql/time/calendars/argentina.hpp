@@ -54,10 +54,10 @@ namespace QuantLib {
     */
     class Argentina : public Calendar {
       private:
-        class MervalImpl : public Calendar::WesternImpl {
+        class MervalImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Buenos Aires stock exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Buenos Aires stock exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         enum Market { Merval   //!< Buenos Aires stock exchange calendar

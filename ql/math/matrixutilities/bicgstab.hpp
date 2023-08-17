@@ -38,11 +38,10 @@ namespace QuantLib {
 
     class BiCGstab  {
       public:
-        typedef ext::function<Disposable<Array>(const Array&)> MatrixMult;
-        
-        BiCGstab(const MatrixMult& A, Size maxIter, Real relTol,
-                 const MatrixMult& preConditioner = MatrixMult());
-        
+        typedef ext::function<Array(const Array&)> MatrixMult;
+
+        BiCGstab(MatrixMult A, Size maxIter, Real relTol, MatrixMult preConditioner = MatrixMult());
+
         BiCGStabResult solve(const Array& b, const Array& x0 = Array()) const;
         
       protected:

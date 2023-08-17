@@ -17,18 +17,19 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/experimental/exoticoptions/analytictwoassetbarrierengine.hpp>
 #include <ql/exercise.hpp>
-#include <ql/math/distributions/normaldistribution.hpp>
+#include <ql/experimental/exoticoptions/analytictwoassetbarrierengine.hpp>
 #include <ql/math/distributions/bivariatenormaldistribution.hpp>
+#include <ql/math/distributions/normaldistribution.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     AnalyticTwoAssetBarrierEngine::AnalyticTwoAssetBarrierEngine(
-            const ext::shared_ptr<GeneralizedBlackScholesProcess>& process1,
-            const ext::shared_ptr<GeneralizedBlackScholesProcess>& process2,
-            const Handle<Quote>& rho)
-    : process1_(process1), process2_(process2), rho_(rho) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process1,
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process2,
+        Handle<Quote> rho)
+    : process1_(std::move(process1)), process2_(std::move(process2)), rho_(std::move(rho)) {
         registerWith(process1_);
         registerWith(process2_);
         registerWith(rho_);
@@ -42,7 +43,7 @@ namespace QuantLib {
 
         Real spot2 = process2_->x0();
         // option is triggered by S2
-        QL_REQUIRE(spot2 >= 0.0, "negative or null underlying given");
+        QL_REQUIRE(spot2 > 0.0, "negative or null underlying given");
         QL_REQUIRE(!triggered(spot2), "barrier touched");
 
         Barrier::Type barrierType = arguments_.barrierType;

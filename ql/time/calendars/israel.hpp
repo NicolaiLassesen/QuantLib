@@ -60,11 +60,11 @@ namespace QuantLib {
     */
     class Israel : public Calendar {
       private:
-        class TelAvivImpl : public Calendar::Impl {
+        class TelAvivImpl final : public Calendar::Impl {
           public:
-            std::string name() const { return "Tel Aviv stock exchange"; }
-            bool isWeekend(Weekday) const;
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Tel Aviv stock exchange"; }
+            bool isWeekend(Weekday) const override;
+            bool isBusinessDay(const Date&) const override;
         };
       public:
           enum Market { Settlement,     //!< generic settlement calendar

@@ -42,13 +42,13 @@
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-namespace {
+namespace bates_model_test {
 
     Real getCalibrationError(
                std::vector<ext::shared_ptr<BlackCalibrationHelper> > & options) {
         Real sse = 0;
-        for (Size i = 0; i < options.size(); ++i) {
-            const Real diff = options[i]->calibrationError()*100.0;
+        for (auto& option : options) {
+            const Real diff = option->calibrationError() * 100.0;
             sse += diff*diff;
         }
         return sse;
@@ -61,12 +61,10 @@ void BatesModelTest::testAnalyticVsBlack() {
 
     BOOST_TEST_MESSAGE("Testing analytic Bates engine against Black formula...");
 
-    SavedSettings backup;
-
     Date settlementDate = Date::todaysDate();
     Settings::instance().evaluationDate() = settlementDate;
 
-    DayCounter dayCounter = ActualActual();
+    DayCounter dayCounter = ActualActual(ActualActual::ISDA);
     Date exerciseDate = settlementDate + 6*Months;
 
     ext::shared_ptr<StrikedTypePayoff> payoff(
@@ -174,12 +172,10 @@ void BatesModelTest::testAnalyticAndMcVsJumpDiffusion() {
 
     BOOST_TEST_MESSAGE("Testing analytic Bates engine against Merton-76 engine...");
 
-    SavedSettings backup;
-
     Date settlementDate = Date::todaysDate();
     Settings::instance().evaluationDate() = settlementDate;
 
-    DayCounter dayCounter = ActualActual();
+    DayCounter dayCounter = ActualActual(ActualActual::ISDA);
 
     ext::shared_ptr<StrikedTypePayoff> payoff(
                                      new PlainVanillaPayoff(Option::Put, 95));
@@ -189,7 +185,6 @@ void BatesModelTest::testAnalyticAndMcVsJumpDiffusion() {
     Handle<Quote> s0(ext::shared_ptr<Quote>(new SimpleQuote(100)));
 
     Real v0 = 0.0433;
-    // FLOATING_POINT_EXCEPTION
     ext::shared_ptr<SimpleQuote> vol(new SimpleQuote(std::sqrt(v0)));
     ext::shared_ptr<BlackVolTermStructure> volTS =
         flatVol(settlementDate, vol, dayCounter);
@@ -270,7 +265,7 @@ void BatesModelTest::testAnalyticAndMcVsJumpDiffusion() {
     }
 }
 
-namespace {
+namespace bates_model_test {
     struct HestonModelData {
         const char* const name;
         Real v0;
@@ -301,34 +296,28 @@ void BatesModelTest::testAnalyticVsMCPricing() {
     BOOST_TEST_MESSAGE("Testing analytic Bates engine against Monte-Carlo "
                        "engine...");
 
-    SavedSettings backup;
+    using namespace bates_model_test;
 
     Date settlementDate(30, March, 2007);
     Settings::instance().evaluationDate() = settlementDate;
 
-    DayCounter dayCounter = ActualActual();
+    DayCounter dayCounter = ActualActual(ActualActual::ISDA);
     Date exerciseDate(30, March, 2012);
 
     ext::shared_ptr<StrikedTypePayoff> payoff(
                                    new PlainVanillaPayoff(Option::Put, 100));
     ext::shared_ptr<Exercise> exercise(new EuropeanExercise(exerciseDate));
 
-    
-    for (Size i=0; i < LENGTH(hestonModels); ++i) { 
-        Handle<YieldTermStructure> riskFreeTS(flatRate(hestonModels[i].r, 
-                                                       dayCounter));
-        Handle<YieldTermStructure> dividendTS(flatRate(hestonModels[i].q, 
-                                                       dayCounter));
+
+    for (auto& hestonModel : hestonModels) {
+        Handle<YieldTermStructure> riskFreeTS(flatRate(hestonModel.r, dayCounter));
+        Handle<YieldTermStructure> dividendTS(flatRate(hestonModel.q, dayCounter));
         Handle<Quote> s0(ext::shared_ptr<Quote>(new SimpleQuote(100)));
 
         ext::shared_ptr<BatesProcess> batesProcess(new BatesProcess(
-                       riskFreeTS, dividendTS, s0,
-                       hestonModels[i].v0, 
-                       hestonModels[i].kappa, 
-                       hestonModels[i].theta, 
-                       hestonModels[i].sigma, 
-                       hestonModels[i].rho, 2.0, -0.2, 0.1));
-    
+            riskFreeTS, dividendTS, s0, hestonModel.v0, hestonModel.kappa, hestonModel.theta,
+            hestonModel.sigma, hestonModel.rho, 2.0, -0.2, 0.1));
+
         const Real mcTolerance = 0.5;
         ext::shared_ptr<PricingEngine> mcEngine =
                 MakeMCEuropeanHestonEngine<PseudoRandom>(batesProcess)
@@ -359,22 +348,18 @@ void BatesModelTest::testAnalyticVsMCPricing() {
         const Real mcError = std::fabs(calculated - expected);
         if (mcError > 3*mcTolerance) {
             BOOST_FAIL("failed to reproduce Monte-Carlo price for BatesEngine"
-                       << "\n    parameter:  " << hestonModels[i].name
-                       << std::fixed << std::setprecision(8)
-                       << "\n    calculated: " << calculated
-                       << "\n    expected:   " << expected
-                       << "\n    error: "      << mcError
+                       << "\n    parameter:  " << hestonModel.name << std::fixed
+                       << std::setprecision(8) << "\n    calculated: " << calculated
+                       << "\n    expected:   " << expected << "\n    error: " << mcError
                        << "\n    tolerance:  " << mcTolerance);
         }
         const Real fdTolerance = 0.2;
         const Real fdError = std::fabs(fdCalculated - expected);
         if (fdError > fdTolerance) {
             BOOST_FAIL("failed to reproduce PIDE price for BatesEngine"
-                       << "\n    parameter:  " << hestonModels[i].name
-                       << std::fixed << std::setprecision(8)
-                       << "\n    calculated: " << fdCalculated
-                       << "\n    expected:   " << expected
-                       << "\n    error: "      << fdError
+                       << "\n    parameter:  " << hestonModel.name << std::fixed
+                       << std::setprecision(8) << "\n    calculated: " << fdCalculated
+                       << "\n    expected:   " << expected << "\n    error: " << fdError
                        << "\n    tolerance:  " << fdTolerance);
         }
     }
@@ -390,7 +375,7 @@ void BatesModelTest::testDAXCalibration() {
     BOOST_TEST_MESSAGE(
              "Testing Bates model calibration using DAX volatility data...");
 
-    SavedSettings backup;
+    using namespace bates_model_test;
 
     Date settlementDate(5, July, 2002);
     Settings::instance().evaluationDate() = settlementDate;
@@ -409,7 +394,6 @@ void BatesModelTest::testDAXCalibration() {
         dates.push_back(settlementDate + t[i]);
         rates.push_back(r[i]);
     }
-     // FLOATING_POINT_EXCEPTION
     Handle<YieldTermStructure> riskFreeTS(
                        ext::shared_ptr<YieldTermStructure>(
                                     new ZeroCurve(dates, rates, dayCounter)));
@@ -492,9 +476,9 @@ void BatesModelTest::testDAXCalibration() {
     //check pricing of derived engines
     std::vector<ext::shared_ptr<PricingEngine> > pricingEngines;
     
-    process = ext::shared_ptr<BatesProcess>(
-        new BatesProcess(riskFreeTS, dividendTS, s0, v0, 
-                         kappa, theta, sigma, rho, 1.0, -0.1, 0.1));
+    process = ext::make_shared<BatesProcess>(
+        riskFreeTS, dividendTS, s0, v0, 
+                         kappa, theta, sigma, rho, 1.0, -0.1, 0.1);
 
     pricingEngines.push_back(ext::shared_ptr<PricingEngine>(
         new BatesDetJumpEngine(
@@ -520,8 +504,8 @@ void BatesModelTest::testDAXCalibration() {
 
     Real tolerance=0.1;
     for (Size i = 0; i < pricingEngines.size(); ++i) {
-        for (Size j = 0; j < options.size(); ++j) {
-            options[j]->setPricingEngine(pricingEngines[i]);
+        for (auto& option : options) {
+            option->setPricingEngine(pricingEngines[i]);
         }
 
         Real calculated = std::fabs(getCalibrationError(options));
@@ -533,14 +517,10 @@ void BatesModelTest::testDAXCalibration() {
 }
 
 test_suite* BatesModelTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Bates model tests");
+    auto* suite = BOOST_TEST_SUITE("Bates model tests");
     suite->add(QUANTLIB_TEST_CASE(&BatesModelTest::testAnalyticVsBlack));
-    suite->add(QUANTLIB_TEST_CASE(
-                        &BatesModelTest::testAnalyticAndMcVsJumpDiffusion));
+    suite->add(QUANTLIB_TEST_CASE(&BatesModelTest::testAnalyticAndMcVsJumpDiffusion));
     suite->add(QUANTLIB_TEST_CASE(&BatesModelTest::testAnalyticVsMCPricing));
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(&BatesModelTest::testDAXCalibration));
     return suite;
 }
-
-

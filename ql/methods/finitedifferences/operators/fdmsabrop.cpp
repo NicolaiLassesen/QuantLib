@@ -21,32 +21,32 @@
     \brief FDM operator for the SABR model
 */
 
-#include <ql/termstructures/yieldtermstructure.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmmesher.hpp>
-#include <ql/methods/finitedifferences/operators/fdmsabrop.hpp>
 #include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
+#include <ql/methods/finitedifferences/operators/fdmsabrop.hpp>
 #include <ql/methods/finitedifferences/operators/firstderivativeop.hpp>
 #include <ql/methods/finitedifferences/operators/secondderivativeop.hpp>
 #include <ql/methods/finitedifferences/operators/secondordermixedderivativeop.hpp>
+#include <ql/termstructures/yieldtermstructure.hpp>
+#include <utility>
 
 namespace QuantLib {
-    FdmSabrOp::FdmSabrOp(
-        const ext::shared_ptr<FdmMesher>& mesher,
-        const ext::shared_ptr<YieldTermStructure>& rTS,
-        Real f0, Real alpha, Real beta, Real nu, Real rho)
-    : rTS_  (rTS),
-      dffMap_(SecondDerivativeOp(0, mesher).
-          mult(0.5 * Exp(2.0*mesher->locations(1))
-               * Pow(mesher->locations(0), 2.0*beta))),
-      dxMap_(FirstDerivativeOp(1, mesher).
-          mult(Array(mesher->layout()->size(), -0.5*nu*nu))),
-      dxxMap_(SecondDerivativeOp(1, mesher).
-          mult(Array(mesher->layout()->size(),  0.5*nu*nu))),
-      correlationMap_(SecondOrderMixedDerivativeOp(0, 1, mesher).
-          mult(rho * nu * Exp(mesher->locations(1))
-               * Pow(mesher->locations(0), beta))),
-      mapF_(0, mesher),
-      mapA_(1, mesher) { }
+    FdmSabrOp::FdmSabrOp(const ext::shared_ptr<FdmMesher>& mesher,
+                         ext::shared_ptr<YieldTermStructure> rTS,
+                         Real f0,
+                         Real alpha,
+                         Real beta,
+                         Real nu,
+                         Real rho)
+    : rTS_(std::move(rTS)),
+      dffMap_(SecondDerivativeOp(0, mesher).mult(0.5 * Exp(2.0 * mesher->locations(1)) *
+                                                 Pow(mesher->locations(0), 2.0 * beta))),
+      dxMap_(FirstDerivativeOp(1, mesher).mult(Array(mesher->layout()->size(), -0.5 * nu * nu))),
+      dxxMap_(SecondDerivativeOp(1, mesher).mult(Array(mesher->layout()->size(), 0.5 * nu * nu))),
+      correlationMap_(
+          SecondOrderMixedDerivativeOp(0, 1, mesher)
+              .mult(rho * nu * Exp(mesher->locations(1)) * Pow(mesher->locations(0), beta))),
+      mapF_(0, mesher), mapA_(1, mesher) {}
 
     void FdmSabrOp::setTime(Time t1, Time t2) {
         const Rate r = rTS_->forwardRate(t1, t2, Continuous).rate();
@@ -59,15 +59,15 @@ namespace QuantLib {
         return 2;
     }
 
-    Disposable<Array> FdmSabrOp::apply(const Array& u) const {
+    Array FdmSabrOp::apply(const Array& u) const {
         return mapF_.apply(u) + mapA_.apply(u) + correlationMap_.apply(u);
     }
 
-    Disposable<Array> FdmSabrOp::apply_mixed(const Array& r) const {
+    Array FdmSabrOp::apply_mixed(const Array& r) const {
         return correlationMap_.apply(r);
     }
 
-    Disposable<Array> FdmSabrOp::apply_direction(
+    Array FdmSabrOp::apply_direction(
         Size direction, const Array& r) const {
         if (direction == 0)
             return mapF_.apply(r);
@@ -77,7 +77,7 @@ namespace QuantLib {
             QL_FAIL("direction too large");
     }
 
-    Disposable<Array> FdmSabrOp::solve_splitting(
+    Array FdmSabrOp::solve_splitting(
        Size direction, const Array& r, Real a) const {
 
         if (direction == 0) {
@@ -90,21 +90,18 @@ namespace QuantLib {
             QL_FAIL("direction too large");
     }
 
-    Disposable<Array> FdmSabrOp::preconditioner(
+    Array FdmSabrOp::preconditioner(
         const Array& r, Real dt) const {
 
         return solve_splitting(1, solve_splitting(0, r, dt), dt) ;
     }
 
-#if !defined(QL_NO_UBLAS_SUPPORT)
-    Disposable<std::vector<SparseMatrix> > FdmSabrOp::toMatrixDecomp() const {
-        std::vector<SparseMatrix> retVal(3);
-
-        retVal[0] = mapA_.toMatrix();
-        retVal[1] = mapF_.toMatrix();
-        retVal[2] = correlationMap_.toMatrix();
-
-        return retVal;
+    std::vector<SparseMatrix> FdmSabrOp::toMatrixDecomp() const {
+        return {
+            mapA_.toMatrix(),
+            mapF_.toMatrix(),
+            correlationMap_.toMatrix()
+        };
     }
-#endif
+
 }

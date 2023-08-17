@@ -22,9 +22,9 @@
 #include <ql/exercise.hpp>
 #include <ql/math/functional.hpp>
 #include <ql/pricingengines/vanilla/analyticcevengine.hpp>
-
-#include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/distributions/non_central_chi_squared.hpp>
+#include <boost/math/special_functions/gamma.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -36,7 +36,7 @@ namespace QuantLib {
       x0_(X(f0)) { }
 
     Real CEVCalculator::X(Real f) const {
-        return std::pow(f, 2.0*(1.0-beta_))/square<Real>()(alpha_*(1.0-beta_));
+        return std::pow(f, 2.0*(1.0-beta_))/squared(alpha_*(1.0-beta_));
     }
 
     Real CEVCalculator::value(
@@ -83,11 +83,12 @@ namespace QuantLib {
 
     }
 
-    AnalyticCEVEngine::AnalyticCEVEngine(
-        Real f0, Real alpha, Real beta,
-        const Handle<YieldTermStructure>& discountCurve)
-    : calculator_(ext::make_shared<CEVCalculator>(f0, alpha,beta)),
-      discountCurve_(discountCurve) {
+    AnalyticCEVEngine::AnalyticCEVEngine(Real f0,
+                                         Real alpha,
+                                         Real beta,
+                                         Handle<YieldTermStructure> discountCurve)
+    : calculator_(ext::make_shared<CEVCalculator>(f0, alpha, beta)),
+      discountCurve_(std::move(discountCurve)) {
         registerWith(discountCurve_);
     }
 

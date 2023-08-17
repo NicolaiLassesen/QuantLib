@@ -25,8 +25,8 @@
 #include <ql/userconfig.hpp>
 
 // first things first
-#if (_MSC_VER < 1600)
-#  error "versions of Visual C++ prior to VC++10 (2010) are no longer supported"
+#if (_MSC_VER < 1900)
+#  error "versions of Visual C++ prior to VC++ 2015 are no longer supported"
 #endif
 
 /*******************************************
@@ -48,9 +48,6 @@
 // conditionally work around compiler glitches
 #define QL_PATCH_MSVC
 
-// prevent auto-link of Boost libs such as serialization
-#define BOOST_ALL_NO_LIB
-
 // Compilation on the x64 platform throws a lot of warnings assigning
 // QuantLib::Size == size_t (64 bit) to QuantLib::Integer == int (32
 // bit under x64 Windows). We disable this warning until a better
@@ -58,6 +55,12 @@
 #ifdef _M_X64
 #pragma warning(disable : 4267)
 #endif
+
+
+/* suppress C++ code analysis warning C26812 in VS 2019:
+ * Prefer 'enum class' over 'enum' (Enum.3). */
+#pragma warning(disable : 26812)
+
 
 #ifndef _CPPRTTI
 #   error Enable Run-Time Type Info (Property Pages | C/C++ | Language)

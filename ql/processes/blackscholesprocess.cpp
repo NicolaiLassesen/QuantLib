@@ -21,27 +21,28 @@
 */
 
 #include <ql/processes/blackscholesprocess.hpp>
-#include <ql/termstructures/volatility/equityfx/localvolsurface.hpp>
-#include <ql/termstructures/volatility/equityfx/localvolcurve.hpp>
 #include <ql/termstructures/volatility/equityfx/localconstantvol.hpp>
+#include <ql/termstructures/volatility/equityfx/localvolcurve.hpp>
+#include <ql/termstructures/volatility/equityfx/localvolsurface.hpp>
 #include <ql/termstructures/yield/flatforward.hpp>
 #include <ql/time/calendars/nullcalendar.hpp>
 #include <ql/time/daycounters/actual365fixed.hpp>
+#include <utility>
 
 
 namespace QuantLib {
 
     GeneralizedBlackScholesProcess::GeneralizedBlackScholesProcess(
-        const Handle<Quote>& x0,
-        const Handle<YieldTermStructure>& dividendTS,
-        const Handle<YieldTermStructure>& riskFreeTS,
-        const Handle<BlackVolTermStructure>& blackVolTS,
-        const Handle<LocalVolTermStructure>& localVolTS)
-    : StochasticProcess1D(ext::make_shared<EulerDiscretization>()),
-      x0_(x0), riskFreeRate_(riskFreeTS),
-      dividendYield_(dividendTS), blackVolatility_(blackVolTS),
-      externalLocalVolTS_(localVolTS),
-      forceDiscretization_(false), hasExternalLocalVol_(true), updated_(false) {
+        Handle<Quote> x0,
+        Handle<YieldTermStructure> dividendTS,
+        Handle<YieldTermStructure> riskFreeTS,
+        Handle<BlackVolTermStructure> blackVolTS,
+        Handle<LocalVolTermStructure> localVolTS)
+    : StochasticProcess1D(ext::make_shared<EulerDiscretization>()), x0_(std::move(x0)),
+      riskFreeRate_(std::move(riskFreeTS)), dividendYield_(std::move(dividendTS)),
+      blackVolatility_(std::move(blackVolTS)), externalLocalVolTS_(std::move(localVolTS)),
+      forceDiscretization_(false), hasExternalLocalVol_(true), updated_(false),
+      isStrikeIndependent_(false) {
         registerWith(x0_);
         registerWith(riskFreeRate_);
         registerWith(dividendYield_);
@@ -50,16 +51,16 @@ namespace QuantLib {
     }
 
     GeneralizedBlackScholesProcess::GeneralizedBlackScholesProcess(
-             const Handle<Quote>& x0,
-             const Handle<YieldTermStructure>& dividendTS,
-             const Handle<YieldTermStructure>& riskFreeTS,
-             const Handle<BlackVolTermStructure>& blackVolTS,
-             const ext::shared_ptr<discretization>& disc,
-             bool forceDiscretization)
-    : StochasticProcess1D(disc), x0_(x0), riskFreeRate_(riskFreeTS),
-      dividendYield_(dividendTS), blackVolatility_(blackVolTS),
-      forceDiscretization_(forceDiscretization),
-      hasExternalLocalVol_(false), updated_(false) {
+        Handle<Quote> x0,
+        Handle<YieldTermStructure> dividendTS,
+        Handle<YieldTermStructure> riskFreeTS,
+        Handle<BlackVolTermStructure> blackVolTS,
+        const ext::shared_ptr<discretization>& disc,
+        bool forceDiscretization)
+    : StochasticProcess1D(disc), x0_(std::move(x0)), riskFreeRate_(std::move(riskFreeTS)),
+      dividendYield_(std::move(dividendTS)), blackVolatility_(std::move(blackVolTS)),
+      forceDiscretization_(forceDiscretization), hasExternalLocalVol_(false), updated_(false),
+      isStrikeIndependent_(false) {
         registerWith(x0_);
         registerWith(riskFreeRate_);
         registerWith(dividendYield_);
@@ -75,8 +76,8 @@ namespace QuantLib {
         // we could be more anticipatory if we know the right dt
         // for which the drift will be used
         Time t1 = t + 0.0001;
-        return riskFreeRate_->forwardRate(t,t1,Continuous,NoFrequency,true)
-             - dividendYield_->forwardRate(t,t1,Continuous,NoFrequency,true)
+        return riskFreeRate_->forwardRate(t,t1,Continuous,NoFrequency,true).rate()
+             - dividendYield_->forwardRate(t,t1,Continuous,NoFrequency,true).rate()
              - 0.5 * sigma * sigma;
     }
 
@@ -96,9 +97,9 @@ namespace QuantLib {
             // exact value for curves
             return x0 *
                 std::exp(dt * (riskFreeRate_->forwardRate(t0, t0 + dt, Continuous,
-                                                          NoFrequency, true) -
+                                                          NoFrequency, true).rate() -
                              dividendYield_->forwardRate(
-                                 t0, t0 + dt, Continuous, NoFrequency, true)));
+                                 t0, t0 + dt, Continuous, NoFrequency, true).rate()));
         } else {
             QL_FAIL("not implemented");
         }
@@ -134,9 +135,9 @@ namespace QuantLib {
             // exact value for curves
             Real var = variance(t0, x0, dt);
             Real drift = (riskFreeRate_->forwardRate(t0, t0 + dt, Continuous,
-                                                     NoFrequency, true) -
+                                                     NoFrequency, true).rate() -
                           dividendYield_->forwardRate(t0, t0 + dt, Continuous,
-                                                      NoFrequency, true)) *
+                                                      NoFrequency, true).rate()) *
                              dt -
                          0.5 * var;
             return apply(x0, std::sqrt(var) * dw + drift);
@@ -187,7 +188,7 @@ namespace QuantLib {
             ext::shared_ptr<BlackConstantVol> constVol =
                 ext::dynamic_pointer_cast<BlackConstantVol>(
                                                           *blackVolatility());
-            if (constVol) {
+            if (constVol != nullptr) {
                 // ok, the local vol is constant too.
                 localVolatility_.linkTo(ext::make_shared<LocalConstantVol>(
                     constVol->referenceDate(),
@@ -201,7 +202,7 @@ namespace QuantLib {
             ext::shared_ptr<BlackVarianceCurve> volCurve =
                 ext::dynamic_pointer_cast<BlackVarianceCurve>(
                                                           *blackVolatility());
-            if (volCurve) {
+            if (volCurve != nullptr) {
                 // ok, we can use the optimized algorithm
                 localVolatility_.linkTo(ext::make_shared<LocalVolCurve>(
                     Handle<BlackVarianceCurve>(volCurve)));

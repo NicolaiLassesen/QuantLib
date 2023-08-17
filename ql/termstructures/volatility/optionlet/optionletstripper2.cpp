@@ -18,44 +18,40 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/termstructures/volatility/optionlet/optionletstripper2.hpp>
-#include <ql/termstructures/volatility/optionlet/optionletstripper1.hpp>
-#include <ql/termstructures/volatility/optionlet/strippedoptionletadapter.hpp>
-#include <ql/termstructures/volatility/optionlet/spreadedoptionletvol.hpp>
-#include <ql/termstructures/volatility/capfloor/capfloortermvolcurve.hpp>
-#include <ql/quotes/simplequote.hpp>
-#include <ql/math/solvers1d/brent.hpp>
-#include <ql/instruments/makecapfloor.hpp>
-#include <ql/pricingengines/capfloor/blackcapfloorengine.hpp>
 #include <ql/indexes/iborindex.hpp>
+#include <ql/instruments/makecapfloor.hpp>
+#include <ql/math/solvers1d/brent.hpp>
+#include <ql/pricingengines/capfloor/blackcapfloorengine.hpp>
+#include <ql/quotes/simplequote.hpp>
+#include <ql/termstructures/volatility/capfloor/capfloortermvolcurve.hpp>
+#include <ql/termstructures/volatility/optionlet/optionletstripper1.hpp>
+#include <ql/termstructures/volatility/optionlet/optionletstripper2.hpp>
+#include <ql/termstructures/volatility/optionlet/spreadedoptionletvol.hpp>
+#include <ql/termstructures/volatility/optionlet/strippedoptionletadapter.hpp>
+#include <utility>
 
 
 namespace QuantLib {
 
     OptionletStripper2::OptionletStripper2(
-            const ext::shared_ptr<OptionletStripper1>& optionletStripper1,
-            const Handle<CapFloorTermVolCurve>& atmCapFloorTermVolCurve)
+        const ext::shared_ptr<OptionletStripper1>& optionletStripper1,
+        const Handle<CapFloorTermVolCurve>& atmCapFloorTermVolCurve)
     : OptionletStripper(optionletStripper1->termVolSurface(),
                         optionletStripper1->iborIndex(),
                         Handle<YieldTermStructure>(),
                         optionletStripper1->volatilityType(),
                         optionletStripper1->displacement()),
-      stripper1_(optionletStripper1),
-      atmCapFloorTermVolCurve_(atmCapFloorTermVolCurve),
+      stripper1_(optionletStripper1), atmCapFloorTermVolCurve_(atmCapFloorTermVolCurve),
       dc_(stripper1_->termVolSurface()->dayCounter()),
       nOptionExpiries_(atmCapFloorTermVolCurve->optionTenors().size()),
-      atmCapFloorStrikes_(nOptionExpiries_),
-      atmCapFloorPrices_(nOptionExpiries_),
-      spreadsVolImplied_(nOptionExpiries_),
-      caps_(nOptionExpiries_),
-      maxEvaluations_(10000),
-      accuracy_(1.e-6) {
+      atmCapFloorStrikes_(nOptionExpiries_), atmCapFloorPrices_(nOptionExpiries_),
+      spreadsVolImplied_(nOptionExpiries_), caps_(nOptionExpiries_) {
         registerWith(stripper1_);
         registerWith(atmCapFloorTermVolCurve_);
 
         QL_REQUIRE(dc_ == atmCapFloorTermVolCurve->dayCounter(),
                    "different day counters provided");
-     }
+    }
 
     void OptionletStripper2::performCalculations() const {
 
@@ -158,12 +154,10 @@ namespace QuantLib {
 //==========================================================================//
 
     OptionletStripper2::ObjectiveFunction::ObjectiveFunction(
-            const ext::shared_ptr<OptionletStripper1>& optionletStripper1,
-            const ext::shared_ptr<CapFloor>& cap,
-            Real targetValue)
-    : cap_(cap),
-      targetValue_(targetValue)
-    {
+        const ext::shared_ptr<OptionletStripper1>& optionletStripper1,
+        ext::shared_ptr<CapFloor> cap,
+        Real targetValue)
+    : cap_(std::move(cap)), targetValue_(targetValue) {
         ext::shared_ptr<OptionletVolatilityStructure> adapter(new
             StrippedOptionletAdapter(optionletStripper1));
         adapter->enableExtrapolation();

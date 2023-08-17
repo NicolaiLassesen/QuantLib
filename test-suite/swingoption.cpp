@@ -19,37 +19,42 @@
 
 #include "swingoption.hpp"
 #include "utilities.hpp"
-
-#include <ql/math/factorial.hpp>
-#include <ql/math/functional.hpp>
-#include <ql/math/richardsonextrapolation.hpp>
-#include <ql/math/distributions/normaldistribution.hpp>
-#include <ql/quotes/simplequote.hpp>
-#include <ql/time/daycounters/actualactual.hpp>
-#include <ql/instruments/vanillaoption.hpp>
-#include <ql/instruments/vanillaswingoption.hpp>
-#include <ql/math/randomnumbers/rngtraits.hpp>
-#include <ql/math/statistics/generalstatistics.hpp>
-#include <ql/termstructures/yield/zerocurve.hpp>
-#include <ql/processes/ornsteinuhlenbeckprocess.hpp>
-#include <ql/processes/blackscholesprocess.hpp>
-#include <ql/methods/montecarlo/multipathgenerator.hpp>
-#include <ql/pricingengines/vanilla/analyticeuropeanengine.hpp>
-#include <ql/experimental/processes/extouwithjumpsprocess.hpp>
-#include <ql/experimental/processes/extendedornsteinuhlenbeckprocess.hpp>
-#include <ql/pricingengines/blackformula.hpp>
-#include <ql/pricingengines/vanilla/fdsimplebsswingengine.hpp>
 #include <ql/experimental/finitedifferences/fdextoujumpvanillaengine.hpp>
 #include <ql/experimental/finitedifferences/fdsimpleextoujumpswingengine.hpp>
+#include <ql/experimental/processes/extendedornsteinuhlenbeckprocess.hpp>
+#include <ql/experimental/processes/extouwithjumpsprocess.hpp>
+#include <ql/instruments/vanillaoption.hpp>
+#include <ql/instruments/vanillaswingoption.hpp>
+#include <ql/math/distributions/normaldistribution.hpp>
+#include <ql/math/factorial.hpp>
+#include <ql/math/functional.hpp>
+#include <ql/math/randomnumbers/rngtraits.hpp>
+#include <ql/math/richardsonextrapolation.hpp>
+#include <ql/math/statistics/generalstatistics.hpp>
 #include <ql/methods/finitedifferences/meshers/exponentialjump1dmesher.hpp>
+#include <ql/methods/montecarlo/multipathgenerator.hpp>
+#include <ql/pricingengines/blackformula.hpp>
+#include <ql/pricingengines/vanilla/analyticeuropeanengine.hpp>
 #include <ql/pricingengines/vanilla/fdblackscholesvanillaengine.hpp>
+#include <ql/pricingengines/vanilla/fdsimplebsswingengine.hpp>
+#include <ql/processes/blackscholesprocess.hpp>
+#include <ql/processes/ornsteinuhlenbeckprocess.hpp>
+#include <ql/quotes/simplequote.hpp>
+#include <ql/termstructures/yield/zerocurve.hpp>
+#include <ql/time/daycounters/actualactual.hpp>
+#include <utility>
 
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
 
-namespace {
+namespace swing_option_test {
+
+    ext::function<Real(Real)> constant_b(Real b) {
+        return [=](Real x){ return b; };
+    }
+
     ext::shared_ptr<ExtOUWithJumpsProcess> createKlugeProcess() {
         Array x0(2);
         x0[0] = 3.0; x0[1] = 0.0;
@@ -62,7 +67,7 @@ namespace {
 
         ext::shared_ptr<ExtendedOrnsteinUhlenbeckProcess> ouProcess(
             new ExtendedOrnsteinUhlenbeckProcess(speed, volatility, x0[0],
-                                                 constant<Real, Real>(x0[0])));
+                                                 constant_b(x0[0])));
         return ext::make_shared<ExtOUWithJumpsProcess>(
             ouProcess, x0[1], beta, jumpIntensity, eta);
     }
@@ -71,8 +76,6 @@ namespace {
 void SwingOptionTest::testExtendedOrnsteinUhlenbeckProcess() {
 
     BOOST_TEST_MESSAGE("Testing extended Ornstein-Uhlenbeck process...");
-
-    SavedSettings backup;
 
     const Real speed = 2.5;
     const Volatility vol = 0.70;
@@ -84,9 +87,9 @@ void SwingOptionTest::testExtendedOrnsteinUhlenbeckProcess() {
         ExtendedOrnsteinUhlenbeckProcess::GaussLobatto};
 
     ext::function<Real (Real)> f[] 
-        = { constant<Real, Real>(level),
-            add<Real>(1.0),
-            static_cast<Real(*)(Real)>(std::sin) }; 
+        = { [=](Real x) -> Real { return level; },
+            [ ](Real x) -> Real { return x + 1.0; },
+            [ ](Real x) -> Real { return std::sin(x); }}; 
 
     for (Size n=0; n < LENGTH(f); ++n) {
         ExtendedOrnsteinUhlenbeckProcess refProcess(
@@ -104,8 +107,8 @@ void SwingOptionTest::testExtendedOrnsteinUhlenbeckProcess() {
             Time t  = 0.0;
             Real q = 0.0;
             Real p = 0.0;
-            
-            PseudoRandom::rng_type rng(PseudoRandom::urng_type(1234u));
+
+            PseudoRandom::rng_type rng(PseudoRandom::urng_type(1234U));
 
             for (Size j=0; j < nTimeSteps; ++j) {
                 const Real dw = rng.next().value;
@@ -128,7 +131,7 @@ void SwingOptionTest::testFdmExponentialJump1dMesher() {
 
     BOOST_TEST_MESSAGE("Testing finite difference mesher for the Kluge model...");
 
-    SavedSettings backup;
+    using namespace swing_option_test;
 
     Array x(2, 1.0);
     const Real beta = 100.0;
@@ -140,7 +143,7 @@ void SwingOptionTest::testFdmExponentialJump1dMesher() {
 
     ext::shared_ptr<ExtendedOrnsteinUhlenbeckProcess> ouProcess(
         new ExtendedOrnsteinUhlenbeckProcess(1.0, 1.0, x[0],
-                                             constant<Real, Real>(1.0)));
+                                             constant_b(1.0)));
     ext::shared_ptr<ExtOUWithJumpsProcess> jumpProcess(
         new ExtOUWithJumpsProcess(ouProcess, x[1], beta, jumpIntensity, eta));
 
@@ -165,8 +168,7 @@ void SwingOptionTest::testFdmExponentialJump1dMesher() {
     for (Real x=1e-12; x < 1.0; x*=10) {
         const Real v = mesher.jumpSizeDistribution(x);
 
-        std::vector<Real>::iterator iter
-            = std::lower_bound(path.begin(), path.end(), x);
+        auto iter = std::lower_bound(path.begin(), path.end(), x);
         const Real q = std::distance(path.begin(), iter)/Real(n);
         QL_REQUIRE(std::fabs(q - v) < relTol1
                    || ((v < threshold) && std::fabs(q-v) < relTol2),
@@ -178,14 +180,14 @@ void SwingOptionTest::testExtOUJumpVanillaEngine() {
 
     BOOST_TEST_MESSAGE("Testing finite difference pricer for the Kluge model...");
 
-    SavedSettings backup;
+    using namespace swing_option_test;
 
     ext::shared_ptr<ExtOUWithJumpsProcess> jumpProcess = createKlugeProcess();
 
     const Date today = Date::todaysDate();
     Settings::instance().evaluationDate() = today;
 
-    const DayCounter dc = ActualActual();
+    const DayCounter dc = ActualActual(ActualActual::ISDA);
     const Date maturityDate = today + Period(12, Months);
     const Time maturity = dc.yearFraction(today, maturityDate);
 
@@ -239,11 +241,9 @@ void SwingOptionTest::testFdBSSwingOption() {
 
     BOOST_TEST_MESSAGE("Testing Black-Scholes vanilla swing option pricing...");
 
-    SavedSettings backup;
-
     Date settlementDate = Date::todaysDate();
     Settings::instance().evaluationDate() = settlementDate;
-    DayCounter dayCounter = ActualActual();
+    DayCounter dayCounter = ActualActual(ActualActual::ISDA);
     Date maturityDate = settlementDate + Period(12, Months);
 
     Real strike = 30;
@@ -318,11 +318,11 @@ void SwingOptionTest::testExtOUJumpSwingOption() {
 
     BOOST_TEST_MESSAGE("Testing simple swing option pricing for Kluge model...");
 
-    SavedSettings backup;
+    using namespace swing_option_test;
 
     Date settlementDate = Date::todaysDate();
     Settings::instance().evaluationDate() = settlementDate;
-    DayCounter dayCounter = ActualActual();
+    DayCounter dayCounter = ActualActual(ActualActual::ISDA);
     Date maturityDate = settlementDate + Period(12, Months);
 
     Real strike = 30;
@@ -418,8 +418,7 @@ void SwingOptionTest::testExtOUJumpSwingOption() {
 
                 exerciseValues[k] =(*payoff)(s)*rTS->discount(exerciseDates[k]);
             }
-            std::sort(exerciseValues.begin(), exerciseValues.end(),
-                      std::greater<Real>());
+            std::sort(exerciseValues.begin(), exerciseValues.end(), std::greater<>());
 
             Real npCashFlows
                 = std::accumulate(exerciseValues.begin(),
@@ -437,15 +436,15 @@ void SwingOptionTest::testExtOUJumpSwingOption() {
     }
 }
 
-namespace {
+namespace swing_option_test {
     class SwingPdePricing {
       public:
         typedef FdSimpleExtOUJumpSwingEngine::Shape Shape;
 
-        SwingPdePricing(const ext::shared_ptr<ExtOUWithJumpsProcess>& process,
-                        const ext::shared_ptr<VanillaOption>& option,
-                        const ext::shared_ptr<Shape>& shape)
-        : process_(process), option_(option), shape_(shape) {}
+        SwingPdePricing(ext::shared_ptr<ExtOUWithJumpsProcess> process,
+                        ext::shared_ptr<VanillaOption> option,
+                        ext::shared_ptr<Shape> shape)
+        : process_(std::move(process)), option_(std::move(option)), shape_(std::move(shape)) {}
 
         Real operator()(Real x) const {
             const ext::shared_ptr<YieldTermStructure> rTS(
@@ -474,7 +473,7 @@ void SwingOptionTest::testKlugeChFVanillaPricing() {
     BOOST_TEST_MESSAGE("Testing Kluge PDE Vanilla Pricing in"
             " comparison to moment matching...");
 
-    SavedSettings backup;
+    using namespace swing_option_test;
 
     Date settlementDate = Date(22, November, 2019);
     Settings::instance().evaluationDate() = settlementDate;
@@ -496,7 +495,7 @@ void SwingOptionTest::testKlugeChFVanillaPricing() {
     const ext::shared_ptr<ExtOUWithJumpsProcess> klugeProcess =
         ext::make_shared<ExtOUWithJumpsProcess>(
             ext::make_shared<ExtendedOrnsteinUhlenbeckProcess>(
-                    alpha, sig, x0, constant<Real, Real>(0.0)),
+                    alpha, sig, x0, constant_b(0.0)),
             y0, beta, lambda, eta);
 
     const Real strike = f0;
@@ -513,7 +512,7 @@ void SwingOptionTest::testKlugeChFVanillaPricing() {
         - sig*sig/(4*alpha)*(1-std::exp(-2*alpha*t))
         - lambda/beta*std::log((eta-std::exp(-beta*t))/(eta-1.0));
 
-    shape->push_back(Shape::value_type(t, ps));
+    shape->emplace_back(t, ps);
 
     const Real expected =
         RichardsonExtrapolation(
@@ -528,7 +527,7 @@ void SwingOptionTest::testKlugeChFVanillaPricing() {
         / (stdDev*stdDev*stdDev);
 
     const Real g2 = 3*(std::exp((alpha + beta)*t)
-        *  square<Real>()(2*alpha*std::exp(2*alpha*t)*(-1 + std::exp(2*beta*t))
+        *  squared(2*alpha*std::exp(2*alpha*t)*(-1 + std::exp(2*beta*t))
                   *lambda + beta*std::exp(2*beta*t)*(-1 + std::exp(2*alpha*t))
                   *eta*eta*sig*sig)
             + 16*alpha*alpha*beta*std::exp((5*alpha + 3*beta)*t)*lambda
@@ -595,7 +594,7 @@ void SwingOptionTest::testKlugeChFVanillaPricing() {
 }
 
 test_suite* SwingOptionTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("Swing-Option Test");
+    auto* suite = BOOST_TEST_SUITE("Swing-Option Test");
 
     suite->add(QUANTLIB_TEST_CASE(
         &SwingOptionTest::testExtendedOrnsteinUhlenbeckProcess));

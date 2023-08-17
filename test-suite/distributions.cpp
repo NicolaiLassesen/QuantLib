@@ -31,21 +31,12 @@
 #include <ql/math/distributions/poissondistribution.hpp>
 #include <ql/math/randomnumbers/stochasticcollocationinvcdf.hpp>
 #include <ql/math/comparison.hpp>
-#include <ql/math/functional.hpp>
-
-#if defined(__GNUC__) && !defined(__clang__) && BOOST_VERSION > 106300
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
 #include <boost/math/distributions/non_central_chi_squared.hpp>
-#if defined(__GNUC__) && !defined(__clang__) && BOOST_VERSION > 106300
-#pragma GCC diagnostic pop
-#endif
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-namespace {
+namespace distributions_test {
 
     Real average = 1.0, sigma = 2.0;
 
@@ -164,19 +155,18 @@ namespace {
         const Real x(0.0);
         const Real y(0.0);
 
-        for (Size i=0;i<LENGTH(rho);i++) {
+        for (Real i : rho) {
             for (Integer sgn=-1; sgn < 2; sgn+=2) {
-                Bivariate bvn(sgn*rho[i]);
-                Real expected = 0.25 + std::asin(sgn*rho[i]) / (2*M_PI) ;
+                Bivariate bvn(sgn * i);
+                Real expected = 0.25 + std::asin(sgn * i) / (2 * M_PI);
                 Real realised = bvn(x,y);
 
                 if (std::fabs(realised-expected)>=tolerance) {
                     BOOST_ERROR(tag << " bivariate cumulative distribution\n"
-                                << std::scientific
-                                << "    rho: " << sgn*rho[i] << "\n"
-                                << "    expected:  " << expected << "\n"
-                                << "    realised:  " << realised << "\n"
-                                << "    tolerance: " << tolerance);
+                                    << std::scientific << "    rho: " << sgn * i << "\n"
+                                    << "    expected:  " << expected << "\n"
+                                    << "    realised:  " << realised << "\n"
+                                    << "    tolerance: " << tolerance);
                 }
             }
         }
@@ -222,6 +212,8 @@ void DistributionTest::testNormal() {
 
     BOOST_TEST_MESSAGE("Testing normal distributions...");
 
+    using namespace distributions_test;
+
     InverseCumulativeNormal invCumStandardNormal;
     Real check = invCumStandardNormal(0.5);
     if (check != 0.0e0) {
@@ -249,10 +241,9 @@ void DistributionTest::testNormal() {
     std::transform(x.begin(), x.end(), yd.begin(), gaussianDerivative);
 
     // check that normal = Gaussian
-    std::transform(x.begin(),x.end(),temp.begin(),normal);
-    std::transform(y.begin(),y.end(),temp.begin(),diff.begin(),
-                   std::minus<Real>());
-    Real e = norm(diff.begin(),diff.end(),h);
+    std::transform(x.begin(), x.end(), temp.begin(), normal);
+    std::transform(y.begin(), y.end(), temp.begin(), diff.begin(), std::minus<>());
+    Real e = norm(diff.begin(), diff.end(), h);
     if (e > 1.0e-16) {
         BOOST_ERROR("norm of C++ NormalDistribution minus analytic Gaussian: "
                     << std::scientific << e << "\n"
@@ -260,11 +251,10 @@ void DistributionTest::testNormal() {
     }
 
     // check that invCum . cum = identity
-    std::transform(x.begin(),x.end(),temp.begin(),cum);
-    std::transform(temp.begin(),temp.end(),temp.begin(),invCum);
-    std::transform(x.begin(),x.end(),temp.begin(),diff.begin(),
-                   std::minus<Real>());
-    e = norm(diff.begin(),diff.end(),h);
+    std::transform(x.begin(), x.end(), temp.begin(), cum);
+    std::transform(temp.begin(), temp.end(), temp.begin(), invCum);
+    std::transform(x.begin(), x.end(), temp.begin(), diff.begin(), std::minus<>());
+    e = norm(diff.begin(), diff.end(), h);
     if (e > 1.0e-7) {
         BOOST_ERROR("norm of invCum . cum minus identity: "
                     << std::scientific << e << "\n"
@@ -272,9 +262,10 @@ void DistributionTest::testNormal() {
     }
 
     MaddockInverseCumulativeNormal mInvCum(average, sigma);
-    std::transform(x.begin(),x.end(), x.begin(), diff.begin(),
-    			   compose3(std::minus<Real>(),
-    				  identity<Real>(), compose(mInvCum, cum)));
+    std::transform(x.begin(), x.end(), diff.begin(),
+                   [&](Real x) -> Real {
+                       return x - mInvCum(cum(x));
+                   });
 
     e = norm(diff.begin(), diff.end(), h);
     if (e > 1.0e-7) {
@@ -286,9 +277,8 @@ void DistributionTest::testNormal() {
     // check that cum.derivative = Gaussian
     for (i=0; i<x.size(); i++)
         temp[i] = cum.derivative(x[i]);
-    std::transform(y.begin(),y.end(),temp.begin(),diff.begin(),
-                   std::minus<Real>());
-    e = norm(diff.begin(),diff.end(),h);
+    std::transform(y.begin(), y.end(), temp.begin(), diff.begin(), std::minus<>());
+    e = norm(diff.begin(), diff.end(), h);
     if (e > 1.0e-16) {
         BOOST_ERROR(
             "norm of C++ Cumulative.derivative minus analytic Gaussian: "
@@ -299,9 +289,8 @@ void DistributionTest::testNormal() {
     // check that normal.derivative = gaussianDerivative
     for (i=0; i<x.size(); i++)
         temp[i] = normal.derivative(x[i]);
-    std::transform(yd.begin(),yd.end(),temp.begin(),diff.begin(),
-                   std::minus<Real>());
-    e = norm(diff.begin(),diff.end(),h);
+    std::transform(yd.begin(), yd.end(), temp.begin(), diff.begin(), std::minus<>());
+    e = norm(diff.begin(), diff.end(), h);
     if (e > 1.0e-16) {
         BOOST_ERROR("norm of C++ Normal.derivative minus analytic derivative: "
                     << std::scientific << e << "\n"
@@ -312,6 +301,8 @@ void DistributionTest::testNormal() {
 void DistributionTest::testBivariate() {
 
     BOOST_TEST_MESSAGE("Testing bivariate cumulative normal distribution...");
+
+    using namespace distributions_test;
 
     checkBivariateAtZero<BivariateCumulativeNormalDistributionDr78>(
                                                       "Drezner 1978", 1.0e-6);
@@ -441,6 +432,8 @@ void DistributionTest::testInverseCumulativePoisson() {
 void DistributionTest::testBivariateCumulativeStudent() {
     BOOST_TEST_MESSAGE(
         "Testing bivariate cumulative Student t distribution...");
+
+    using namespace distributions_test;
 
     Real xs[14] = { 0.00,  0.50,  1.00,  1.50,  2.00,  2.50, 3.00, 4.00,  5.00,  6.00,  7.00,  8.00, 9.00, 10.00 };
     Natural ns[20] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 60, 90, 120, 150, 300, 600 };
@@ -582,18 +575,15 @@ void DistributionTest::testBivariateCumulativeStudent() {
     };
 
     tolerance = 1.0e-6;
-    for (Size i=0; i < LENGTH(cases); ++i) {
-		BivariateCumulativeStudentDistribution f(cases[i].n,  cases[i].rho);
-        Real calculated = f(cases[i].x, cases[i].y);
-        Real expected = cases[i].result;
+    for (auto& i : cases) {
+        BivariateCumulativeStudentDistribution f(i.n, i.rho);
+        Real calculated = f(i.x, i.y);
+        Real expected = i.result;
         if (std::fabs(calculated - expected) > tolerance)
-            BOOST_ERROR("Failed to reproduce CDF value:" <<
-                        "\n    n:   " << cases[i].n <<
-                        "\n    rho: " << cases[i].rho <<
-                        "\n    x:   " << cases[i].x <<
-                        "\n    y:   " << cases[i].y <<
-                        "\n    calculated: " << calculated <<
-                        "\n    expected:   " << expected);
+            BOOST_ERROR("Failed to reproduce CDF value:"
+                        << "\n    n:   " << i.n << "\n    rho: " << i.rho << "\n    x:   " << i.x
+                        << "\n    y:   " << i.y << "\n    calculated: " << calculated
+                        << "\n    expected:   " << expected);
     }
 }
 
@@ -604,18 +594,18 @@ void DistributionTest::testBivariateCumulativeStudentVsBivariate() {
     Natural n = 10000;  // for this value, the distribution should be
                         // close to a bivariate normal distribution.
 
-	for (Real rho = -1.0; rho < 1.01; rho += 0.25) {
-		BivariateCumulativeStudentDistribution T(n, rho);
-		BivariateCumulativeNormalDistribution N(rho);
+    for (Real rho = -1.0; rho < 1.01; rho += 0.25) {
+        BivariateCumulativeStudentDistribution T(n, rho);
+        BivariateCumulativeNormalDistribution N(rho);
 
         Real avgDiff = 0.0;
         Size m = 0;
-		Real tolerance = 4.0e-5;
-		for (Real x = -10; x < 10.1; x += 0.25) {
-			for (Real y = -10; y < 10.1; y += 0.25) {
+        Real tolerance = 4.0e-5;
+        for (Real x = -10; x < 10.1; x += 0.5) {
+            for (Real y = -10; y < 10.1; y += 0.5) {
                 Real calculated = T(x, y);
                 Real expected = N(x, y);
-				Real diff = std::fabs(calculated - expected);
+                Real diff = std::fabs(calculated - expected);
                 if (diff > tolerance)
                     BOOST_ERROR("Failed to reproduce limit value:" <<
                                 "\n    rho: " << rho <<
@@ -624,11 +614,11 @@ void DistributionTest::testBivariateCumulativeStudentVsBivariate() {
                                 "\n    calculated: " << calculated <<
                                 "\n    expected:   " << expected);
                 
-				avgDiff += diff;
-				++m;
-			}
-		}
-		avgDiff /= m;
+                avgDiff += diff;
+                ++m;
+            }
+        }
+        avgDiff /= m;
         if (avgDiff > 3.0e-6)
             BOOST_ERROR("Failed to reproduce average limit value:" <<
                         "\n    rho: " << rho <<
@@ -637,7 +627,7 @@ void DistributionTest::testBivariateCumulativeStudentVsBivariate() {
 }
     
 
-namespace {
+namespace distributions_test {
     class InverseNonCentralChiSquared {
       public:
         InverseNonCentralChiSquared(Real df, Real ncp)
@@ -654,6 +644,8 @@ namespace {
 void DistributionTest::testInvCDFviaStochasticCollocation() {
     BOOST_TEST_MESSAGE(
         "Testing inverse CDF based on stochastic collocation...");
+
+    using namespace distributions_test;
 
     const Real k = 3.0;
     const Real lambda = 1.0;
@@ -724,12 +716,8 @@ void DistributionTest::testSankaranApproximation() {
     const Real ncps[] = {1,2,3,1,2,3};
 
     const Real tol = 0.01;
-    for (Size i=0; i < LENGTH(dfs); ++i) {
-        const Real df = dfs[i];
-
-        for (Size j=0; j < LENGTH(ncps); ++j) {
-            Real ncp = ncps[j];
-
+    for (Real df : dfs) {
+        for (Real ncp : ncps) {
             const NonCentralCumulativeChiSquareDistribution d(df, ncp);
             const NonCentralCumulativeChiSquareSankaranApprox sankaran(df, ncp);
 
@@ -753,27 +741,18 @@ void DistributionTest::testSankaranApproximation() {
     }
 }
 
-test_suite* DistributionTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("Distribution tests");
+test_suite* DistributionTest::suite(SpeedLevel) {
+    auto* suite = BOOST_TEST_SUITE("Distribution tests");
 
     suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testNormal));
     suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testBivariate));
     suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testPoisson));
     suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testCumulativePoisson));
-    suite->add(QUANTLIB_TEST_CASE(
-                            &DistributionTest::testInverseCumulativePoisson));
-    suite->add(QUANTLIB_TEST_CASE(
-                          &DistributionTest::testBivariateCumulativeStudent));
-    suite->add(QUANTLIB_TEST_CASE(
-                   &DistributionTest::testInvCDFviaStochasticCollocation));
-
-    suite->add(QUANTLIB_TEST_CASE(
-                   &DistributionTest::testSankaranApproximation));
-
-    if (speed <= Fast) {
-        suite->add(QUANTLIB_TEST_CASE(
-            &DistributionTest::testBivariateCumulativeStudentVsBivariate));
-    }
+    suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testInverseCumulativePoisson));
+    suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testBivariateCumulativeStudent));
+    suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testInvCDFviaStochasticCollocation));
+    suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testSankaranApproximation));
+    suite->add(QUANTLIB_TEST_CASE(&DistributionTest::testBivariateCumulativeStudentVsBivariate));
 
     return suite;
 }

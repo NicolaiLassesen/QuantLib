@@ -21,14 +21,15 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
 #include <ql/exercise.hpp>
+#include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     AnalyticBarrierEngine::AnalyticBarrierEngine(
-            const ext::shared_ptr<GeneralizedBlackScholesProcess>& process)
-    : process_(process) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process)
+    : process_(std::move(process)) {
         registerWith(process_);
     }
 
@@ -40,9 +41,12 @@ namespace QuantLib {
         QL_REQUIRE(payoff->strike()>0.0,
                    "strike must be positive");
 
+        QL_REQUIRE(arguments_.exercise->type() == Exercise::European,
+                   "only european style option are supported");
+
         Real strike = payoff->strike();
         Real spot = process_->x0();
-        QL_REQUIRE(spot >= 0.0, "negative or null underlying given");
+        QL_REQUIRE(spot > 0.0, "negative or null underlying given");
         QL_REQUIRE(!triggered(spot), "barrier touched");
 
         Barrier::Type barrierType = arguments_.barrierType;
@@ -123,7 +127,7 @@ namespace QuantLib {
 
     Volatility AnalyticBarrierEngine::volatility() const {
         return process_->blackVolatility()->blackVol(
-                    arguments_.exercise->lastDate(), 
+                    arguments_.exercise->lastDate(),
                     strike());
     }
 
@@ -179,8 +183,9 @@ namespace QuantLib {
             std::log(underlying()/strike())/stdDeviation() + muSigma();
         Real N1 = f_(phi*x1);
         Real N2 = f_(phi*(x1-stdDeviation()));
+
         return phi*(underlying() * dividendDiscount() * N1
-                    - strike() * riskFreeDiscount() * N2);
+                      - strike() * riskFreeDiscount() * N2);
     }
 
     Real AnalyticBarrierEngine::B(Real phi) const {
@@ -189,7 +194,7 @@ namespace QuantLib {
         Real N1 = f_(phi*x2);
         Real N2 = f_(phi*(x2-stdDeviation()));
         return phi*(underlying() * dividendDiscount() * N1
-                    - strike() * riskFreeDiscount() * N2);
+                      - strike() * riskFreeDiscount() * N2);
     }
 
     Real AnalyticBarrierEngine::C(Real eta, Real phi) const {
@@ -199,8 +204,10 @@ namespace QuantLib {
         Real y1 = std::log(barrier()*HS/strike())/stdDeviation() + muSigma();
         Real N1 = f_(eta*y1);
         Real N2 = f_(eta*(y1-stdDeviation()));
-        return phi*(underlying() * dividendDiscount() * powHS1 * N1
-                    - strike() * riskFreeDiscount() * powHS0 * N2);
+        // when N1 or N2 are zero, the corresponding powHS might
+        // be infinity, resulting in a NaN for their products.  The limit should be 0.
+        return phi*(underlying() * dividendDiscount() * (N1 == 0.0 ? Real(0.0) : Real(powHS1 * N1))
+                      - strike() * riskFreeDiscount() * (N2 == 0.0 ? Real(0.0) : Real(powHS0 * N2)));
     }
 
     Real AnalyticBarrierEngine::D(Real eta, Real phi) const {
@@ -210,8 +217,10 @@ namespace QuantLib {
         Real y2 = std::log(barrier()/underlying())/stdDeviation() + muSigma();
         Real N1 = f_(eta*y2);
         Real N2 = f_(eta*(y2-stdDeviation()));
-        return phi*(underlying() * dividendDiscount() * powHS1 * N1
-                    - strike() * riskFreeDiscount() * powHS0 * N2);
+        // when N1 or N2 are zero, the corresponding powHS might
+        // be infinity, resulting in a NaN for their products.  The limit should be 0.
+        return phi*(underlying() * dividendDiscount() * (N1 == 0.0 ? Real(0.0) : Real(powHS1 * N1))
+                      - strike() * riskFreeDiscount() * (N2 == 0.0 ? Real(0.0) : Real(powHS0 * N2)));
     }
 
     Real AnalyticBarrierEngine::E(Real eta) const {
@@ -223,7 +232,9 @@ namespace QuantLib {
                 std::log(barrier()/underlying())/stdDeviation() + muSigma();
             Real N1 = f_(eta*(x2 - stdDeviation()));
             Real N2 = f_(eta*(y2 - stdDeviation()));
-            return rebate() * riskFreeDiscount() * (N1 - powHS0 * N2);
+            // when N2 is zero, powHS0 might be infinity, resulting in
+            // a NaN for their product.  The limit should be 0.
+            return rebate() * riskFreeDiscount() * (N1 - (N2 == 0.0 ? Real(0.0) : Real(powHS0 * N2)));
         } else {
             return 0.0;
         }
@@ -244,11 +255,12 @@ namespace QuantLib {
 
             Real N1 = f_(eta * z);
             Real N2 = f_(eta * (z - 2.0 * lambda * sigmaSqrtT));
-            return rebate() * (powHSplus * N1 + powHSminus * N2);
+            // when N1 or N2 are zero, the corresponding powHS might
+            // be infinity, resulting in a NaN for their product.  The limit should be 0.
+            return rebate() * ((N1 == 0.0 ? Real(0.0) : Real(powHSplus * N1)) + (N2 == 0.0 ? Real(0.0) : Real(powHSminus * N2)));
         } else {
             return 0.0;
         }
     }
 
 }
-

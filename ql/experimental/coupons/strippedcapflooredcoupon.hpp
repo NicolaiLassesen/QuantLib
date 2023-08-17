@@ -34,9 +34,18 @@ namespace QuantLib {
 
         explicit StrippedCappedFlooredCoupon(const ext::shared_ptr<CappedFlooredCoupon> &underlying);
 
+        //! \name Obverver interface
+        //@{
+        void deepUpdate() override;
+        //@}
+
+        //! \name LazyObject interface
+        //@{
+        void performCalculations() const override;
+        //@}
         //! Coupon interface
-        Rate rate() const;
-        Rate convexityAdjustment() const;
+        Rate rate() const override;
+        Rate convexityAdjustment() const override;
         //! cap
         Rate cap() const;
         //! floor
@@ -46,28 +55,25 @@ namespace QuantLib {
         //! effective floor
         Rate effectiveFloor() const;
 
-        //! Observer interface
-        void update();
-
         //! Visitability
-        virtual void accept(AcyclicVisitor&);
+        void accept(AcyclicVisitor&) override;
 
         bool isCap() const;
         bool isFloor() const;
         bool isCollar() const;
 
-        void setPricer(const ext::shared_ptr<FloatingRateCouponPricer>& pricer);
+        void setPricer(const ext::shared_ptr<FloatingRateCouponPricer>& pricer) override;
 
-        const ext::shared_ptr<CappedFlooredCoupon> underlying() { return underlying_; }
+        ext::shared_ptr<CappedFlooredCoupon> underlying() { return underlying_; }
 
-    protected:
+      protected:
         ext::shared_ptr<CappedFlooredCoupon> underlying_;
 
     };
 
     class StrippedCappedFlooredCouponLeg {
       public:
-        explicit StrippedCappedFlooredCouponLeg(const Leg &underlyingLeg);
+        explicit StrippedCappedFlooredCouponLeg(Leg underlyingLeg);
         operator Leg() const;
       private:
         Leg underlyingLeg_;

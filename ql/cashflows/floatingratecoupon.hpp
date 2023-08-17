@@ -31,6 +31,7 @@
 
 #include <ql/cashflows/coupon.hpp>
 #include <ql/patterns/visitor.hpp>
+#include <ql/patterns/lazyobject.hpp>
 #include <ql/time/daycounter.hpp>
 #include <ql/handle.hpp>
 
@@ -41,8 +42,7 @@ namespace QuantLib {
     class FloatingRateCouponPricer;
 
     //! base floating-rate coupon class
-    class FloatingRateCoupon : public Coupon,
-                               public Observer {
+    class FloatingRateCoupon : public Coupon {
       public:
         FloatingRateCoupon(const Date& paymentDate,
                            Real nominal,
@@ -54,21 +54,25 @@ namespace QuantLib {
                            Spread spread = 0.0,
                            const Date& refPeriodStart = Date(),
                            const Date& refPeriodEnd = Date(),
-                           const DayCounter& dayCounter = DayCounter(),
+                           DayCounter dayCounter = DayCounter(),
                            bool isInArrears = false,
                            const Date& exCouponDate = Date());
 
+        //! \name LazyObject interface
+        //@{
+        void performCalculations() const override;
+        //@}
         //! \name CashFlow interface
         //@{
-        Real amount() const { return rate() * accrualPeriod() * nominal(); }
+        Real amount() const override { return rate() * accrualPeriod() * nominal(); }
         //@}
 
         //! \name Coupon interface
         //@{
-        Rate rate() const;
+        Rate rate() const override;
         Real price(const Handle<YieldTermStructure>& discountingCurve) const;
-        DayCounter dayCounter() const { return dayCounter_; }
-        Real accruedAmount(const Date&) const;
+        DayCounter dayCounter() const override { return dayCounter_; }
+        Real accruedAmount(const Date&) const override;
         //@}
 
         //! \name Inspectors
@@ -93,14 +97,9 @@ namespace QuantLib {
         bool isInArrears() const { return isInArrears_; }
         //@}
 
-        //! \name Observer interface
-        //@{
-        void update() { notifyObservers(); }
-        //@}
-
         //! \name Visitability
         //@{
-        virtual void accept(AcyclicVisitor&);
+        void accept(AcyclicVisitor&) override;
         //@}
 
         virtual void setPricer(const ext::shared_ptr<FloatingRateCouponPricer>&);
@@ -115,6 +114,7 @@ namespace QuantLib {
         Spread spread_;
         bool isInArrears_;
         ext::shared_ptr<FloatingRateCouponPricer> pricer_;
+        mutable Real rate_;
     };
 
     // inline definitions
@@ -139,13 +139,12 @@ namespace QuantLib {
 
     inline Rate
     FloatingRateCoupon::convexityAdjustmentImpl(Rate fixing) const {
-        return (gearing() == 0.0 ? 0.0 : adjustedFixing()-fixing);
+        return (gearing() == 0.0 ? Rate(0.0) : Rate(adjustedFixing()-fixing));
     }
 
     inline void FloatingRateCoupon::accept(AcyclicVisitor& v) {
-        Visitor<FloatingRateCoupon>* v1 =
-            dynamic_cast<Visitor<FloatingRateCoupon>*>(&v);
-        if (v1 != 0)
+        auto* v1 = dynamic_cast<Visitor<FloatingRateCoupon>*>(&v);
+        if (v1 != nullptr)
             v1->visit(*this);
         else
             Coupon::accept(v);

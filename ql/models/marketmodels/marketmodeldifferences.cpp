@@ -1,7 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2007 François du Vignaud
+ Copyright (C) 2007 FranÃ§ois du Vignaud
 
  This file is part of QuantLib, a free-software/open-source library
  for financial quantitative analysts and developers - http://quantlib.org/
@@ -21,7 +21,6 @@
 #include <ql/models/marketmodels/evolutiondescription.hpp>
 #include <ql/models/marketmodels/piecewiseconstantcorrelation.hpp>
 #include <ql/models/marketmodels/models/piecewiseconstantvariance.hpp>
-#include <ql/math/functional.hpp>
 
 namespace QuantLib {
 
@@ -93,7 +92,7 @@ namespace QuantLib {
             QL_ENSURE(piecewiseConstantCorrelation.times()
                 == piecewiseConstantVariances.front()->rateTimes(),
                 "correlations and volatilities intertave");
-            std::vector<Matrix> peudoRoots;
+            std::vector<Matrix> pseudoRoots;
             const std::vector<Time>& rateTimes
                 = piecewiseConstantVariances.front()->rateTimes();
             for (Size i=1; i<rateTimes.size(); ++i) {
@@ -107,11 +106,11 @@ namespace QuantLib {
                     std::transform(correlations.row_begin(j),
                                    correlations.row_end(j),
                                    pseudoRoot.row_begin(j),
-                                   multiply_by<Real>(volatility));
+                                   [=](Real x) -> Real { return x * volatility; });
                 }
-                peudoRoots.push_back(pseudoRoot);
+                pseudoRoots.push_back(pseudoRoot);
             }
-            return peudoRoots;
+            return pseudoRoots;
     }
 
 }

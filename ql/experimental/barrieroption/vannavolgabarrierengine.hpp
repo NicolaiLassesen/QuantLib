@@ -25,34 +25,29 @@
 #define quantlib_vanna_volga_barrier_engine_hpp
 
 #include <ql/processes/blackscholesprocess.hpp>
-#include <ql/instruments/dividendbarrieroption.hpp>
+#include <ql/instruments/barrieroption.hpp>
 #include <ql/experimental/fx/deltavolquote.hpp>
 
 namespace QuantLib {
 
-    //! Vanna Volga barrier option engine
-
+    //! Vanna/Volga barrier option engine
     /*!
         \ingroup barrierengines
     */
-    class VannaVolgaBarrierEngine
-        : public GenericEngine<DividendBarrierOption::arguments,
-                               DividendBarrierOption::results> {
+    class VannaVolgaBarrierEngine : public BarrierOption::engine {
       public:
 
         // Constructor
-          VannaVolgaBarrierEngine(
-                const Handle<DeltaVolQuote>& atmVol,
-                const Handle<DeltaVolQuote>& vol25Put,
-                const Handle<DeltaVolQuote>& vol25Call,
-                const Handle<Quote>& spotFX,
-                const Handle<YieldTermStructure>& domesticTS,
-                const Handle<YieldTermStructure>& foreignTS,
-                const bool adaptVanDelta = false,
-                const Real bsPriceWithSmile = 0.0
-                );
+        VannaVolgaBarrierEngine(Handle<DeltaVolQuote> atmVol,
+                                Handle<DeltaVolQuote> vol25Put,
+                                Handle<DeltaVolQuote> vol25Call,
+                                Handle<Quote> spotFX,
+                                Handle<YieldTermStructure> domesticTS,
+                                Handle<YieldTermStructure> foreignTS,
+                                bool adaptVanDelta = false,
+                                Real bsPriceWithSmile = 0.0);
 
-        void calculate() const;
+        void calculate() const override;
 
       private:
         const Handle<DeltaVolQuote> atmVol_;
@@ -70,4 +65,4 @@ namespace QuantLib {
 
 }
 
-#endif /*quantlib_fd_black_scholes_barrier_engine_hpp*/
+#endif

@@ -56,7 +56,7 @@ namespace QuantLib {
             times_[i] = dayCounter.yearFraction(referenceDate_, dates[i]);
         }
 
-        generateArguments();
+        GridModelLocalVolSurface::generateArguments();
     }
 
     void GridModelLocalVolSurface::update() {
@@ -83,13 +83,12 @@ namespace QuantLib {
     }
 
     void GridModelLocalVolSurface::generateArguments() {
-        using namespace ext::placeholders;
         const ext::shared_ptr<Matrix> localVolMatrix(
             new Matrix(strikes_.front()->size(), times_.size()));
 
         std::transform(arguments_.begin(), arguments_.end(),
                        localVolMatrix->begin(),
-                       ext::bind(&Parameter::operator(), _1, 0.0));
+                       [](const Parameter& p) { return p(0.0); });
 
         localVol_ = ext::make_shared<FixedLocalVolSurface>(
                 referenceDate_,

@@ -17,10 +17,12 @@ quantlib.elc
 quantlib.pc
 QuantLib.spec
 CMakeCache.txt
+CMakeUserPresets.json
 Docs/.time-stamp
 Docs/.time-stamp-html
 Docs/.time-stamp-online
 Docs/.time-stamp-man
+Docs/LICENSE.TXT
 Docs/reference-*/
 Docs/html/
 Docs/man/
@@ -45,6 +47,7 @@ test-suite/*.trs
 Makefile
 Makefile.in
 unity.cpp
+unity_*.cpp
 testCaseCollection.xml
 .deps
 .libs
@@ -74,6 +77,7 @@ testCaseCollection.xml
 *.ipch
 CMakeFiles
 *.cmake
+!cmake/*.cmake
 TAGS
 .dirstamp
 
@@ -108,7 +112,7 @@ test-suite/.unit_test_profile.txt
 .vs
 .vscode
 .idea
-cmake-build-debug
+cmake-build-*
 nbproject
 .cproject
 

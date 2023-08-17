@@ -18,56 +18,57 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/termstructures/yield/oisratehelper.hpp>
 #include <ql/instruments/makeois.hpp>
+#include <ql/instruments/simplifynotificationgraph.hpp>
 #include <ql/pricingengines/swap/discountingswapengine.hpp>
+#include <ql/termstructures/yield/oisratehelper.hpp>
 #include <ql/utilities/null_deleter.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    OISRateHelper::OISRateHelper(
-                    Natural settlementDays,
-                    const Period& tenor, // swap maturity
-                    const Handle<Quote>& fixedRate,
-                    const ext::shared_ptr<OvernightIndex>& overnightIndex,
-                    const Handle<YieldTermStructure>& discount,
-                    bool telescopicValueDates,
-                    Natural paymentLag,
-                    BusinessDayConvention paymentConvention,
-                    Frequency paymentFrequency,
-                    const Calendar& paymentCalendar,
-                    const Period& forwardStart, 
-                    const Spread overnightSpread,
-                    Pillar::Choice pillar,
-                    Date customPillarDate)
-    : RelativeDateRateHelper(fixedRate),
-      pillarChoice_(pillar),
-      settlementDays_(settlementDays), tenor_(tenor),
-      overnightIndex_(overnightIndex), discountHandle_(discount),
-      telescopicValueDates_(telescopicValueDates),
+    OISRateHelper::OISRateHelper(Natural settlementDays,
+                                 const Period& tenor, // swap maturity
+                                 const Handle<Quote>& fixedRate,
+                                 const ext::shared_ptr<OvernightIndex>& overnightIndex,
+                                 Handle<YieldTermStructure> discount,
+                                 bool telescopicValueDates,
+                                 Natural paymentLag,
+                                 BusinessDayConvention paymentConvention,
+                                 Frequency paymentFrequency,
+                                 Calendar paymentCalendar,
+                                 const Period& forwardStart,
+                                 const Spread overnightSpread,
+                                 Pillar::Choice pillar,
+                                 Date customPillarDate,
+                                 RateAveraging::Type averagingMethod,
+                                 ext::optional<bool> endOfMonth)
+    : RelativeDateRateHelper(fixedRate), pillarChoice_(pillar), settlementDays_(settlementDays), tenor_(tenor),
+      discountHandle_(std::move(discount)), telescopicValueDates_(telescopicValueDates),
       paymentLag_(paymentLag), paymentConvention_(paymentConvention),
-      paymentFrequency_(paymentFrequency),
-      paymentCalendar_(paymentCalendar),
-      forwardStart_(forwardStart), overnightSpread_(overnightSpread) {
+      paymentFrequency_(paymentFrequency), paymentCalendar_(std::move(paymentCalendar)),
+      forwardStart_(forwardStart), overnightSpread_(overnightSpread),
+      averagingMethod_(averagingMethod), endOfMonth_(endOfMonth) {
+
+        overnightIndex_ =
+            ext::dynamic_pointer_cast<OvernightIndex>(overnightIndex->clone(termStructureHandle_));
+        // We want to be notified of changes of fixings, but we don't
+        // want notifications from termStructureHandle_ (they would
+        // interfere with bootstrapping.)
+        overnightIndex_->unregisterWith(termStructureHandle_);
+
         registerWith(overnightIndex_);
         registerWith(discountHandle_);
 
         pillarDate_ = customPillarDate;
-        initializeDates();
+        OISRateHelper::initializeDates();
     }
 
     void OISRateHelper::initializeDates() {
 
-        // dummy OvernightIndex with curve/swap arguments
-        // review here
-        ext::shared_ptr<IborIndex> clonedIborIndex =
-            overnightIndex_->clone(termStructureHandle_);
-        ext::shared_ptr<OvernightIndex> clonedOvernightIndex =
-            ext::dynamic_pointer_cast<OvernightIndex>(clonedIborIndex);
-
         // input discount curve Handle might be empty now but it could
         //    be assigned a curve later; use a RelinkableHandle here
-        swap_ = MakeOIS(tenor_, clonedOvernightIndex, 0.0, forwardStart_)
+        MakeOIS tmp = MakeOIS(tenor_, overnightIndex_, 0.0, forwardStart_)
             .withDiscountingTermStructure(discountRelinkableHandle_)
             .withSettlementDays(settlementDays_)
             .withTelescopicValueDates(telescopicValueDates_)
@@ -75,7 +76,15 @@ namespace QuantLib {
             .withPaymentAdjustment(paymentConvention_)
             .withPaymentFrequency(paymentFrequency_)
             .withPaymentCalendar(paymentCalendar_)
-            .withOvernightLegSpread(overnightSpread_);
+            .withOvernightLegSpread(overnightSpread_)
+            .withAveragingMethod(averagingMethod_);
+        if (endOfMonth_) {
+            swap_ = tmp.withEndOfMonth(*endOfMonth_);
+        } else {
+            swap_ = tmp;
+        }
+
+        simplifyNotificationGraph(*swap_, true);
 
         earliestDate_ = swap_->startDate();
         maturityDate_ = swap_->maturityDate();
@@ -126,48 +135,65 @@ namespace QuantLib {
     }
 
     Real OISRateHelper::impliedQuote() const {
-        QL_REQUIRE(termStructure_ != 0, "term structure not set");
+        QL_REQUIRE(termStructure_ != nullptr, "term structure not set");
         // we didn't register as observers - force calculation
-        swap_->recalculate();
+        swap_->deepUpdate();
         return swap_->fairRate();
     }
 
     void OISRateHelper::accept(AcyclicVisitor& v) {
-        Visitor<OISRateHelper>* v1 =
-            dynamic_cast<Visitor<OISRateHelper>*>(&v);
-        if (v1 != 0)
+        auto* v1 = dynamic_cast<Visitor<OISRateHelper>*>(&v);
+        if (v1 != nullptr)
             v1->visit(*this);
         else
             RateHelper::accept(v);
     }
 
-    DatedOISRateHelper::DatedOISRateHelper(
-                    const Date& startDate,
-                    const Date& endDate,
-                    const Handle<Quote>& fixedRate,
-                    const ext::shared_ptr<OvernightIndex>& overnightIndex,
-                    const Handle<YieldTermStructure>& discount,
-                    bool telescopicValueDates)
-        : RateHelper(fixedRate), discountHandle_(discount),
-          telescopicValueDates_(telescopicValueDates) {
+    DatedOISRateHelper::DatedOISRateHelper(const Date& startDate,
+                                           const Date& endDate,
+                                           const Handle<Quote>& fixedRate,
+                                           const ext::shared_ptr<OvernightIndex>& overnightIndex,
+                                           Handle<YieldTermStructure> discount,
+                                           bool telescopicValueDates,
+                                           RateAveraging::Type averagingMethod,
+                                           Natural paymentLag,
+                                           BusinessDayConvention paymentConvention,
+                                           Frequency paymentFrequency,
+                                           const Calendar& paymentCalendar,
+                                           const Period& forwardStart,
+                                           Spread overnightSpread,
+                                           ext::optional<bool> endOfMonth)
+    : RateHelper(fixedRate), discountHandle_(std::move(discount)),
+      telescopicValueDates_(telescopicValueDates), averagingMethod_(averagingMethod) {
 
-        registerWith(overnightIndex);
+        auto clonedOvernightIndex =
+            ext::dynamic_pointer_cast<OvernightIndex>(overnightIndex->clone(termStructureHandle_));
+        // We want to be notified of changes of fixings, but we don't
+        // want notifications from termStructureHandle_ (they would
+        // interfere with bootstrapping.)
+        clonedOvernightIndex->unregisterWith(termStructureHandle_);
+
+        registerWith(clonedOvernightIndex);
         registerWith(discountHandle_);
-
-        // dummy OvernightIndex with curve/swap arguments
-        // review here
-        ext::shared_ptr<IborIndex> clonedIborIndex =
-            overnightIndex->clone(termStructureHandle_);
-        ext::shared_ptr<OvernightIndex> clonedOvernightIndex =
-            ext::dynamic_pointer_cast<OvernightIndex>(clonedIborIndex);
 
         // input discount curve Handle might be empty now but it could
         //    be assigned a curve later; use a RelinkableHandle here
-        swap_ = MakeOIS(Period(), clonedOvernightIndex, 0.0)
+        auto tmp = MakeOIS(Period(), clonedOvernightIndex, 0.0, forwardStart)
             .withDiscountingTermStructure(discountRelinkableHandle_)
             .withEffectiveDate(startDate)
             .withTerminationDate(endDate)
-            .withTelescopicValueDates(telescopicValueDates_);
+            .withTelescopicValueDates(telescopicValueDates_)
+            .withPaymentLag(paymentLag)
+            .withPaymentAdjustment(paymentConvention)
+            .withPaymentFrequency(paymentFrequency)
+            .withPaymentCalendar(paymentCalendar)
+            .withOvernightLegSpread(overnightSpread)
+            .withAveragingMethod(averagingMethod_);
+        if (endOfMonth) {
+            swap_ = tmp.withEndOfMonth(*endOfMonth);
+        } else {
+            swap_ = tmp;
+        }
 
         earliestDate_ = swap_->startDate();
         Date lastPaymentDate = std::max(swap_->overnightLeg().back()->date(),
@@ -192,16 +218,15 @@ namespace QuantLib {
     }
 
     Real DatedOISRateHelper::impliedQuote() const {
-        QL_REQUIRE(termStructure_ != 0, "term structure not set");
+        QL_REQUIRE(termStructure_ != nullptr, "term structure not set");
         // we didn't register as observers - force calculation
         swap_->deepUpdate();
         return swap_->fairRate();
     }
 
     void DatedOISRateHelper::accept(AcyclicVisitor& v) {
-        Visitor<DatedOISRateHelper>* v1 =
-            dynamic_cast<Visitor<DatedOISRateHelper>*>(&v);
-        if (v1 != 0)
+        auto* v1 = dynamic_cast<Visitor<DatedOISRateHelper>*>(&v);
+        if (v1 != nullptr)
             v1->visit(*this);
         else
             RateHelper::accept(v);

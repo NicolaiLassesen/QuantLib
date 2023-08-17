@@ -47,22 +47,13 @@
 #include <ql/utilities/dataformatters.hpp>
 #include <ql/math/integrals/segmentintegral.hpp>
 #include <ql/math/statistics/convergencestatistics.hpp>
-#include <ql/math/functional.hpp>
 #include <ql/math/statistics/sequencestatistics.hpp>
 #include <sstream>
-
-#if defined(BOOST_MSVC)
-#include <float.h>
-//namespace { unsigned int u = _controlfp(_EM_INEXACT, _MCW_EM); }
-#endif
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-#define BEGIN(x) (x+0)
-#define END(x) (x+LENGTH(x))
-
-namespace {
+namespace market_model_smm_test {
 
     Date todaysDate, startDate, endDate;
     std::vector<Time> rateTimes;
@@ -166,9 +157,9 @@ namespace {
 #endif
     }
 
-    const ext::shared_ptr<SequenceStatisticsInc> simulate(
-                         const ext::shared_ptr<MarketModelEvolver>& evolver,
-                         const MarketModelMultiProduct& product) {
+    ext::shared_ptr<SequenceStatisticsInc>
+    simulate(const ext::shared_ptr<MarketModelEvolver>& evolver,
+             const MarketModelMultiProduct& product) {
         Size initialNumeraire = evolver->numeraires().front();
         Real initialNumeraireValue = todaysDiscounts[initialNumeraire];
 
@@ -219,12 +210,12 @@ namespace {
         std::vector<Rate> usedRates = curveState_lmm.coterminalSwapRates();
         std::transform(usedRates.begin(), usedRates.end(),
                        bumpedRates.begin(),
-                       add<Rate>(rateBump));
+                       [=](Rate r){ return r + rateBump; });
 
         std::vector<Volatility> bumpedVols(volatilities.size());
         std::transform(volatilities.begin(), volatilities.end(),
                        bumpedVols.begin(),
-                       add<Volatility>(volBump));
+                       [=](Volatility v){ return v + volBump; });
         Matrix correlations = exponentialCorrelations(evolution.rateTimes(),
                                                       longTermCorrelation,
                                                       beta);
@@ -282,7 +273,7 @@ namespace {
     std::vector<Size> makeMeasure(const MarketModelMultiProduct& product,
                                   MeasureType measureType) {
         std::vector<Size> result;
-        EvolutionDescription evolution(product.evolution());
+        const EvolutionDescription& evolution(product.evolution());
         switch (measureType) {
           case ProductSuggested:
             result = product.suggestedNumeraires();
@@ -351,11 +342,12 @@ namespace {
         }
     }
 
-    void checkCoterminalSwapsAndSwaptions(const SequenceStatisticsInc& stats,
-                                          const Rate fixedRate,
-                                          const std::vector<ext::shared_ptr<StrikedTypePayoff> >& displacedPayoff,
-                                          const ext::shared_ptr<MarketModel>, //marketModel,
-                                          const std::string& config) {
+    void checkCoterminalSwapsAndSwaptions(
+        const SequenceStatisticsInc& stats,
+        const Rate fixedRate,
+        const std::vector<ext::shared_ptr<StrikedTypePayoff> >& displacedPayoff,
+        const ext::shared_ptr<MarketModel>&, // marketModel,
+        const std::string& config) {
 
         std::vector<Real> results = stats.mean();
         std::vector<Real> errors = stats.errorEstimate();
@@ -433,6 +425,8 @@ void MarketModelSmmTest::testMultiStepCoterminalSwapsAndSwaptions() {
                        "multi-step coterminal swaps and swaptions "
                        "in a lognormal coterminal swap rate market model...");
 
+    using namespace market_model_smm_test;
+
     setup();
 
     Real fixedRate = 0.04;
@@ -465,19 +459,17 @@ void MarketModelSmmTest::testMultiStepCoterminalSwapsAndSwaptions() {
     MarketModelType marketModels[] = {// CalibratedMM,
                                        ExponentialCorrelationFlatVolatility,
                                        ExponentialCorrelationAbcdVolatility };
-    for (Size j=0; j<LENGTH(marketModels); j++) {
+    for (auto& j : marketModels) {
         Size testedFactors[] = { /*4, 8,*/ todaysForwards.size()};
-        for (Size m=0; m<LENGTH(testedFactors); ++m) {
-            Size factors = testedFactors[m];
+        for (unsigned long factors : testedFactors) {
             // Composite's ProductSuggested is the Terminal one
             MeasureType measures[] = { // ProductSuggested,
                                        Terminal,
                                        //MoneyMarketPlus,
                                        MoneyMarket};
-            for (Size k=0; k<LENGTH(measures); k++) {
-                std::vector<Size> numeraires = makeMeasure(product, measures[k]);
-                ext::shared_ptr<MarketModel> marketModel =
-                    makeMarketModel(evolution, factors, marketModels[j]);
+            for (auto& measure : measures) {
+                std::vector<Size> numeraires = makeMeasure(product, measure);
+                ext::shared_ptr<MarketModel> marketModel = makeMarketModel(evolution, factors, j);
                 EvolverType evolvers[] = { Pc /*, Ipc */};
                 ext::shared_ptr<MarketModelEvolver> evolver;
                 Size stop = isInTerminalMeasure(evolution, numeraires) ? 0 : 1;
@@ -491,12 +483,14 @@ void MarketModelSmmTest::testMultiStepCoterminalSwapsAndSwaptions() {
                                                          generatorFactory,
                                                          evolvers[i]);
                         std::ostringstream config;
-                        config <<
-                            marketModelTypeToString(marketModels[j]) << ", " <<
-                            factors << (factors>1 ? (factors==todaysForwards.size() ? " (full) factors, " : " factors, ") : " factor,") <<
-                            measureTypeToString(measures[k]) << ", " <<
-                            evolverTypeToString(evolvers[i]) << ", " <<
-                            "MT BGF";
+                        config << marketModelTypeToString(j) << ", " << factors
+                               << (factors > 1 ?
+                                       (factors == todaysForwards.size() ? " (full) factors, " :
+                                                                           " factors, ") :
+                                       " factor,")
+                               << measureTypeToString(measure) << ", "
+                               << evolverTypeToString(evolvers[i]) << ", "
+                               << "MT BGF";
                         if (printReport_)
                             BOOST_TEST_MESSAGE("    " << config.str());
                         ext::shared_ptr<SequenceStatisticsInc> stats = simulate(evolver, product);
@@ -513,7 +507,7 @@ void MarketModelSmmTest::testMultiStepCoterminalSwapsAndSwaptions() {
 
 // --- Call the desired tests
 test_suite* MarketModelSmmTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("SMM Market-model tests");
+    auto* suite = BOOST_TEST_SUITE("SMM Market-model tests");
 
     if (speed == Slow) {
         suite->add(QUANTLIB_TEST_CASE(

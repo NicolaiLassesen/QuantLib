@@ -69,15 +69,15 @@ namespace QuantLib {
     */
     class Italy : public Calendar {
       private:
-        class SettlementImpl : public Calendar::WesternImpl {
+        class SettlementImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Italian settlement"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Italian settlement"; }
+            bool isBusinessDay(const Date&) const override;
         };
-        class ExchangeImpl : public Calendar::WesternImpl {
+        class ExchangeImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Milan stock exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Milan stock exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         //! Italian calendars

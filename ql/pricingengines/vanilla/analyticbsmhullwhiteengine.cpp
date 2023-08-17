@@ -24,6 +24,7 @@
 #include <ql/pricingengines/vanilla/analyticbsmhullwhiteengine.hpp>
 #include <ql/pricingengines/vanilla/analyticeuropeanengine.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvoltermstructure.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -41,19 +42,20 @@ namespace QuantLib {
                   varianceOffset_(varianceOffset),
                   volTS_(volTS) { }
 
-            Real minStrike() const { return volTS_->minStrike(); }
-            Real maxStrike() const { return volTS_->maxStrike(); }
-            Date maxDate() const   { return volTS_->maxDate(); }
+            Real minStrike() const override { return volTS_->minStrike(); }
+            Real maxStrike() const override { return volTS_->maxStrike(); }
+            Date maxDate() const override { return volTS_->maxDate(); }
 
           protected:
-            Real blackVarianceImpl(Time t, Real strike) const {
+            Real blackVarianceImpl(Time t, Real strike) const override {
                 return volTS_->blackVariance(t, strike, true)+varianceOffset_;
             }
-            Volatility blackVolImpl(Time t, Real strike) const {
+            Volatility blackVolImpl(Time t, Real strike) const override {
                 Time nonZeroMaturity = (t==0.0 ? 0.00001 : t);
                 Real var = blackVarianceImpl(nonZeroMaturity, strike);
                 return std::sqrt(var/nonZeroMaturity);
             }
+
           private:
             const Real varianceOffset_;
             const Handle<BlackVolTermStructure> volTS_;
@@ -61,13 +63,13 @@ namespace QuantLib {
     }
 
     AnalyticBSMHullWhiteEngine::AnalyticBSMHullWhiteEngine(
-             Real equityShortRateCorrelation,
-             const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
-             const ext::shared_ptr<HullWhite> & model)
-    : GenericModelEngine<HullWhite,
-                         VanillaOption::arguments,
-                         VanillaOption::results>(model),
-      rho_(equityShortRateCorrelation), process_(process) {
+        Real equityShortRateCorrelation,
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process,
+        const ext::shared_ptr<HullWhite>& model)
+    : GenericModelEngine<HullWhite, VanillaOption::arguments, VanillaOption::results>(model),
+      rho_(equityShortRateCorrelation), process_(std::move(process)) {
+        QL_REQUIRE(process_, "no Black-Scholes process specified");
+        QL_REQUIRE(!model_.empty(), "no Hull-White model specified");
         registerWith(process_);
     }
 

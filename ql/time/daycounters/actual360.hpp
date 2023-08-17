@@ -36,25 +36,22 @@ namespace QuantLib {
     */
     class Actual360 : public DayCounter {
       private:
-        class Impl : public DayCounter::Impl {
+        class Impl final : public DayCounter::Impl {
           private:
               bool includeLastDay_;
           public:
             explicit Impl(const bool includeLastDay)
             : includeLastDay_(includeLastDay) {}
-            std::string name() const {
+            std::string name() const override {
                 return includeLastDay_ ?
                     std::string("Actual/360 (inc)")
                     : std::string("Actual/360");
             }
-            Date::serial_type dayCount(const Date& d1,
-                                       const Date& d2) const {
+            Date::serial_type dayCount(const Date& d1, const Date& d2) const override {
                 return (d2-d1) + (includeLastDay_ ? 1 : 0);
             }
-            Time yearFraction(const Date& d1,
-                              const Date& d2,
-                              const Date&,
-                              const Date&) const {
+            Time
+            yearFraction(const Date& d1, const Date& d2, const Date&, const Date&) const override {
                 return (daysBetween(d1,d2)
                         + (includeLastDay_ ? 1.0 : 0.0))/360.0;
             }

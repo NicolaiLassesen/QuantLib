@@ -30,6 +30,7 @@
 
 #include <ql/instrument.hpp>
 #include <ql/default.hpp>
+#include <ql/optional.hpp>
 #include <ql/time/schedule.hpp>
 
 #include <ql/experimental/credit/basket.hpp>
@@ -123,11 +124,11 @@ namespace QuantLib {
                       Rate runningRate,
                       const DayCounter& dayCounter,
                       BusinessDayConvention paymentConvention,
-                      boost::optional<Real> notional = boost::none);
+                      ext::optional<Real> notional = ext::nullopt);
 
         const ext::shared_ptr<Basket>& basket() const { return basket_; }
 
-        bool isExpired () const;
+        bool isExpired() const override;
         Rate fairPremium() const;
         Rate fairUpfrontPremium() const;
         Rate premiumValue () const;
@@ -161,14 +162,14 @@ namespace QuantLib {
         /*!
           Expected tranche loss for all payment dates
          */
-        Disposable<std::vector<Real> > expectedTrancheLoss() const;
+        std::vector<Real> expectedTrancheLoss() const;
         Size error () const;
 
-        void setupArguments(PricingEngine::arguments*) const;
-        void fetchResults(const PricingEngine::results*) const;
+        void setupArguments(PricingEngine::arguments*) const override;
+        void fetchResults(const PricingEngine::results*) const override;
 
-    private:
-        void setupExpired() const;
+      private:
+        void setupExpired() const override;
 
         ext::shared_ptr<Basket> basket_;
         Protection::Side side_;
@@ -193,7 +194,7 @@ namespace QuantLib {
         arguments() : side(Protection::Side(-1)),
                       upfrontRate(Null<Real>()),
                       runningRate(Null<Real>()) {}
-        void validate() const;
+        void validate() const override;
 
         ext::shared_ptr<Basket> basket;
         Protection::Side side;
@@ -208,17 +209,17 @@ namespace QuantLib {
 
     class SyntheticCDO::results : public Instrument::results {
     public:
-        void reset();
-        Real premiumValue;
-        Real protectionValue;
-        Real upfrontPremiumValue;
-        Real remainingNotional;
-        Real xMin, xMax;
-        Size error;
-        /* Expected tranche losses affecting this tranche coupons. Notice this 
-        number might be below the actual basket losses, since the cdo protection
-        might start after basket inception (forward start CDO)*/
-        std::vector<Real> expectedTrancheLoss;
+      void reset() override;
+      Real premiumValue;
+      Real protectionValue;
+      Real upfrontPremiumValue;
+      Real remainingNotional;
+      Real xMin, xMax;
+      Size error;
+      /* Expected tranche losses affecting this tranche coupons. Notice this
+      number might be below the actual basket losses, since the cdo protection
+      might start after basket inception (forward start CDO)*/
+      std::vector<Real> expectedTrancheLoss;
     };
 
 

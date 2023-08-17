@@ -31,7 +31,7 @@
 #include <ql/time/period.hpp>
 #include <ql/time/dategenerationrule.hpp>
 #include <ql/errors.hpp>
-#include <boost/optional.hpp>
+#include <ql/optional.hpp>
 
 namespace QuantLib {
 
@@ -43,28 +43,27 @@ namespace QuantLib {
             meta information that can be used by client classes. Note
             that neither the list of dates nor the meta information is
             checked for plausibility in any sense. */
-        Schedule(const std::vector<Date>&,
-                 const Calendar& calendar = NullCalendar(),
-                 const BusinessDayConvention
-                                    convention = Unadjusted,
-                 boost::optional<BusinessDayConvention>
-                     terminationDateConvention = boost::none,
-                 const boost::optional<Period> tenor = boost::none,
-                 boost::optional<DateGeneration::Rule> rule = boost::none,
-                 boost::optional<bool> endOfMonth = boost::none,
-                 const std::vector<bool>& isRegular = std::vector<bool>(0));
+        Schedule(
+            const std::vector<Date>&,
+            Calendar calendar = NullCalendar(),
+            BusinessDayConvention convention = Unadjusted,
+            const ext::optional<BusinessDayConvention>& terminationDateConvention = ext::nullopt,
+            const ext::optional<Period>& tenor = ext::nullopt,
+            const ext::optional<DateGeneration::Rule>& rule = ext::nullopt,
+            const ext::optional<bool>& endOfMonth = ext::nullopt,
+            std::vector<bool> isRegular = std::vector<bool>(0));
         /*! rule based constructor */
         Schedule(Date effectiveDate,
                  const Date& terminationDate,
                  const Period& tenor,
-                 const Calendar& calendar,
+                 Calendar calendar,
                  BusinessDayConvention convention,
                  BusinessDayConvention terminationDateConvention,
                  DateGeneration::Rule rule,
                  bool endOfMonth,
                  const Date& firstDate = Date(),
                  const Date& nextToLastDate = Date());
-        Schedule() {}
+        Schedule() = default;
         //! \name Date access
         //@{
         Size size() const { return dates_.size(); }
@@ -108,12 +107,12 @@ namespace QuantLib {
         Schedule until(const Date& truncationDate) const;
         //@}
       private:
-        boost::optional<Period> tenor_;
+        ext::optional<Period> tenor_;
         Calendar calendar_;
         BusinessDayConvention convention_;
-        boost::optional<BusinessDayConvention> terminationDateConvention_;
-        boost::optional<DateGeneration::Rule> rule_;
-        boost::optional<bool> endOfMonth_;
+        ext::optional<BusinessDayConvention> terminationDateConvention_;
+        ext::optional<DateGeneration::Rule> rule_;
+        ext::optional<bool> endOfMonth_;
         Date firstDate_, nextToLastDate_;
         std::vector<Date> dates_;
         std::vector<bool> isRegular_;
@@ -126,7 +125,6 @@ namespace QuantLib {
     */
     class MakeSchedule {
       public:
-        MakeSchedule();
         MakeSchedule& from(const Date& effectiveDate);
         MakeSchedule& to(const Date& terminationDate);
         MakeSchedule& withTenor(const Period&);
@@ -144,15 +142,18 @@ namespace QuantLib {
       private:
         Calendar calendar_;
         Date effectiveDate_, terminationDate_;
-        boost::optional<Period> tenor_;
-        boost::optional<BusinessDayConvention> convention_;
-        boost::optional<BusinessDayConvention> terminationDateConvention_;
-        DateGeneration::Rule rule_;
-        bool endOfMonth_;
+        ext::optional<Period> tenor_;
+        ext::optional<BusinessDayConvention> convention_;
+        ext::optional<BusinessDayConvention> terminationDateConvention_;
+        DateGeneration::Rule rule_ = DateGeneration::Backward;
+        bool endOfMonth_ = false;
         Date firstDate_, nextToLastDate_;
     };
 
-
+    /*! Helper function for returning the date on or before date \p d that is the 20th of the month and obeserves the 
+        given date generation \p rule if it is relevant.
+    */
+    Date previousTwentieth(const Date& d, DateGeneration::Rule rule);
 
     // inline definitions
 
@@ -183,7 +184,7 @@ namespace QuantLib {
     inline const Date &Schedule::endDate() const { return dates_.back(); }
 
     inline bool Schedule::hasTenor() const {
-        return tenor_ != boost::none;
+        return static_cast<bool>(tenor_);
     }
 
     inline const Period& Schedule::tenor() const {
@@ -198,7 +199,7 @@ namespace QuantLib {
 
     inline bool
     Schedule::hasTerminationDateBusinessDayConvention() const {
-        return terminationDateConvention_ != boost::none;
+        return static_cast<bool>(terminationDateConvention_);
     }
 
     inline BusinessDayConvention
@@ -209,7 +210,7 @@ namespace QuantLib {
     }
 
     inline bool Schedule::hasRule() const {
-        return rule_ != boost::none;
+        return static_cast<bool>(rule_);
     }
 
     inline DateGeneration::Rule Schedule::rule() const {
@@ -218,7 +219,7 @@ namespace QuantLib {
     }
 
     inline bool Schedule::hasEndOfMonth() const {
-        return endOfMonth_ != boost::none;
+        return static_cast<bool>(endOfMonth_);
     }
 
     inline bool Schedule::endOfMonth() const {

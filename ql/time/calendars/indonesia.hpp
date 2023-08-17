@@ -61,10 +61,10 @@ namespace QuantLib {
     */
     class Indonesia : public Calendar {
       private:
-        class BejImpl : public Calendar::WesternImpl {
+        class BejImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Jakarta stock exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Jakarta stock exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         enum Market { BEJ,  //!< Jakarta stock exchange (merged into IDX)

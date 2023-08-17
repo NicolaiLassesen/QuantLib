@@ -38,8 +38,6 @@ void CdsOptionTest::testCached() {
 
     BOOST_TEST_MESSAGE("Testing CDS-option value against cached values...");
 
-    SavedSettings backup;
-
     Date cachedToday = Date(10,December,2007);
     Settings::instance().evaluationDate() = cachedToday;
 
@@ -116,7 +114,7 @@ void CdsOptionTest::testCached() {
 
 
 test_suite* CdsOptionTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("range-accrual-swap tests");
+    auto* suite = BOOST_TEST_SUITE("range-accrual-swap tests");
     suite->add(QUANTLIB_TEST_CASE(&CdsOptionTest::testCached));
     return suite;
 }

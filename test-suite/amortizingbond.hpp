@@ -25,8 +25,9 @@
 class AmortizingBondTest {
   public:
     static void testAmortizingFixedRateBond();
-	static boost::unit_test_framework::test_suite* suite();
-
+    static void testBrazilianAmortizingFixedRateBond();
+    static void testAmortizingFixedRateBondWithDrawDown();
+    static boost::unit_test_framework::test_suite* suite();
 };
 
 #endif

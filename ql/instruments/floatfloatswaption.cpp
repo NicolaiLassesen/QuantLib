@@ -17,19 +17,28 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/instruments/floatfloatswaption.hpp>
 #include <ql/exercise.hpp>
+#include <ql/instruments/floatfloatswaption.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    FloatFloatSwaption::FloatFloatSwaption(
-        const ext::shared_ptr<FloatFloatSwap>& swap,
-        const ext::shared_ptr<Exercise>& exercise, Settlement::Type delivery,
-        Settlement::Method settlementMethod)
-    : Option(ext::shared_ptr<Payoff>(), exercise), swap_(swap),
+    FloatFloatSwaption::FloatFloatSwaption(ext::shared_ptr<FloatFloatSwap> swap,
+                                           const ext::shared_ptr<Exercise>& exercise,
+                                           Settlement::Type delivery,
+                                           Settlement::Method settlementMethod)
+    : Option(ext::shared_ptr<Payoff>(), exercise), swap_(std::move(swap)),
       settlementType_(delivery), settlementMethod_(settlementMethod) {
-    registerWith(swap_);
-    registerWithObservables(swap_);
+        registerWith(swap_);
+        // When we ask for the NPV of an expired swaption, the
+        // swap is not recalculated and thus wouldn't forward
+        // later notifications according to the default behavior of
+        // LazyObject instances.  This means that even if the
+        // evaluation date changes so that the swaption is no longer
+        // expired, the instrument wouldn't be notified and thus it
+        // wouldn't recalculate.  To avoid this, we override the
+        // default behavior of the underlying swap.
+        swap_->alwaysForwardNotifications();
     }
 
     bool FloatFloatSwaption::isExpired() const {
@@ -41,10 +50,9 @@ namespace QuantLib {
 
         swap_->setupArguments(args);
 
-        FloatFloatSwaption::arguments *arguments =
-            dynamic_cast<FloatFloatSwaption::arguments *>(args);
+        auto* arguments = dynamic_cast<FloatFloatSwaption::arguments*>(args);
 
-        QL_REQUIRE(arguments != 0, "wrong argument type");
+        QL_REQUIRE(arguments != nullptr, "wrong argument type");
 
         arguments->swap = swap_;
         arguments->exercise = exercise_;
@@ -60,10 +68,10 @@ namespace QuantLib {
                                                   settlementMethod);
     }
 
-    Disposable<std::vector<ext::shared_ptr<BlackCalibrationHelper> > >
+    std::vector<ext::shared_ptr<BlackCalibrationHelper>>
     FloatFloatSwaption::calibrationBasket(
-        ext::shared_ptr<SwapIndex> standardSwapBase,
-        ext::shared_ptr<SwaptionVolatilityStructure> swaptionVolatility,
+        const ext::shared_ptr<SwapIndex>& standardSwapBase,
+        const ext::shared_ptr<SwaptionVolatilityStructure>& swaptionVolatility,
         const BasketGeneratingEngine::CalibrationBasketType basketType) const {
 
         ext::shared_ptr<BasketGeneratingEngine> engine =

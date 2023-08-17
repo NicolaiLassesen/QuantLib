@@ -20,12 +20,13 @@
 /*! \file lognormalcmsspreadpricer.cpp
 */
 
-#include <ql/experimental/coupons/lognormalcmsspreadpricer.hpp>
 #include <ql/experimental/coupons/cmsspreadcoupon.hpp>
+#include <ql/experimental/coupons/lognormalcmsspreadpricer.hpp>
 #include <ql/math/integrals/kronrodintegral.hpp>
-#include <ql/termstructures/volatility/swaption/swaptionvolcube.hpp>
 #include <ql/pricingengines/blackformula.hpp>
-
+#include <ql/termstructures/volatility/swaption/swaptionvolcube.hpp>
+#include <ql/optional.hpp>
+#include <utility>
 
 using std::sqrt;
 
@@ -42,14 +43,15 @@ namespace QuantLib {
     };
 
     LognormalCmsSpreadPricer::LognormalCmsSpreadPricer(
-        const ext::shared_ptr<CmsCouponPricer> cmsPricer,
-        const Handle<Quote> &correlation,
-        const Handle<YieldTermStructure> &couponDiscountCurve,
+        const ext::shared_ptr<CmsCouponPricer>& cmsPricer,
+        const Handle<Quote>& correlation,
+        Handle<YieldTermStructure> couponDiscountCurve,
         const Size integrationPoints,
-        const boost::optional<VolatilityType> volatilityType,
-        const Real shift1, const Real shift2)
-        : CmsSpreadCouponPricer(correlation), cmsPricer_(cmsPricer),
-          couponDiscountCurve_(couponDiscountCurve) {
+        const ext::optional<VolatilityType>& volatilityType,
+        const Real shift1,
+        const Real shift2)
+    : CmsSpreadCouponPricer(correlation), cmsPricer_(cmsPricer),
+      couponDiscountCurve_(std::move(couponDiscountCurve)) {
 
         registerWith(correlation);
         if (!couponDiscountCurve_.empty())
@@ -64,7 +66,7 @@ namespace QuantLib {
 
         cnd_ = ext::make_shared<CumulativeNormalDistribution>(0.0, 1.0);
 
-        if(volatilityType == boost::none) {
+        if (!volatilityType) {
             QL_REQUIRE(shift1 == Null<Real>() && shift2 == Null<Real>(),
                        "if volatility type is inherited, no shifts should be "
                        "specified");
@@ -119,7 +121,7 @@ namespace QuantLib {
                  (rho_ * gearing1_ * vol1_ + gearing2_ * vol2_) * s);
         Real f =
             close_enough(alpha_, 0.0)
-                ? std::max(beta, 0.0)
+                ? Real(std::max(beta, 0.0))
                 : psi_ * alpha_ / (M_SQRTPI * M_SQRT2) *
                           std::exp(-beta * beta / (2.0 * alpha_ * alpha_)) +
                       beta * (1.0 - (*cnd_)(-psi_ * beta / alpha_));
@@ -169,19 +171,19 @@ namespace QuantLib {
                                 << ") should be positive while gearing2 ("
                                 << gearing2_ << ") should be negative");
 
-        c1_ = ext::shared_ptr<CmsCoupon>(new CmsCoupon(
+        c1_ = ext::make_shared<CmsCoupon>(
             coupon_->date(), coupon_->nominal(), coupon_->accrualStartDate(),
             coupon_->accrualEndDate(), coupon_->fixingDays(),
             index_->swapIndex1(), 1.0, 0.0, coupon_->referencePeriodStart(),
             coupon_->referencePeriodEnd(), coupon_->dayCounter(),
-            coupon_->isInArrears()));
+            coupon_->isInArrears());
 
-        c2_ = ext::shared_ptr<CmsCoupon>(new CmsCoupon(
+        c2_ = ext::make_shared<CmsCoupon>(
             coupon_->date(), coupon_->nominal(), coupon_->accrualStartDate(),
             coupon_->accrualEndDate(), coupon_->fixingDays(),
             index_->swapIndex2(), 1.0, 0.0, coupon_->referencePeriodStart(),
             coupon_->referencePeriodEnd(), coupon_->dayCounter(),
-            coupon_->isInArrears()));
+            coupon_->isInArrears());
 
         c1_->setPricer(cmsPricer_);
         c2_->setPricer(cmsPricer_);
@@ -209,7 +211,7 @@ namespace QuantLib {
                     swvol->shift(fixingDate_, index_->swapIndex2()->tenor());
             }
 
-            if (swcub == NULL) {
+            if (swcub == nullptr) {
                 // not a cube, just an atm surface given, so we can
                 // not easily convert volatilities and just forbid it
                 QL_REQUIRE(inheritedVolatilityType_,

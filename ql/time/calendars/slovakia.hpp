@@ -55,10 +55,10 @@ namespace QuantLib {
     */
     class Slovakia : public Calendar {
       private:
-        class BsseImpl : public Calendar::WesternImpl {
+        class BsseImpl final : public Calendar::WesternImpl {
           public:
-            std::string name() const { return "Bratislava stock exchange"; }
-            bool isBusinessDay(const Date&) const;
+            std::string name() const override { return "Bratislava stock exchange"; }
+            bool isBusinessDay(const Date&) const override;
         };
       public:
         enum Market { BSSE    //!< Bratislava stock exchange

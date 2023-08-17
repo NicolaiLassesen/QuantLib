@@ -18,62 +18,11 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-/*! \file shoutcondition.hpp
-    \brief shout option exercise condition
-*/
-
 #ifndef quantlib_fd_shout_condition_hpp
 #define quantlib_fd_shout_condition_hpp
 
-#include <ql/methods/finitedifferences/fdtypedefs.hpp>
-#include <ql/discretizedasset.hpp>
-#include <ql/instruments/payoffs.hpp>
-
-namespace QuantLib {
-
-    //! Shout option condition
-    /*! A shout option is an option where the holder has the right to
-        lock in a minimum value for the payoff at one (shout) time
-        during the option's life. The minimum value is the option's
-        intrinsic value at the shout time.
-    */
-    class ShoutCondition : public StandardCurveDependentStepCondition {
-      public:
-        ShoutCondition(Option::Type type,
-                       Real strike,
-                       Time resTime,
-                       Rate rate);
-        ShoutCondition(const Array& intrinsicValues,
-                       Time resTime,
-                       Rate rate);
-        void applyTo(Array& a,
-                     Time t) const;
-      private:
-        virtual Real applyToValue(Real current,
-                                  Real intrinsic) const {
-            return std::max(current, disc_ * intrinsic );
-        }
-        Time resTime_;
-        Rate rate_;
-        mutable DiscountFactor disc_;
-    };
-
-    inline ShoutCondition::ShoutCondition(Option::Type type,
-                                          Real strike, Time resTime,
-                                          Rate rate)
-    : StandardCurveDependentStepCondition(type, strike),
-      resTime_(resTime), rate_(rate) {}
-
-    inline ShoutCondition::ShoutCondition(const Array& intrinsicValues,
-                                          Time resTime, Rate rate)
-        : StandardCurveDependentStepCondition(intrinsicValues),
-          resTime_(resTime), rate_(rate) {}
-
-    inline void ShoutCondition::applyTo(Array& a, Time t) const {
-        disc_ = std::exp(-rate_ * (t - resTime_));
-        StandardCurveDependentStepCondition::applyTo(a, t);
-    }
-}
+// Deprecated in version 1.32
+#pragma message("Warning: this file is empty and will disappear in a future release; do not include it.")
 
 
 #endif

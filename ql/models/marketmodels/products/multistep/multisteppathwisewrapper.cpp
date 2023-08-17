@@ -21,7 +21,6 @@ FOR A PARTICULAR PURPOSE.  See the license for more details.
 #include <ql/models/marketmodels/curvestate.hpp>
 #include <ql/models/marketmodels/utilities.hpp>
 #include <ql/models/marketmodels/evolutiondescription.hpp>
-#include <ql/auto_ptr.hpp>
 
 namespace QuantLib 
 {
@@ -30,10 +29,9 @@ namespace QuantLib
         numberOfProducts_(innerProduct.numberOfProducts())
     {
 
-        for (Size i=0; i < cashFlowsGenerated_.size(); ++i)
-            for (Size j=0; j < cashFlowsGenerated_[i].size(); ++j)
-                    cashFlowsGenerated_[i][j].amount.resize(1+innerProduct.evolution().numberOfRates());
-        
+        for (auto& i : cashFlowsGenerated_)
+            for (auto& j : i)
+                j.amount.resize(1 + innerProduct.evolution().numberOfRates());
     }
 
         std::vector<Time>  MultiProductPathwiseWrapper::possibleCashFlowTimes() const
@@ -85,11 +83,10 @@ namespace QuantLib
             return innerProduct_->evolution();
         }
 
-        QL_UNIQUE_OR_AUTO_PTR<MarketModelMultiProduct>
+        std::unique_ptr<MarketModelMultiProduct>
         MultiProductPathwiseWrapper::clone() const
         {
-                return QL_UNIQUE_OR_AUTO_PTR<MarketModelMultiProduct>(
-                                      new MultiProductPathwiseWrapper(*this));
+            return std::unique_ptr<MarketModelMultiProduct>(new MultiProductPathwiseWrapper(*this));
         }
 
       

@@ -24,9 +24,10 @@
 #ifndef quantlib_interest_rate_modelling_parameter_hpp
 #define quantlib_interest_rate_modelling_parameter_hpp
 
-#include <ql/qldefines.hpp>
 #include <ql/handle.hpp>
 #include <ql/math/optimization/constraint.hpp>
+#include <ql/qldefines.hpp>
+#include <utility>
 #include <vector>
 
 namespace QuantLib {
@@ -39,7 +40,7 @@ namespace QuantLib {
         //! Base class for model parameter implementation
         class Impl {
           public:
-            virtual ~Impl() {}
+            virtual ~Impl() = default;
             virtual Real value(const Array& params, Time t) const = 0;
         };
         ext::shared_ptr<Impl> impl_;
@@ -60,10 +61,8 @@ namespace QuantLib {
         }
         const Constraint& constraint() const { return constraint_; }
       protected:
-        Parameter(Size size,
-                  const ext::shared_ptr<Impl>& impl,
-                  const Constraint& constraint)
-        : impl_(impl), params_(size), constraint_(constraint) {}
+        Parameter(Size size, ext::shared_ptr<Impl> impl, Constraint constraint)
+        : impl_(std::move(impl)), params_(size), constraint_(std::move(constraint)) {}
         Array params_;
         Constraint constraint_;
     };
@@ -71,11 +70,9 @@ namespace QuantLib {
     //! Standard constant parameter \f$ a(t) = a \f$
     class ConstantParameter : public Parameter {
       private:
-        class Impl : public Parameter::Impl {
+        class Impl final : public Parameter::Impl {
           public:
-            Real value(const Array& params, Time) const {
-                return params[0];
-            }
+            Real value(const Array& params, Time) const override { return params[0]; }
         };
       public:
         ConstantParameter(const Constraint& constraint)
@@ -101,11 +98,9 @@ namespace QuantLib {
     //! %Parameter which is always zero \f$ a(t) = 0 \f$
     class NullParameter : public Parameter {
       private:
-        class Impl : public Parameter::Impl {
+        class Impl final : public Parameter::Impl {
           public:
-            Real value(const Array&, Time) const {
-                return 0.0;
-            }
+            Real value(const Array&, Time) const override { return 0.0; }
         };
       public:
         NullParameter()
@@ -123,12 +118,11 @@ namespace QuantLib {
     */
     class PiecewiseConstantParameter : public Parameter {
       private:
-        class Impl : public Parameter::Impl {
+        class Impl final : public Parameter::Impl {
           public:
-            explicit Impl(const std::vector<Time>& times)
-            : times_(times) {}
+            explicit Impl(std::vector<Time> times) : times_(std::move(times)) {}
 
-            Real value(const Array& params, Time t) const {
+            Real value(const Array& params, Time t) const override {
                 Size size = times_.size();
                 for (Size i=0; i<size; i++) {
                     if (t<times_[i])
@@ -136,6 +130,7 @@ namespace QuantLib {
                 }
                 return params[size];
             }
+
           private:
             std::vector<Time> times_;
         };
@@ -155,8 +150,8 @@ namespace QuantLib {
       public:
         class NumericalImpl : public Parameter::Impl {
           public:
-            NumericalImpl(const Handle<YieldTermStructure>& termStructure)
-            : times_(0), values_(0), termStructure_(termStructure) {}
+            NumericalImpl(Handle<YieldTermStructure> termStructure)
+            : times_(0), values_(0), termStructure_(std::move(termStructure)) {}
 
             void set(Time t, Real x) {
                 times_.push_back(t);
@@ -169,9 +164,8 @@ namespace QuantLib {
                 times_.clear();
                 values_.clear();
             }
-            Real value(const Array&, Time t) const {
-                std::vector<Time>::const_iterator result =
-                    std::find(times_.begin(), times_.end(), t);
+            Real value(const Array&, Time t) const override {
+                auto result = std::find(times_.begin(), times_.end(), t);
                 QL_REQUIRE(result!=times_.end(),
                            "fitting parameter not set!");
                 return values_[result - times_.begin()];

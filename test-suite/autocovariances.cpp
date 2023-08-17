@@ -23,7 +23,6 @@
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
-using namespace std;
 
 void AutocovariancesTest::testConvolutions() {
     BOOST_TEST_MESSAGE("Testing convolutions...");
@@ -85,7 +84,7 @@ void AutocovariancesTest::testAutoCorrelations() {
 }
 
 test_suite* AutocovariancesTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("auto-covariance tests");
+    auto* suite = BOOST_TEST_SUITE("auto-covariance tests");
     suite->add(QUANTLIB_TEST_CASE(&AutocovariancesTest::testConvolutions));
     suite->add(QUANTLIB_TEST_CASE(&AutocovariancesTest::testAutoCovariances));
     suite->add(QUANTLIB_TEST_CASE(&AutocovariancesTest::testAutoCorrelations));

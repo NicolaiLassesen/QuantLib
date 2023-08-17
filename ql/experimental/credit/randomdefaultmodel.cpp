@@ -19,7 +19,9 @@
 */
 
 #include <ql/experimental/credit/randomdefaultmodel.hpp>
+#include <ql/math/solvers1d/bisection.hpp>
 #include <ql/math/solvers1d/brent.hpp>
+#include <utility>
 
 using namespace std;
 
@@ -30,10 +32,11 @@ namespace QuantLib {
         // Utility for the numerical solver
         class Root {
           public:
-            Root(const Handle<DefaultProbabilityTermStructure> dts, Real pd)
-            : dts_(dts), pd_(pd) {}
+            Root(Handle<DefaultProbabilityTermStructure> dts, Real pd)
+            : dts_(std::move(dts)), pd_(pd) {}
             Real operator()(Real t) const {
-                QL_REQUIRE (t >= 0.0, "t < 0");
+                QL_REQUIRE(t >= 0.0, "GaussianRandomDefaultModel: internal error, t < 0 ("
+                                         << t << ") during root searching.");
                 return dts_->defaultProbability(t, true) - pd_;
             }
           private:
@@ -44,16 +47,13 @@ namespace QuantLib {
     }
 
     GaussianRandomDefaultModel::GaussianRandomDefaultModel(
-                               ext::shared_ptr<Pool> pool,
-                               const std::vector<DefaultProbKey>& defaultKeys,
-                               Handle<OneFactorCopula> copula,
-                               Real accuracy,
-                               long seed)
-        : RandomDefaultModel(pool, defaultKeys),
-          copula_(copula),
-          accuracy_(accuracy),
-          seed_(seed),
-          rsg_(PseudoRandom::make_sequence_generator(pool->size()+1, seed)) {
+        const ext::shared_ptr<Pool>& pool,
+        const std::vector<DefaultProbKey>& defaultKeys,
+        const Handle<OneFactorCopula>& copula,
+        Real accuracy,
+        long seed)
+    : RandomDefaultModel(pool, defaultKeys), copula_(copula), accuracy_(accuracy), seed_(seed),
+      rsg_(PseudoRandom::make_sequence_generator(pool->size() + 1, seed)) {
         registerWith(copula);
     }
 
@@ -74,9 +74,21 @@ namespace QuantLib {
             Real p = CumulativeNormalDistribution()(y);
 
             if (dts->defaultProbability(tmax) < p)
-                pool_->setTime(name, tmax+1);
-            else
-                pool_->setTime(name, Brent().solve(Root(dts,p),accuracy_,0,1));
+                pool_->setTime(name, tmax + 1);
+            else {
+                // we know there is a zero of f(t) = dts->defaultProbability(t) - p in [0, tmax]
+                try {
+                    // try bracketing the root and find it with Brent
+                    Brent brent;
+                    brent.setLowerBound(0.0);
+                    brent.setUpperBound(tmax);
+                    pool_->setTime(name, brent.solve(Root(dts, p), accuracy_, tmax / 2.0, 1.0));
+                } catch (...) {
+                    // if Brent fails, use Bisection, this is guaranteed to find the root
+                    pool_->setTime(
+                        name, Bisection().solve(Root(dts, p), accuracy_, tmax / 2.0, 0.0, tmax));
+                }
+            }
         }
     }
 

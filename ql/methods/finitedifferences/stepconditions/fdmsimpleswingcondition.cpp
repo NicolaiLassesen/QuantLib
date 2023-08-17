@@ -19,22 +19,20 @@
 
 #include <ql/methods/finitedifferences/operators/fdmlinearoplayout.hpp>
 #include <ql/methods/finitedifferences/stepconditions/fdmsimpleswingcondition.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     FdmSimpleSwingCondition::FdmSimpleSwingCondition(
-            const std::vector<Time> & exerciseTimes,
-            const ext::shared_ptr<FdmMesher>& mesher,
-            const ext::shared_ptr<FdmInnerValueCalculator>& calculator,
-            Size swingDirection,
-            Size minExercises)
-    : exerciseTimes_ (exerciseTimes),
-      mesher_        (mesher),
-      calculator_    (calculator),
-      minExercises_  (minExercises),
-      swingDirection_(swingDirection) {
-    }
-    
+        std::vector<Time> exerciseTimes,
+        ext::shared_ptr<FdmMesher> mesher,
+        ext::shared_ptr<FdmInnerValueCalculator> calculator,
+        Size swingDirection,
+        Size minExercises)
+    : exerciseTimes_(std::move(exerciseTimes)), mesher_(std::move(mesher)),
+      calculator_(std::move(calculator)), minExercises_(minExercises),
+      swingDirection_(swingDirection) {}
+
     void FdmSimpleSwingCondition::applyTo(Array& a, Time t) const {
 
         const std::vector<Time>::const_iterator iter
@@ -46,15 +44,10 @@ namespace QuantLib {
 
             const Size d = std::distance(iter, exerciseTimes_.end());
 
-            const ext::shared_ptr<FdmLinearOpLayout> layout=mesher_->layout();
-
-            QL_REQUIRE(layout->size() == a.size(),
+            QL_REQUIRE(mesher_->layout()->size() == a.size(),
                        "inconsistent array dimensions");
 
-            const FdmLinearOpIterator endIter = layout->end();
-            
-            for (FdmLinearOpIterator iter = layout->begin(); iter != endIter;
-                 ++iter) {
+            for (const auto& iter : *mesher_->layout()) {
                 
                 const std::vector<Size>& coor = iter.coordinates();
                 
@@ -64,7 +57,7 @@ namespace QuantLib {
                     const Real cashflow = calculator_->innerValue(iter, t);
                     const Real currentValue = a[iter.index()];
                     const Real valuePlusOneExercise
-                         = a[layout->neighbourhood(iter, swingDirection_, 1)];
+                         = a[mesher_->layout()->neighbourhood(iter, swingDirection_, 1)];
                     
                     if (   currentValue < valuePlusOneExercise + cashflow
                         || exercisesUsed + d <=  minExercises_) {

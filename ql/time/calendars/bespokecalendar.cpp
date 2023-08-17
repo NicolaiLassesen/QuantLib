@@ -19,18 +19,18 @@
 
 #include <ql/time/calendars/bespokecalendar.hpp>
 #include <sstream>
+#include <utility>
 
 namespace QuantLib {
 
-    BespokeCalendar::Impl::Impl(const std::string& name)
-    : name_(name) {}
+    BespokeCalendar::Impl::Impl(std::string name) : name_(std::move(name)) {}
 
     std::string BespokeCalendar::Impl::name() const {
         return name_;
     }
 
     bool BespokeCalendar::Impl::isWeekend(Weekday w) const {
-        return (weekend_.find(w) != weekend_.end());
+        return (weekend_mask_ & (1 << w)) != 0;
     }
 
     bool BespokeCalendar::Impl::isBusinessDay(const Date& date) const {
@@ -38,7 +38,7 @@ namespace QuantLib {
     }
 
     void BespokeCalendar::Impl::addWeekend(Weekday w) {
-        weekend_.insert(w);
+        weekend_mask_ |= (1 << w);
     }
 
 

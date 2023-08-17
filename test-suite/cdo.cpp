@@ -34,18 +34,15 @@
 #include <ql/time/daycounters/actualactual.hpp>
 #include <ql/quotes/simplequote.hpp>
 #include <ql/currencies/europe.hpp>
-#include <ql/functional.hpp>
-#include <boost/preprocessor/iteration/local.hpp>
 #include <iomanip>
 #include <iostream>
 
 using namespace QuantLib;
-using namespace std;
 using namespace boost::unit_test_framework;
 
 #ifndef QL_PATCH_SOLARIS
 
-namespace {
+namespace cdo_test {
 
     Real hwAttachment[] = { 0.00, 0.03, 0.06, 0.10 };
     Real hwDetachment[] = { 0.03, 0.06, 0.10, 1.00 };
@@ -74,7 +71,7 @@ namespace {
         { 0.3,  5,  5, { 1713, 359, 136,  9 } }
     };
 
-    void check(int i, int j, const string& desc, Real found, Real expected,
+    void check(int i, int j, const std::string& desc, Real found, Real expected,
                Real bpTolerance, Real relativeTolerance) 
     {
         /* Uncomment to display the full show if your debugging:
@@ -100,7 +97,7 @@ void CdoTest::testHW(unsigned dataSet) {
     BOOST_TEST_MESSAGE ("Testing CDO premiums against Hull-White values"
                         " for data set " << dataSet << "...");
 
-    SavedSettings backup;
+    using namespace cdo_test;
 
     Size poolSize = 100;
     Real lambda = 0.01;
@@ -116,7 +113,7 @@ void CdoTest::testHW(unsigned dataSet) {
     Compounding cmp = Continuous; // Simple;
 
     Real recovery = 0.4;
-    vector<Real> nominals(poolSize, 100.0);
+    std::vector<Real> nominals(poolSize, 100.0);
     Real premium = 0.02;
     Period maxTerm (5, Years);
     Schedule schedule = MakeSchedule().from(Date (1, September, 2006))
@@ -134,30 +131,27 @@ void CdoTest::testHW(unsigned dataSet) {
     Handle<YieldTermStructure> yieldHandle (yieldPtr);
 
     Handle<Quote> hazardRate(ext::shared_ptr<Quote>(new SimpleQuote(lambda)));
-    vector<Handle<DefaultProbabilityTermStructure> > basket;
+    std::vector<Handle<DefaultProbabilityTermStructure> > basket;
     ext::shared_ptr<DefaultProbabilityTermStructure> ptr (
                new FlatHazardRate (asofDate,
                                    hazardRate,
-                                   ActualActual()));
+                                   ActualActual(ActualActual::ISDA)));
     ext::shared_ptr<Pool> pool (new Pool());
-    vector<string> names;
+    std::vector<std::string> names;
     // probability key items
-    vector<Issuer> issuers;
-    vector<pair<DefaultProbKey,
+    std::vector<Issuer> issuers;
+    std::vector<std::pair<DefaultProbKey,
            Handle<DefaultProbabilityTermStructure> > > probabilities;
-    probabilities.push_back(std::make_pair(
-        NorthAmericaCorpDefaultKey(EURCurrency(),
-                                   SeniorSec,
-                                   Period(0,Weeks),
-                                   10.),
-       Handle<DefaultProbabilityTermStructure>(ptr)));
+    probabilities.emplace_back(
+        NorthAmericaCorpDefaultKey(EURCurrency(), SeniorSec, Period(0, Weeks), 10.),
+        Handle<DefaultProbabilityTermStructure>(ptr));
 
     for (Size i=0; i<poolSize; ++i) {
-        ostringstream o;
+        std::ostringstream o;
         o << "issuer-" << i;
         names.push_back(o.str());
-        basket.push_back(Handle<DefaultProbabilityTermStructure>(ptr));
-        issuers.push_back(Issuer(probabilities));
+        basket.emplace_back(ptr);
+        issuers.emplace_back(probabilities);
         pool->add(names.back(), issuers.back(), NorthAmericaCorpDefaultKey(
                 EURCurrency(), QuantLib::SeniorSec, Period(), 1.));
     }
@@ -189,21 +183,21 @@ void CdoTest::testHW(unsigned dataSet) {
             GaussianCopulaPolicy::initTraits()));
 
         // 1.-Inhomogeneous gaussian
-        modelNames.push_back("Inhomogeneous gaussian");
+        modelNames.emplace_back("Inhomogeneous gaussian");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             IHGaussPoolLossModel(gaussKtLossLM, nBuckets, 5., -5, 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 2.-homogeneous gaussian
-        modelNames.push_back("Homogeneous gaussian");
+        modelNames.emplace_back("Homogeneous gaussian");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             HomogGaussPoolLossModel(gaussKtLossLM, nBuckets, 5., -5, 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 3.-random default gaussian
-        modelNames.push_back("Random default gaussian");
+        modelNames.emplace_back("Random default gaussian");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>(new
             RandomDefaultLM<GaussianCopulaPolicy>(gaussKtLossLM, numSims)));
         absoluteTolerance.push_back(1.);
@@ -211,7 +205,7 @@ void CdoTest::testHW(unsigned dataSet) {
         relativeTolerancePeriod.push_back(0.07);
         // SECOND MC
         // gaussian LHP
-        modelNames.push_back("Gaussian LHP");
+        modelNames.emplace_back("Gaussian LHP");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>(new
             GaussianLHPLossModel(hCorrelation,
                 std::vector<Real>(poolSize, recovery))));
@@ -232,21 +226,21 @@ void CdoTest::testHW(unsigned dataSet) {
             poolSize,
             initTG));
         // 1.-inhomogeneous studentT
-        modelNames.push_back("Inhomogeneous student");
+        modelNames.emplace_back("Inhomogeneous student");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             IHStudentPoolLossModel(TKtLossLM, nBuckets, 5., -5., 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 2.-homogeneous student T
-        modelNames.push_back("Homogeneous student");
+        modelNames.emplace_back("Homogeneous student");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             HomogTPoolLossModel(TKtLossLM, nBuckets, 5., -5., 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 3.-random default student T
-        modelNames.push_back("Random default studentT");
+        modelNames.emplace_back("Random default studentT");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>(new
             RandomDefaultLM<TCopulaPolicy>(TKtLossLM, numSims)));
         absoluteTolerance.push_back(1.);
@@ -272,21 +266,21 @@ void CdoTest::testHW(unsigned dataSet) {
             poolSize,
             initTG));
         // 1.-inhomogeneous
-        modelNames.push_back("Inhomogeneous student-gaussian");
+        modelNames.emplace_back("Inhomogeneous student-gaussian");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             IHStudentPoolLossModel(TKtLossLM, nBuckets, 5., -5., 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 2.-homogeneous
-        modelNames.push_back("Homogeneous student-gaussian");
+        modelNames.emplace_back("Homogeneous student-gaussian");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             HomogTPoolLossModel(TKtLossLM, nBuckets, 5., -5., 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 3.-random default
-        modelNames.push_back("Random default student-gaussian");
+        modelNames.emplace_back("Random default student-gaussian");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>(new
             RandomDefaultLM<TCopulaPolicy>(TKtLossLM, numSims)));
         absoluteTolerance.push_back(1.);
@@ -308,21 +302,21 @@ void CdoTest::testHW(unsigned dataSet) {
             poolSize,
             initTG));
         // 1.-inhomogeneous gaussian
-        modelNames.push_back("Inhomogeneous gaussian-student");
+        modelNames.emplace_back("Inhomogeneous gaussian-student");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             IHStudentPoolLossModel(TKtLossLM, nBuckets, 5., -5., 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 2.-homogeneous gaussian
-        modelNames.push_back("Homogeneous gaussian-student");
+        modelNames.emplace_back("Homogeneous gaussian-student");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>( new
             HomogTPoolLossModel(TKtLossLM, nBuckets, 5., -5., 15)));
         absoluteTolerance.push_back(1.);
         relativeToleranceMidp.push_back(0.04);
         relativeTolerancePeriod.push_back(0.04);
         // 3.-random default gaussian
-        modelNames.push_back("Random default gaussian-student");
+        modelNames.emplace_back("Random default gaussian-student");
         basketModels.push_back(ext::shared_ptr<DefaultLossModel>(new
             RandomDefaultLM<TCopulaPolicy>(TKtLossLM, numSims)));
         absoluteTolerance.push_back(1.);
@@ -341,7 +335,7 @@ void CdoTest::testHW(unsigned dataSet) {
         ext::shared_ptr<Basket> basketPtr (
             new Basket(asofDate, names, nominals, pool,
                 hwAttachment[j], hwDetachment[j]));
-        ostringstream trancheId;
+        std::ostringstream trancheId;
         trancheId << "[" << hwAttachment[j] << " , " << hwDetachment[j]
             << "]";
         SyntheticCDO cdoe(basketPtr, Protection::Seller,
@@ -369,14 +363,16 @@ void CdoTest::testHW(unsigned dataSet) {
 
 
 test_suite* CdoTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("CDO tests");
+    auto* suite = BOOST_TEST_SUITE("CDO tests");
+
     #ifndef QL_PATCH_SOLARIS
     if (speed == Slow) {
-        #define BOOST_PP_LOCAL_MACRO(n) \
-            suite->add(QUANTLIB_TEST_CASE(ext::bind(&CdoTest::testHW, n)));
-
-        #define BOOST_PP_LOCAL_LIMITS (0, 4)
-        #include BOOST_PP_LOCAL_ITERATE()
+        // unrolled to get different test names
+        suite->add(QUANTLIB_TEST_CASE([=](){ CdoTest::testHW(0); }));
+        suite->add(QUANTLIB_TEST_CASE([=](){ CdoTest::testHW(1); }));
+        suite->add(QUANTLIB_TEST_CASE([=](){ CdoTest::testHW(2); }));
+        suite->add(QUANTLIB_TEST_CASE([=](){ CdoTest::testHW(3); }));
+        suite->add(QUANTLIB_TEST_CASE([=](){ CdoTest::testHW(4); }));
     }
     #endif
     return suite;

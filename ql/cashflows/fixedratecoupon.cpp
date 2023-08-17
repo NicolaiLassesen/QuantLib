@@ -23,6 +23,7 @@
 */
 
 #include <ql/cashflows/fixedratecoupon.hpp>
+#include <utility>
 
 using std::vector;
 
@@ -43,32 +44,43 @@ namespace QuantLib {
 
     FixedRateCoupon::FixedRateCoupon(const Date& paymentDate,
                                      Real nominal,
-                                     const InterestRate& interestRate,
+                                     InterestRate interestRate,
                                      const Date& accrualStartDate,
                                      const Date& accrualEndDate,
                                      const Date& refPeriodStart,
                                      const Date& refPeriodEnd,
                                      const Date& exCouponDate)
-    : Coupon(paymentDate, nominal, accrualStartDate, accrualEndDate,
-             refPeriodStart, refPeriodEnd, exCouponDate),
-      rate_(interestRate) {}
+    : Coupon(paymentDate,
+             nominal,
+             accrualStartDate,
+             accrualEndDate,
+             refPeriodStart,
+             refPeriodEnd,
+             exCouponDate),
+      rate_(std::move(interestRate)) {}
 
     Real FixedRateCoupon::amount() const {
-        return nominal()*(rate_.compoundFactor(accrualStartDate_,
-                                               accrualEndDate_,
-                                               refPeriodStart_,
-                                               refPeriodEnd_) - 1.0);
+        calculate();
+        return amount_;
+    }
+
+    void FixedRateCoupon::performCalculations() const {
+        amount_ = nominal() * (rate_.compoundFactor(accrualStartDate_, accrualEndDate_,
+                                                    refPeriodStart_, refPeriodEnd_) -
+                               1.0);
     }
 
     Real FixedRateCoupon::accruedAmount(const Date& d) const {
         if (d <= accrualStartDate_ || d > paymentDate_) {
+            // out of coupon range
             return 0.0;
         } else if (tradingExCoupon(d)) {
             return -nominal()*(rate_.compoundFactor(d,
-                                                    accrualEndDate_,
+                                                    std::max(d, accrualEndDate_),
                                                     refPeriodStart_,
                                                     refPeriodEnd_) - 1.0);
         } else {
+            // usual case
             return nominal()*(rate_.compoundFactor(accrualStartDate_,
                                                    std::min(d,accrualEndDate_),
                                                    refPeriodStart_,
@@ -78,8 +90,7 @@ namespace QuantLib {
 
 
     FixedRateLeg::FixedRateLeg(const Schedule& schedule)
-    : schedule_(schedule), paymentCalendar_(schedule.calendar()),
-      paymentAdjustment_(Following), paymentLag_(0) {}
+    : schedule_(schedule), paymentCalendar_(schedule.calendar()) {}
 
     FixedRateLeg& FixedRateLeg::withNotionals(Real notional) {
         notionals_ = vector<Real>(1,notional);

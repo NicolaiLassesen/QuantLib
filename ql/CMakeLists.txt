@@ -1,6 +1,4 @@
-# cpp files, this list is maintained manually
-
-set(QuantLib_SRC
+set(QL_SOURCES
     cashflow.cpp
     cashflows/averagebmacoupon.cpp
     cashflows/capflooredcoupon.cpp
@@ -18,6 +16,7 @@ set(QuantLib_SRC
     cashflows/digitaliborcoupon.cpp
     cashflows/dividend.cpp
     cashflows/duration.cpp
+    cashflows/equitycashflow.cpp
     cashflows/fixedratecoupon.cpp
     cashflows/floatingratecoupon.cpp
     cashflows/iborcoupon.cpp
@@ -30,7 +29,9 @@ set(QuantLib_SRC
     cashflows/replication.cpp
     cashflows/simplecashflow.cpp
     cashflows/timebasket.cpp
+    cashflows/subperiodcoupon.cpp
     cashflows/yoyinflationcoupon.cpp
+    cashflows/zeroinflationcashflow.cpp
     currencies/africa.cpp
     currencies/america.cpp
     currencies/asia.cpp
@@ -44,22 +45,18 @@ set(QuantLib_SRC
     event.cpp
     exchangerate.cpp
     exercise.cpp
-    experimental/amortizingbonds/amortizingcmsratebond.cpp
-    experimental/amortizingbonds/amortizingfixedratebond.cpp
-    experimental/amortizingbonds/amortizingfloatingratebond.cpp
+    experimental/asian/analytic_cont_geom_av_price_heston.cpp
+    experimental/asian/analytic_discr_geom_av_price_heston.cpp
     experimental/averageois/arithmeticaverageois.cpp
     experimental/averageois/arithmeticoisratehelper.cpp
     experimental/averageois/averageoiscouponpricer.cpp
     experimental/averageois/makearithmeticaverageois.cpp
-    experimental/barrieroption/analyticdoublebarrierbinaryengine.cpp
-    experimental/barrieroption/analyticdoublebarrierengine.cpp
+    experimental/barrieroption/mcdoublebarrierengine.cpp
     experimental/barrieroption/discretizeddoublebarrieroption.cpp
-    experimental/barrieroption/doublebarrieroption.cpp
-    experimental/barrieroption/doublebarriertype.cpp
     experimental/barrieroption/perturbativebarrieroptionengine.cpp
     experimental/barrieroption/quantodoublebarrieroption.cpp
+    experimental/barrieroption/suowangdoublebarrierengine.cpp
     experimental/barrieroption/vannavolgabarrierengine.cpp
-    experimental/barrieroption/wulinyongdoublebarrierengine.cpp
     experimental/basismodels/swaptioncfs.cpp
     experimental/basismodels/tenoroptionletvts.cpp
     experimental/basismodels/tenorswaptionvts.cpp
@@ -92,15 +89,12 @@ set(QuantLib_SRC
     experimental/commodities/unitofmeasure.cpp
     experimental/commodities/unitofmeasureconversion.cpp
     experimental/commodities/unitofmeasureconversionmanager.cpp
-    experimental/convertiblebonds/convertiblebond.cpp
-    experimental/convertiblebonds/discretizedconvertible.cpp
     experimental/coupons/cmsspreadcoupon.cpp
     experimental/coupons/digitalcmsspreadcoupon.cpp
     experimental/coupons/lognormalcmsspreadpricer.cpp
     experimental/coupons/proxyibor.cpp
     experimental/coupons/quantocouponpricer.cpp
     experimental/coupons/strippedcapflooredcoupon.cpp
-    experimental/coupons/subperiodcoupons.cpp
     experimental/coupons/swapspreadindex.cpp
     experimental/credit/basecorrelationstructure.cpp
     experimental/credit/basket.cpp
@@ -128,7 +122,6 @@ set(QuantLib_SRC
     experimental/credit/recoveryratequote.cpp
     experimental/credit/riskyassetswap.cpp
     experimental/credit/riskyassetswapoption.cpp
-    experimental/credit/riskybond.cpp
     experimental/credit/syntheticcdo.cpp
     experimental/exoticoptions/analyticamericanmargrabeengine.cpp
     experimental/exoticoptions/analyticcomplexchooserengine.cpp
@@ -161,17 +154,12 @@ set(QuantLib_SRC
     experimental/exoticoptions/writerextensibleoption.cpp
     experimental/finitedifferences/dynprogvppintrinsicvalueengine.cpp
     experimental/finitedifferences/fdextoujumpvanillaengine.cpp
-    experimental/finitedifferences/fdhestondoublebarrierengine.cpp
     experimental/finitedifferences/fdklugeextouspreadengine.cpp
-    experimental/finitedifferences/fdmblackscholesfwdop.cpp
     experimental/finitedifferences/fdmdupire1dop.cpp
     experimental/finitedifferences/fdmextendedornsteinuhlenbeckop.cpp
     experimental/finitedifferences/fdmextoujumpop.cpp
     experimental/finitedifferences/fdmextoujumpsolver.cpp
-    experimental/finitedifferences/fdmhestonfwdop.cpp
-    experimental/finitedifferences/fdmhestongreensfct.cpp
     experimental/finitedifferences/fdmklugeextouop.cpp
-    experimental/finitedifferences/fdmsquarerootfwdop.cpp
     experimental/finitedifferences/fdmvppstartlimitstepcondition.cpp
     experimental/finitedifferences/fdmvppstepcondition.cpp
     experimental/finitedifferences/fdmvppstepconditionfactory.cpp
@@ -182,8 +170,7 @@ set(QuantLib_SRC
     experimental/finitedifferences/fdsimpleklugeextouvppengine.cpp
     experimental/finitedifferences/glued1dmesher.cpp
     experimental/finitedifferences/vanillavppoption.cpp
-    experimental/futures/overnightindexfuture.cpp
-    experimental/futures/overnightindexfutureratehelper.cpp
+    experimental/forward/analytichestonforwardeuropeanengine.cpp
     experimental/fx/blackdeltacalculator.cpp
     experimental/fx/deltavolquote.cpp
     experimental/inflation/cpicapfloorengines.cpp
@@ -192,7 +179,6 @@ set(QuantLib_SRC
     experimental/inflation/yoyoptionlethelpers.cpp
     experimental/lattices/extendedbinomialtree.cpp
     experimental/math/convolvedstudentt.cpp
-    experimental/math/expm.cpp
     experimental/math/fireflyalgorithm.cpp
     experimental/math/gaussiancopulapolicy.cpp
     experimental/math/gaussiannoncentralchisquaredpolynomial.cpp
@@ -206,15 +192,12 @@ set(QuantLib_SRC
     experimental/mcbasket/longstaffschwartzmultipathpricer.cpp
     experimental/mcbasket/mcpathbasketengine.cpp
     experimental/mcbasket/pathmultiassetoption.cpp
-    experimental/models/hestonslvfdmmodel.cpp
-    experimental/models/hestonslvmcmodel.cpp
     experimental/models/normalclvmodel.cpp
     experimental/models/squarerootclvmodel.cpp
     experimental/processes/extendedblackscholesprocess.cpp
     experimental/processes/extendedornsteinuhlenbeckprocess.cpp
     experimental/processes/extouwithjumpsprocess.cpp
     experimental/processes/gemanroncoroniprocess.cpp
-    experimental/processes/hestonslvprocess.cpp
     experimental/processes/klugeextouprocess.cpp
     experimental/processes/vegastressedblackscholesprocess.cpp
     experimental/risk/creditriskplus.cpp
@@ -224,6 +207,8 @@ set(QuantLib_SRC
     experimental/swaptions/haganirregularswaptionengine.cpp
     experimental/swaptions/irregularswap.cpp
     experimental/swaptions/irregularswaption.cpp
+    experimental/termstructures/basisswapratehelpers.cpp
+    experimental/termstructures/crosscurrencyratehelpers.cpp
     experimental/variancegamma/analyticvariancegammaengine.cpp
     experimental/variancegamma/fftengine.cpp
     experimental/variancegamma/fftvanillaengine.cpp
@@ -250,8 +235,11 @@ set(QuantLib_SRC
     experimental/volatility/zabr.cpp
     index.cpp
     indexes/bmaindex.cpp
+    indexes/equityindex.cpp
     indexes/ibor/bibor.cpp
+    indexes/ibor/corra.cpp
     indexes/ibor/eonia.cpp
+    indexes/ibor/estr.cpp
     indexes/ibor/euribor.cpp
     indexes/ibor/eurlibor.cpp
     indexes/ibor/fedfunds.cpp
@@ -271,6 +259,7 @@ set(QuantLib_SRC
     indexes/swap/jpyliborswap.cpp
     indexes/swap/usdliborswap.cpp
     indexes/swapindex.cpp
+    instrument.cpp
     instruments/asianoption.cpp
     instruments/assetswap.cpp
     instruments/averagetype.cpp
@@ -279,8 +268,13 @@ set(QuantLib_SRC
     instruments/basketoption.cpp
     instruments/bmaswap.cpp
     instruments/bond.cpp
+    instruments/bondforward.cpp
+    instruments/bonds/amortizingcmsratebond.cpp
+    instruments/bonds/amortizingfixedratebond.cpp
+    instruments/bonds/amortizingfloatingratebond.cpp
     instruments/bonds/btp.cpp
     instruments/bonds/cmsratebond.cpp
+    instruments/bonds/convertiblebonds.cpp
     instruments/bonds/cpibond.cpp
     instruments/bonds/fixedratebond.cpp
     instruments/bonds/floatingratebond.cpp
@@ -294,8 +288,10 @@ set(QuantLib_SRC
     instruments/creditdefaultswap.cpp
     instruments/dividendbarrieroption.cpp
     instruments/dividendvanillaoption.cpp
+    instruments/doublebarrieroption.cpp
+    instruments/doublebarriertype.cpp
+    instruments/equitytotalreturnswap.cpp
     instruments/europeanoption.cpp
-    instruments/fixedratebondforward.cpp
     instruments/floatfloatswap.cpp
     instruments/floatfloatswaption.cpp
     instruments/forward.cpp
@@ -317,10 +313,12 @@ set(QuantLib_SRC
     instruments/nonstandardswaption.cpp
     instruments/oneassetoption.cpp
     instruments/overnightindexedswap.cpp
+    instruments/overnightindexfuture.cpp
     instruments/payoffs.cpp
     instruments/quantobarrieroption.cpp
     instruments/quantoforwardvanillaoption.cpp
     instruments/quantovanillaoption.cpp
+    instruments/simplifynotificationgraph.cpp
     instruments/stickyratchet.cpp
     instruments/stock.cpp
     instruments/swap.cpp
@@ -331,6 +329,7 @@ set(QuantLib_SRC
     instruments/varianceswap.cpp
     instruments/yearonyearinflationswap.cpp
     instruments/zerocouponinflationswap.cpp
+    instruments/zerocouponswap.cpp
     interestrate.cpp
     legacy/libormarketmodels/lfmcovarparam.cpp
     legacy/libormarketmodels/lfmcovarproxy.cpp
@@ -372,6 +371,7 @@ set(QuantLib_SRC
     math/factorial.cpp
     math/incompletegamma.cpp
     math/integrals/discreteintegrals.cpp
+    math/integrals/exponentialintegrals.cpp
     math/integrals/filonintegral.cpp
     math/integrals/gaussianorthogonalpolynomial.cpp
     math/integrals/gaussianquadratures.cpp
@@ -379,10 +379,12 @@ set(QuantLib_SRC
     math/integrals/integral.cpp
     math/integrals/kronrodintegral.cpp
     math/integrals/segmentintegral.cpp
+    math/interpolations/chebyshevinterpolation.cpp    
     math/matrix.cpp
     math/matrixutilities/basisincompleteordered.cpp
     math/matrixutilities/bicgstab.cpp
     math/matrixutilities/choleskydecomposition.cpp
+    math/matrixutilities/expm.cpp
     math/matrixutilities/factorreduction.cpp
     math/matrixutilities/getcovariance.cpp
     math/matrixutilities/gmres.cpp
@@ -447,16 +449,20 @@ set(QuantLib_SRC
     methods/finitedifferences/meshers/uniformgridmesher.cpp
     methods/finitedifferences/operators/fdm2dblackscholesop.cpp
     methods/finitedifferences/operators/fdmbatesop.cpp
+    methods/finitedifferences/operators/fdmblackscholesfwdop.cpp
     methods/finitedifferences/operators/fdmblackscholesop.cpp
     methods/finitedifferences/operators/fdmcevop.cpp
     methods/finitedifferences/operators/fdmg2op.cpp
+    methods/finitedifferences/operators/fdmhestonfwdop.cpp
     methods/finitedifferences/operators/fdmhestonhullwhiteop.cpp
     methods/finitedifferences/operators/fdmhestonop.cpp
+    methods/finitedifferences/operators/fdmcirop.cpp
     methods/finitedifferences/operators/fdmhullwhiteop.cpp
     methods/finitedifferences/operators/fdmlinearoplayout.cpp
     methods/finitedifferences/operators/fdmlocalvolfwdop.cpp
     methods/finitedifferences/operators/fdmornsteinuhlenbeckop.cpp
     methods/finitedifferences/operators/fdmsabrop.cpp
+    methods/finitedifferences/operators/fdmsquarerootfwdop.cpp
     methods/finitedifferences/operators/firstderivativeop.cpp
     methods/finitedifferences/operators/ninepointlinearop.cpp
     methods/finitedifferences/operators/nthorderderivativeop.cpp
@@ -482,6 +488,7 @@ set(QuantLib_SRC
     methods/finitedifferences/solvers/fdmg2solver.cpp
     methods/finitedifferences/solvers/fdmhestonhullwhitesolver.cpp
     methods/finitedifferences/solvers/fdmhestonsolver.cpp
+    methods/finitedifferences/solvers/fdmcirsolver.cpp
     methods/finitedifferences/solvers/fdmhullwhitesolver.cpp
     methods/finitedifferences/solvers/fdmsimple2dbssolver.cpp
     methods/finitedifferences/stepconditions/fdmamericanstepcondition.cpp
@@ -494,13 +501,17 @@ set(QuantLib_SRC
     methods/finitedifferences/tridiagonaloperator.cpp
     methods/finitedifferences/utilities/bsmrndcalculator.cpp
     methods/finitedifferences/utilities/cevrndcalculator.cpp
+    methods/finitedifferences/utilities/escroweddividendadjustment.cpp
     methods/finitedifferences/utilities/fdmaffinemodelswapinnervalue.cpp
     methods/finitedifferences/utilities/fdmaffinemodeltermstructure.cpp
     methods/finitedifferences/utilities/fdmdirichletboundary.cpp
     methods/finitedifferences/utilities/fdmdiscountdirichletboundary.cpp
     methods/finitedifferences/utilities/fdmdividendhandler.cpp
+    methods/finitedifferences/utilities/fdmescrowedloginnervaluecalculator.cpp
+    methods/finitedifferences/utilities/fdmhestongreensfct.cpp
     methods/finitedifferences/utilities/fdmindicesonboundary.cpp
     methods/finitedifferences/utilities/fdminnervaluecalculator.cpp
+    methods/finitedifferences/utilities/fdmshoutloginnervaluecalculator.cpp
     methods/finitedifferences/utilities/fdmmesherintegral.cpp
     methods/finitedifferences/utilities/fdmquantohelper.cpp
     methods/finitedifferences/utilities/fdmtimedepdirichletboundary.cpp
@@ -520,6 +531,8 @@ set(QuantLib_SRC
     models/equity/gjrgarchmodel.cpp
     models/equity/hestonmodel.cpp
     models/equity/hestonmodelhelper.cpp
+    models/equity/hestonslvfdmmodel.cpp
+    models/equity/hestonslvmcmodel.cpp
     models/equity/piecewisetimedependenthestonmodel.cpp
     models/marketmodels/accountingengine.cpp
     models/marketmodels/browniangenerators/mtbrowniangenerator.cpp
@@ -555,7 +568,6 @@ set(QuantLib_SRC
     models/marketmodels/evolvers/lognormalfwdrateiballand.cpp
     models/marketmodels/evolvers/lognormalfwdrateipc.cpp
     models/marketmodels/evolvers/lognormalfwdratepc.cpp
-    models/marketmodels/evolvers/marketmodelvolprocess.cpp
     models/marketmodels/evolvers/normalfwdratepc.cpp
     models/marketmodels/evolvers/svddfwdratepc.cpp
     models/marketmodels/evolvers/volprocesses/squarerootandersen.cpp
@@ -578,7 +590,6 @@ set(QuantLib_SRC
     models/marketmodels/models/piecewiseconstantabcdvariance.cpp
     models/marketmodels/models/piecewiseconstantvariance.cpp
     models/marketmodels/models/pseudorootfacade.cpp
-    models/marketmodels/models/volatilityinterpolationspecifier.cpp
     models/marketmodels/models/volatilityinterpolationspecifierabcd.cpp
     models/marketmodels/pathwiseaccountingengine.cpp
     models/marketmodels/pathwisediscounter.cpp
@@ -637,6 +648,7 @@ set(QuantLib_SRC
     models/volatility/constantestimator.cpp
     models/volatility/garch.cpp
     money.cpp
+    optional.cpp
     patterns/observable.cpp
     position.cpp
     prices.cpp
@@ -647,14 +659,20 @@ set(QuantLib_SRC
     pricingengines/asian/analytic_discr_geom_av_strike.cpp
     pricingengines/asian/fdblackscholesasianengine.cpp
     pricingengines/asian/mc_discr_arith_av_price.cpp
+    pricingengines/asian/mc_discr_arith_av_price_heston.cpp
     pricingengines/asian/mc_discr_arith_av_strike.cpp
     pricingengines/asian/mc_discr_geom_av_price.cpp
+    pricingengines/asian/mc_discr_geom_av_price_heston.cpp
+    pricingengines/asian/turnbullwakemanasianengine.cpp
     pricingengines/barrier/analyticbarrierengine.cpp
     pricingengines/barrier/analyticbinarybarrierengine.cpp
+    pricingengines/barrier/analyticdoublebarrierbinaryengine.cpp
+    pricingengines/barrier/analyticdoublebarrierengine.cpp
     pricingengines/barrier/discretizedbarrieroption.cpp
     pricingengines/barrier/fdblackscholesbarrierengine.cpp
     pricingengines/barrier/fdblackscholesrebateengine.cpp
     pricingengines/barrier/fdhestonbarrierengine.cpp
+    pricingengines/barrier/fdhestondoublebarrierengine.cpp
     pricingengines/barrier/fdhestonrebateengine.cpp
     pricingengines/barrier/mcbarrierengine.cpp
     pricingengines/basket/fd2dblackscholesvanillaengine.cpp
@@ -667,6 +685,8 @@ set(QuantLib_SRC
     pricingengines/blackscholescalculator.cpp
     pricingengines/bond/bondfunctions.cpp
     pricingengines/bond/discountingbondengine.cpp
+    pricingengines/bond/discretizedconvertible.cpp
+    pricingengines/bond/riskybondengine.cpp
     pricingengines/capfloor/analyticcapfloorengine.cpp
     pricingengines/capfloor/bacheliercapfloorengine.cpp
     pricingengines/capfloor/blackcapfloorengine.cpp
@@ -680,12 +700,15 @@ set(QuantLib_SRC
     pricingengines/credit/integralcdsengine.cpp
     pricingengines/credit/isdacdsengine.cpp
     pricingengines/credit/midpointcdsengine.cpp
+    pricingengines/forward/mcforwardeuropeanbsengine.cpp
+    pricingengines/forward/mcforwardeuropeanhestonengine.cpp
     pricingengines/greeks.cpp
     pricingengines/inflation/inflationcapfloorengines.cpp
     pricingengines/lookback/analyticcontinuousfixedlookback.cpp
     pricingengines/lookback/analyticcontinuousfloatinglookback.cpp
     pricingengines/lookback/analyticcontinuouspartialfixedlookback.cpp
     pricingengines/lookback/analyticcontinuouspartialfloatinglookback.cpp
+    pricingengines/lookback/mclookbackengine.cpp
     pricingengines/swap/cvaswapengine.cpp
     pricingengines/swap/discountingswapengine.cpp
     pricingengines/swap/discretizedswap.cpp
@@ -706,6 +729,7 @@ set(QuantLib_SRC
     pricingengines/vanilla/analyticdigitalamericanengine.cpp
     pricingengines/vanilla/analyticdividendeuropeanengine.cpp
     pricingengines/vanilla/analyticeuropeanengine.cpp
+    pricingengines/vanilla/analyticeuropeanvasicekengine.cpp
     pricingengines/vanilla/analyticgjrgarchengine.cpp
     pricingengines/vanilla/analytich1hwengine.cpp
     pricingengines/vanilla/analytichestonengine.cpp
@@ -716,8 +740,11 @@ set(QuantLib_SRC
     pricingengines/vanilla/bjerksundstenslandengine.cpp
     pricingengines/vanilla/coshestonengine.cpp
     pricingengines/vanilla/discretizedvanillaoption.cpp
+    pricingengines/vanilla/exponentialfittinghestonengine.cpp
     pricingengines/vanilla/fdbatesvanillaengine.cpp
     pricingengines/vanilla/fdblackscholesvanillaengine.cpp
+    pricingengines/vanilla/fdblackscholesshoutengine.cpp
+    pricingengines/vanilla/fdcirvanillaengine.cpp
     pricingengines/vanilla/fdcevvanillaengine.cpp
     pricingengines/vanilla/fdhestonhullwhitevanillaengine.cpp
     pricingengines/vanilla/fdhestonvanillaengine.cpp
@@ -731,6 +758,8 @@ set(QuantLib_SRC
     pricingengines/vanilla/mcamericanengine.cpp
     pricingengines/vanilla/mcdigitalengine.cpp
     pricingengines/vanilla/mchestonhullwhiteengine.cpp
+    pricingengines/vanilla/qdfpamericanengine.cpp
+    pricingengines/vanilla/qdplusamericanengine.cpp
     processes/batesprocess.cpp
     processes/blackscholesprocess.cpp
     processes/endeulerdiscretization.cpp
@@ -742,12 +771,14 @@ set(QuantLib_SRC
     processes/gsrprocess.cpp
     processes/gsrprocesscore.cpp
     processes/hestonprocess.cpp
+    processes/hestonslvprocess.cpp
     processes/hullwhiteprocess.cpp
     processes/hybridhestonhullwhiteprocess.cpp
     processes/jointstochasticprocess.cpp
     processes/merton76process.cpp
     processes/mfstateprocess.cpp
     processes/ornsteinuhlenbeckprocess.cpp
+    processes/coxingersollrossprocess.cpp
     processes/squarerootprocess.cpp
     processes/stochasticprocessarray.cpp
     quotes/eurodollarfuturesquote.cpp
@@ -811,10 +842,10 @@ set(QuantLib_SRC
     termstructures/volatility/swaption/cmsmarket.cpp
     termstructures/volatility/swaption/cmsmarketcalibration.cpp
     termstructures/volatility/swaption/gaussian1dswaptionvolatility.cpp
+    termstructures/volatility/swaption/interpolatedswaptionvolatilitycube.cpp
     termstructures/volatility/swaption/spreadedswaptionvol.cpp
     termstructures/volatility/swaption/swaptionconstantvol.cpp
     termstructures/volatility/swaption/swaptionvolcube.cpp
-    termstructures/volatility/swaption/swaptionvolcube2.cpp
     termstructures/volatility/swaption/swaptionvoldiscrete.cpp
     termstructures/volatility/swaption/swaptionvolmatrix.cpp
     termstructures/volatility/swaption/swaptionvolstructure.cpp
@@ -825,6 +856,7 @@ set(QuantLib_SRC
     termstructures/yield/forwardstructure.cpp
     termstructures/yield/nonlinearfittingmethods.cpp
     termstructures/yield/oisratehelper.cpp
+    termstructures/yield/overnightindexfutureratehelper.cpp
     termstructures/yield/ratehelpers.cpp
     termstructures/yield/zeroyieldstructure.cpp
     termstructures/yieldtermstructure.cpp
@@ -838,6 +870,7 @@ set(QuantLib_SRC
     time/calendars/botswana.cpp
     time/calendars/brazil.cpp
     time/calendars/canada.cpp
+    time/calendars/chile.cpp
     time/calendars/china.cpp
     time/calendars/czechrepublic.cpp
     time/calendars/denmark.cpp
@@ -881,6 +914,8 @@ set(QuantLib_SRC
     time/daycounters/business252.cpp
     time/daycounters/simpledaycounter.cpp
     time/daycounters/thirty360.cpp
+    time/daycounters/thirty365.cpp
+    time/daycounters/yearfractiontodate.cpp
     time/ecb.cpp
     time/frequency.cpp
     time/imm.cpp
@@ -895,13 +930,10 @@ set(QuantLib_SRC
     version.cpp
 )
 
-# hpp files, this list is maintained manually
-
-set(QuantLib_HDR
+set(QL_HEADERS
+    any.hpp
     auto_link.hpp
-    auto_ptr.hpp
     cashflow.hpp
-    cashflows/all.hpp
     cashflows/averagebmacoupon.hpp
     cashflows/capflooredcoupon.hpp
     cashflows/capflooredinflationcoupon.hpp
@@ -918,6 +950,7 @@ set(QuantLib_HDR
     cashflows/digitaliborcoupon.hpp
     cashflows/dividend.hpp
     cashflows/duration.hpp
+    cashflows/equitycashflow.hpp
     cashflows/fixedratecoupon.hpp
     cashflows/floatingratecoupon.hpp
     cashflows/iborcoupon.hpp
@@ -927,17 +960,19 @@ set(QuantLib_HDR
     cashflows/lineartsrpricer.hpp
     cashflows/overnightindexedcoupon.hpp
     cashflows/rangeaccrual.hpp
+    cashflows/rateaveraging.hpp
     cashflows/replication.hpp
     cashflows/simplecashflow.hpp
+    cashflows/subperiodcoupon.hpp
     cashflows/timebasket.hpp
     cashflows/yoyinflationcoupon.hpp
+    cashflows/zeroinflationcashflow.hpp
     compounding.hpp
     config.ansi.hpp
     config.mingw.hpp
     config.msvc.hpp
     config.sun.hpp
     currencies/africa.hpp
-    currencies/all.hpp
     currencies/america.hpp
     currencies/asia.hpp
     currencies/crypto.hpp
@@ -951,46 +986,37 @@ set(QuantLib_HDR
     event.hpp
     exchangerate.hpp
     exercise.hpp
-    experimental/all.hpp
-    experimental/amortizingbonds/all.hpp
     experimental/amortizingbonds/amortizingcmsratebond.hpp
     experimental/amortizingbonds/amortizingfixedratebond.hpp
     experimental/amortizingbonds/amortizingfloatingratebond.hpp
-    experimental/averageois/all.hpp
+    experimental/asian/analytic_cont_geom_av_price_heston.hpp
+    experimental/asian/analytic_discr_geom_av_price_heston.hpp
     experimental/averageois/arithmeticaverageois.hpp
     experimental/averageois/arithmeticoisratehelper.hpp
     experimental/averageois/averageoiscouponpricer.hpp
     experimental/averageois/makearithmeticaverageois.hpp
-    experimental/barrieroption/all.hpp
-    experimental/barrieroption/analyticdoublebarrierbinaryengine.hpp
-    experimental/barrieroption/analyticdoublebarrierengine.hpp
+    experimental/barrieroption/mcdoublebarrierengine.hpp
     experimental/barrieroption/binomialdoublebarrierengine.hpp
     experimental/barrieroption/discretizeddoublebarrieroption.hpp
-    experimental/barrieroption/doublebarrieroption.hpp
-    experimental/barrieroption/doublebarriertype.hpp
     experimental/barrieroption/perturbativebarrieroptionengine.hpp
     experimental/barrieroption/quantodoublebarrieroption.hpp
+    experimental/barrieroption/suowangdoublebarrierengine.hpp
     experimental/barrieroption/vannavolgabarrierengine.hpp
     experimental/barrieroption/vannavolgadoublebarrierengine.hpp
     experimental/barrieroption/vannavolgainterpolation.hpp
-    experimental/barrieroption/wulinyongdoublebarrierengine.hpp
-    experimental/basismodels/all.hpp
     experimental/basismodels/swaptioncfs.hpp
     experimental/basismodels/tenoroptionletvts.hpp
     experimental/basismodels/tenorswaptionvts.hpp
-    experimental/callablebonds/all.hpp
     experimental/callablebonds/blackcallablebondengine.hpp
     experimental/callablebonds/callablebond.hpp
     experimental/callablebonds/callablebondconstantvol.hpp
     experimental/callablebonds/callablebondvolstructure.hpp
     experimental/callablebonds/discretizedcallablefixedratebond.hpp
     experimental/callablebonds/treecallablebondengine.hpp
-    experimental/catbonds/all.hpp
     experimental/catbonds/catbond.hpp
     experimental/catbonds/catrisk.hpp
     experimental/catbonds/montecarlocatbondengine.hpp
     experimental/catbonds/riskynotional.hpp
-    experimental/commodities/all.hpp
     experimental/commodities/commodity.hpp
     experimental/commodities/commoditycashflow.hpp
     experimental/commodities/commoditycurve.hpp
@@ -1013,21 +1039,13 @@ set(QuantLib_HDR
     experimental/commodities/unitofmeasure.hpp
     experimental/commodities/unitofmeasureconversion.hpp
     experimental/commodities/unitofmeasureconversionmanager.hpp
-    experimental/convertiblebonds/all.hpp
-    experimental/convertiblebonds/binomialconvertibleengine.hpp
-    experimental/convertiblebonds/convertiblebond.hpp
-    experimental/convertiblebonds/discretizedconvertible.hpp
-    experimental/convertiblebonds/tflattice.hpp
-    experimental/coupons/all.hpp
     experimental/coupons/cmsspreadcoupon.hpp
     experimental/coupons/digitalcmsspreadcoupon.hpp
     experimental/coupons/lognormalcmsspreadpricer.hpp
     experimental/coupons/proxyibor.hpp
     experimental/coupons/quantocouponpricer.hpp
     experimental/coupons/strippedcapflooredcoupon.hpp
-    experimental/coupons/subperiodcoupons.hpp
     experimental/coupons/swapspreadindex.hpp
-    experimental/credit/all.hpp
     experimental/credit/basecorrelationlossmodel.hpp
     experimental/credit/basecorrelationstructure.hpp
     experimental/credit/basket.hpp
@@ -1073,7 +1091,6 @@ set(QuantLib_HDR
     experimental/credit/spotlosslatentmodel.hpp
     experimental/credit/spreadedhazardratecurve.hpp
     experimental/credit/syntheticcdo.hpp
-    experimental/exoticoptions/all.hpp
     experimental/exoticoptions/analyticamericanmargrabeengine.hpp
     experimental/exoticoptions/analyticcomplexchooserengine.hpp
     experimental/exoticoptions/analyticcompoundoptionengine.hpp
@@ -1104,26 +1121,20 @@ set(QuantLib_HDR
     experimental/exoticoptions/twoassetbarrieroption.hpp
     experimental/exoticoptions/twoassetcorrelationoption.hpp
     experimental/exoticoptions/writerextensibleoption.hpp
-    experimental/finitedifferences/all.hpp
     experimental/finitedifferences/dynprogvppintrinsicvalueengine.hpp
     experimental/finitedifferences/fdextoujumpvanillaengine.hpp
-    experimental/finitedifferences/fdhestondoublebarrierengine.hpp
     experimental/finitedifferences/fdklugeextouspreadengine.hpp
-    experimental/finitedifferences/fdmblackscholesfwdop.hpp
     experimental/finitedifferences/fdmdupire1dop.hpp
     experimental/finitedifferences/fdmexpextouinnervaluecalculator.hpp
     experimental/finitedifferences/fdmextendedornsteinuhlenbeckop.hpp
     experimental/finitedifferences/fdmextoujumpmodelinnervalue.hpp
     experimental/finitedifferences/fdmextoujumpop.hpp
     experimental/finitedifferences/fdmextoujumpsolver.hpp
-    experimental/finitedifferences/fdmhestonfwdop.hpp
-    experimental/finitedifferences/fdmhestongreensfct.hpp
     experimental/finitedifferences/fdmklugeextouop.hpp
     experimental/finitedifferences/fdmklugeextousolver.hpp
     experimental/finitedifferences/fdmsimple2dextousolver.hpp
     experimental/finitedifferences/fdmsimple3dextoujumpsolver.hpp
     experimental/finitedifferences/fdmspreadpayoffinnervalue.hpp
-    experimental/finitedifferences/fdmsquarerootfwdop.hpp
     experimental/finitedifferences/fdmvppstartlimitstepcondition.hpp
     experimental/finitedifferences/fdmvppstepcondition.hpp
     experimental/finitedifferences/fdmvppstepconditionfactory.hpp
@@ -1133,15 +1144,10 @@ set(QuantLib_HDR
     experimental/finitedifferences/fdsimpleextoustorageengine.hpp
     experimental/finitedifferences/fdsimpleklugeextouvppengine.hpp
     experimental/finitedifferences/glued1dmesher.hpp
-    experimental/finitedifferences/modtriplebandlinearop.hpp
     experimental/finitedifferences/vanillavppoption.hpp
-    experimental/futures/all.hpp
-    experimental/futures/overnightindexfuture.hpp
-    experimental/futures/overnightindexfutureratehelper.hpp
-    experimental/fx/all.hpp
+    experimental/forward/analytichestonforwardeuropeanengine.hpp
     experimental/fx/blackdeltacalculator.hpp
     experimental/fx/deltavolquote.hpp
-    experimental/inflation/all.hpp
     experimental/inflation/cpicapfloorengines.hpp
     experimental/inflation/cpicapfloortermpricesurface.hpp
     experimental/inflation/genericindexes.hpp
@@ -1153,12 +1159,9 @@ set(QuantLib_HDR
     experimental/inflation/yoyinflationoptionletvolatilitystructure2.hpp
     experimental/inflation/yoyoptionlethelpers.hpp
     experimental/inflation/yoyoptionletstripper.hpp
-    experimental/lattices/all.hpp
     experimental/lattices/extendedbinomialtree.hpp
-    experimental/math/all.hpp
     experimental/math/claytoncopularng.hpp
     experimental/math/convolvedstudentt.hpp
-    experimental/math/expm.hpp
     experimental/math/farliegumbelmorgensterncopularng.hpp
     experimental/math/fireflyalgorithm.hpp
     experimental/math/frankcopularng.hpp
@@ -1180,50 +1183,39 @@ set(QuantLib_HDR
     experimental/math/tcopulapolicy.hpp
     experimental/math/zigguratrng.hpp
     experimental/mcbasket/adaptedpathpayoff.hpp
-    experimental/mcbasket/all.hpp
     experimental/mcbasket/longstaffschwartzmultipathpricer.hpp
     experimental/mcbasket/mcamericanpathengine.hpp
     experimental/mcbasket/mclongstaffschwartzpathengine.hpp
     experimental/mcbasket/mcpathbasketengine.hpp
     experimental/mcbasket/pathmultiassetoption.hpp
     experimental/mcbasket/pathpayoff.hpp
-    experimental/models/all.hpp
-    experimental/models/hestonslvfdmmodel.hpp
-    experimental/models/hestonslvmcmodel.hpp
     experimental/models/normalclvmodel.hpp
     experimental/models/squarerootclvmodel.hpp
-    experimental/processes/all.hpp
     experimental/processes/extendedblackscholesprocess.hpp
     experimental/processes/extendedornsteinuhlenbeckprocess.hpp
     experimental/processes/extouwithjumpsprocess.hpp
     experimental/processes/gemanroncoroniprocess.hpp
-    experimental/processes/hestonslvprocess.hpp
     experimental/processes/klugeextouprocess.hpp
     experimental/processes/vegastressedblackscholesprocess.hpp
-    experimental/risk/all.hpp
     experimental/risk/creditriskplus.hpp
     experimental/risk/sensitivityanalysis.hpp
-    experimental/shortrate/all.hpp
     experimental/shortrate/generalizedhullwhite.hpp
     experimental/shortrate/generalizedornsteinuhlenbeckprocess.hpp
-    experimental/swaptions/all.hpp
     experimental/swaptions/haganirregularswaptionengine.hpp
     experimental/swaptions/irregularswap.hpp
     experimental/swaptions/irregularswaption.hpp
-    experimental/termstructures/all.hpp
+    experimental/termstructures/basisswapratehelpers.hpp
+    experimental/termstructures/crosscurrencyratehelpers.hpp
     experimental/termstructures/multicurvesensitivities.hpp
-    experimental/variancegamma/all.hpp
     experimental/variancegamma/analyticvariancegammaengine.hpp
     experimental/variancegamma/fftengine.hpp
     experimental/variancegamma/fftvanillaengine.hpp
     experimental/variancegamma/fftvariancegammaengine.hpp
     experimental/variancegamma/variancegammamodel.hpp
     experimental/variancegamma/variancegammaprocess.hpp
-    experimental/varianceoption/all.hpp
     experimental/varianceoption/integralhestonvarianceoptionengine.hpp
     experimental/varianceoption/varianceoption.hpp
     experimental/volatility/abcdatmvolcurve.hpp
-    experimental/volatility/all.hpp
     experimental/volatility/blackatmvolcurve.hpp
     experimental/volatility/blackvolsurface.hpp
     experimental/volatility/equityfxvolsurface.hpp
@@ -1234,6 +1226,7 @@ set(QuantLib_HDR
     experimental/volatility/noarbsabrinterpolatedsmilesection.hpp
     experimental/volatility/noarbsabrinterpolation.hpp
     experimental/volatility/noarbsabrsmilesection.hpp
+    experimental/volatility/noarbsabrswaptionvolatilitycube.hpp
     experimental/volatility/sabrvolsurface.hpp
     experimental/volatility/sabrvoltermstructure.hpp
     experimental/volatility/sviinterpolatedsmilesection.hpp
@@ -1249,9 +1242,8 @@ set(QuantLib_HDR
     grid.hpp
     handle.hpp
     index.hpp
-    indexes/all.hpp
     indexes/bmaindex.hpp
-    indexes/ibor/all.hpp
+    indexes/equityindex.hpp
     indexes/ibor/aonia.hpp
     indexes/ibor/audlibor.hpp
     indexes/ibor/bbsw.hpp
@@ -1260,8 +1252,11 @@ set(QuantLib_HDR
     indexes/ibor/cadlibor.hpp
     indexes/ibor/cdor.hpp
     indexes/ibor/chflibor.hpp
+    indexes/ibor/corra.hpp
+    indexes/ibor/destr.hpp
     indexes/ibor/dkklibor.hpp
     indexes/ibor/eonia.hpp
+    indexes/ibor/estr.hpp
     indexes/ibor/euribor.hpp
     indexes/ibor/eurlibor.hpp
     indexes/ibor/fedfunds.hpp
@@ -1278,25 +1273,26 @@ set(QuantLib_HDR
     indexes/ibor/shibor.hpp
     indexes/ibor/sofr.hpp
     indexes/ibor/sonia.hpp
+    indexes/ibor/swestr.hpp
     indexes/ibor/thbfix.hpp
     indexes/ibor/tibor.hpp
+    indexes/ibor/tona.hpp
     indexes/ibor/trlibor.hpp
     indexes/ibor/usdlibor.hpp
     indexes/ibor/wibor.hpp
     indexes/ibor/zibor.hpp
     indexes/iborindex.hpp
     indexes/indexmanager.hpp
-    indexes/inflation/all.hpp
     indexes/inflation/aucpi.hpp
     indexes/inflation/euhicp.hpp
     indexes/inflation/frhicp.hpp
+    indexes/inflation/ukhicp.hpp
     indexes/inflation/ukrpi.hpp
     indexes/inflation/uscpi.hpp
     indexes/inflation/zacpi.hpp
     indexes/inflationindex.hpp
     indexes/interestrateindex.hpp
     indexes/region.hpp
-    indexes/swap/all.hpp
     indexes/swap/chfliborswap.hpp
     indexes/swap/euriborswap.hpp
     indexes/swap/eurliborswap.hpp
@@ -1305,7 +1301,6 @@ set(QuantLib_HDR
     indexes/swap/usdliborswap.hpp
     indexes/swapindex.hpp
     instrument.hpp
-    instruments/all.hpp
     instruments/asianoption.hpp
     instruments/assetswap.hpp
     instruments/averagetype.hpp
@@ -1314,9 +1309,13 @@ set(QuantLib_HDR
     instruments/basketoption.hpp
     instruments/bmaswap.hpp
     instruments/bond.hpp
-    instruments/bonds/all.hpp
+    instruments/bondforward.hpp
+    instruments/bonds/amortizingcmsratebond.hpp
+    instruments/bonds/amortizingfixedratebond.hpp
+    instruments/bonds/amortizingfloatingratebond.hpp
     instruments/bonds/btp.hpp
     instruments/bonds/cmsratebond.hpp
+    instruments/bonds/convertiblebonds.hpp
     instruments/bonds/cpibond.hpp
     instruments/bonds/fixedratebond.hpp
     instruments/bonds/floatingratebond.hpp
@@ -1332,6 +1331,9 @@ set(QuantLib_HDR
     instruments/dividendbarrieroption.hpp
     instruments/dividendschedule.hpp
     instruments/dividendvanillaoption.hpp
+    instruments/doublebarrieroption.hpp
+    instruments/doublebarriertype.hpp
+    instruments/equitytotalreturnswap.hpp
     instruments/europeanoption.hpp
     instruments/fixedratebondforward.hpp
     instruments/floatfloatswap.hpp
@@ -1355,10 +1357,12 @@ set(QuantLib_HDR
     instruments/nonstandardswaption.hpp
     instruments/oneassetoption.hpp
     instruments/overnightindexedswap.hpp
+    instruments/overnightindexfuture.hpp
     instruments/payoffs.hpp
     instruments/quantobarrieroption.hpp
     instruments/quantoforwardvanillaoption.hpp
     instruments/quantovanillaoption.hpp
+    instruments/simplifynotificationgraph.hpp
     instruments/stickyratchet.hpp
     instruments/stock.hpp
     instruments/swap.hpp
@@ -1370,9 +1374,8 @@ set(QuantLib_HDR
     instruments/varianceswap.hpp
     instruments/yearonyearinflationswap.hpp
     instruments/zerocouponinflationswap.hpp
+    instruments/zerocouponswap.hpp
     interestrate.hpp
-    legacy/all.hpp
-    legacy/libormarketmodels/all.hpp
     legacy/libormarketmodels/lfmcovarparam.hpp
     legacy/libormarketmodels/lfmcovarproxy.hpp
     legacy/libormarketmodels/lfmhullwhiteparam.hpp
@@ -1389,7 +1392,6 @@ set(QuantLib_HDR
     legacy/libormarketmodels/lmlinexpvolmodel.hpp
     legacy/libormarketmodels/lmvolmodel.hpp
     math/abcdmathfunction.hpp
-    math/all.hpp
     math/array.hpp
     math/autocovariance.hpp
     math/bernsteinpolynomial.hpp
@@ -1397,7 +1399,6 @@ set(QuantLib_HDR
     math/bspline.hpp
     math/comparison.hpp
     math/copulas/alimikhailhaqcopula.hpp
-    math/copulas/all.hpp
     math/copulas/claytoncopula.hpp
     math/copulas/farliegumbelmorgensterncopula.hpp
     math/copulas/frankcopula.hpp
@@ -1411,7 +1412,6 @@ set(QuantLib_HDR
     math/copulas/mincopula.hpp
     math/copulas/plackettcopula.hpp
     math/curve.hpp
-    math/distributions/all.hpp
     math/distributions/binomialdistribution.hpp
     math/distributions/bivariatenormaldistribution.hpp
     math/distributions/bivariatestudenttdistribution.hpp
@@ -1426,26 +1426,28 @@ set(QuantLib_HDR
     math/functional.hpp
     math/generallinearleastsquares.hpp
     math/incompletegamma.hpp
-    math/initializers.hpp
-    math/integrals/all.hpp
     math/integrals/discreteintegrals.hpp
+    math/integrals/exponentialintegrals.hpp
     math/integrals/filonintegral.hpp
     math/integrals/gaussianorthogonalpolynomial.hpp
     math/integrals/gaussianquadratures.hpp
+    math/integrals/gausslaguerrecosinepolynomial.hpp
     math/integrals/gausslobattointegral.hpp
     math/integrals/integral.hpp
     math/integrals/kronrodintegral.hpp
+    math/integrals/momentbasedgaussianpolynomial.hpp
     math/integrals/segmentintegral.hpp
     math/integrals/simpsonintegral.hpp
+    math/integrals/tanhsinhintegral.hpp
     math/integrals/trapezoidintegral.hpp
     math/integrals/twodimensionalintegral.hpp
     math/interpolation.hpp
     math/interpolations/abcdinterpolation.hpp
-    math/interpolations/all.hpp
     math/interpolations/backwardflatinterpolation.hpp
     math/interpolations/backwardflatlinearinterpolation.hpp
     math/interpolations/bicubicsplineinterpolation.hpp
     math/interpolations/bilinearinterpolation.hpp
+    math/interpolations/chebyshevinterpolation.hpp    
     math/interpolations/convexmonotoneinterpolation.hpp
     math/interpolations/cubicinterpolation.hpp
     math/interpolations/extrapolation.hpp
@@ -1465,11 +1467,11 @@ set(QuantLib_HDR
     math/lexicographicalview.hpp
     math/linearleastsquaresregression.hpp
     math/matrix.hpp
-    math/matrixutilities/all.hpp
     math/matrixutilities/basisincompleteordered.hpp
     math/matrixutilities/bicgstab.hpp
     math/matrixutilities/choleskydecomposition.hpp
     math/matrixutilities/factorreduction.hpp
+    math/matrixutilities/expm.hpp
     math/matrixutilities/getcovariance.hpp
     math/matrixutilities/gmres.hpp
     math/matrixutilities/pseudosqrt.hpp
@@ -1482,8 +1484,6 @@ set(QuantLib_HDR
     math/matrixutilities/tqreigendecomposition.hpp
     math/modifiedbessel.hpp
     math/ode/adaptiverungekutta.hpp
-    math/ode/all.hpp
-    math/optimization/all.hpp
     math/optimization/armijo.hpp
     math/optimization/bfgs.hpp
     math/optimization/conjugategradient.hpp
@@ -1510,7 +1510,6 @@ set(QuantLib_HDR
     math/polynomialmathfunction.hpp
     math/primenumbers.hpp
     math/quadratic.hpp
-    math/randomnumbers/all.hpp
     math/randomnumbers/boxmullergaussianrng.hpp
     math/randomnumbers/centrallimitgaussianrng.hpp
     math/randomnumbers/faurersg.hpp
@@ -1535,7 +1534,6 @@ set(QuantLib_HDR
     math/rounding.hpp
     math/sampledcurve.hpp
     math/solver1d.hpp
-    math/solvers1d/all.hpp
     math/solvers1d/bisection.hpp
     math/solvers1d/brent.hpp
     math/solvers1d/falseposition.hpp
@@ -1544,7 +1542,6 @@ set(QuantLib_HDR
     math/solvers1d/newtonsafe.hpp
     math/solvers1d/ridder.hpp
     math/solvers1d/secant.hpp
-    math/statistics/all.hpp
     math/statistics/convergencestatistics.hpp
     math/statistics/discrepancystatistics.hpp
     math/statistics/gaussianstatistics.hpp
@@ -1556,9 +1553,6 @@ set(QuantLib_HDR
     math/statistics/statistics.hpp
     math/transformedgrid.hpp
     mathconstants.hpp
-    methods/all.hpp
-    methods/finitedifferences/all.hpp
-    methods/finitedifferences/americancondition.hpp
     methods/finitedifferences/boundarycondition.hpp
     methods/finitedifferences/bsmoperator.hpp
     methods/finitedifferences/bsmtermoperator.hpp
@@ -1571,7 +1565,6 @@ set(QuantLib_HDR
     methods/finitedifferences/fdtypedefs.hpp
     methods/finitedifferences/finitedifferencemodel.hpp
     methods/finitedifferences/impliciteuler.hpp
-    methods/finitedifferences/meshers/all.hpp
     methods/finitedifferences/meshers/concentrating1dmesher.hpp
     methods/finitedifferences/meshers/exponentialjump1dmesher.hpp
     methods/finitedifferences/meshers/fdm1dmesher.hpp
@@ -1586,15 +1579,16 @@ set(QuantLib_HDR
     methods/finitedifferences/meshers/uniform1dmesher.hpp
     methods/finitedifferences/meshers/uniformgridmesher.hpp
     methods/finitedifferences/mixedscheme.hpp
-    methods/finitedifferences/onefactoroperator.hpp
-    methods/finitedifferences/operators/all.hpp
     methods/finitedifferences/operators/fdm2dblackscholesop.hpp
     methods/finitedifferences/operators/fdmbatesop.hpp
+    methods/finitedifferences/operators/fdmblackscholesfwdop.hpp
     methods/finitedifferences/operators/fdmblackscholesop.hpp
     methods/finitedifferences/operators/fdmcevop.hpp
     methods/finitedifferences/operators/fdmg2op.hpp
+    methods/finitedifferences/operators/fdmhestonfwdop.hpp
     methods/finitedifferences/operators/fdmhestonhullwhiteop.hpp
     methods/finitedifferences/operators/fdmhestonop.hpp
+    methods/finitedifferences/operators/fdmcirop.hpp
     methods/finitedifferences/operators/fdmhullwhiteop.hpp
     methods/finitedifferences/operators/fdmlinearop.hpp
     methods/finitedifferences/operators/fdmlinearopcomposite.hpp
@@ -1603,7 +1597,9 @@ set(QuantLib_HDR
     methods/finitedifferences/operators/fdmlocalvolfwdop.hpp
     methods/finitedifferences/operators/fdmornsteinuhlenbeckop.hpp
     methods/finitedifferences/operators/fdmsabrop.hpp
+    methods/finitedifferences/operators/fdmsquarerootfwdop.hpp
     methods/finitedifferences/operators/firstderivativeop.hpp
+    methods/finitedifferences/operators/modtriplebandlinearop.hpp
     methods/finitedifferences/operators/ninepointlinearop.hpp
     methods/finitedifferences/operators/nthorderderivativeop.hpp
     methods/finitedifferences/operators/numericaldifferentiation.hpp
@@ -1615,7 +1611,6 @@ set(QuantLib_HDR
     methods/finitedifferences/pde.hpp
     methods/finitedifferences/pdebsm.hpp
     methods/finitedifferences/pdeshortrate.hpp
-    methods/finitedifferences/schemes/all.hpp
     methods/finitedifferences/schemes/boundaryconditionschemehelper.hpp
     methods/finitedifferences/schemes/craigsneydscheme.hpp
     methods/finitedifferences/schemes/cranknicolsonscheme.hpp
@@ -1627,7 +1622,6 @@ set(QuantLib_HDR
     methods/finitedifferences/schemes/modifiedcraigsneydscheme.hpp
     methods/finitedifferences/schemes/trbdf2scheme.hpp
     methods/finitedifferences/shoutcondition.hpp
-    methods/finitedifferences/solvers/all.hpp
     methods/finitedifferences/solvers/fdm1dimsolver.hpp
     methods/finitedifferences/solvers/fdm2dblackscholessolver.hpp
     methods/finitedifferences/solvers/fdm2dimsolver.hpp
@@ -1638,12 +1632,12 @@ set(QuantLib_HDR
     methods/finitedifferences/solvers/fdmg2solver.hpp
     methods/finitedifferences/solvers/fdmhestonhullwhitesolver.hpp
     methods/finitedifferences/solvers/fdmhestonsolver.hpp
+    methods/finitedifferences/solvers/fdmcirsolver.hpp
     methods/finitedifferences/solvers/fdmhullwhitesolver.hpp
     methods/finitedifferences/solvers/fdmndimsolver.hpp
     methods/finitedifferences/solvers/fdmsimple2dbssolver.hpp
     methods/finitedifferences/solvers/fdmsolverdesc.hpp
     methods/finitedifferences/stepcondition.hpp
-    methods/finitedifferences/stepconditions/all.hpp
     methods/finitedifferences/stepconditions/fdmamericanstepcondition.hpp
     methods/finitedifferences/stepconditions/fdmarithmeticaveragecondition.hpp
     methods/finitedifferences/stepconditions/fdmbermudanstepcondition.hpp
@@ -1653,17 +1647,20 @@ set(QuantLib_HDR
     methods/finitedifferences/stepconditions/fdmstepconditioncomposite.hpp
     methods/finitedifferences/trbdf2.hpp
     methods/finitedifferences/tridiagonaloperator.hpp
-    methods/finitedifferences/utilities/all.hpp
     methods/finitedifferences/utilities/bsmrndcalculator.hpp
     methods/finitedifferences/utilities/cevrndcalculator.hpp
+    methods/finitedifferences/utilities/escroweddividendadjustment.hpp
     methods/finitedifferences/utilities/fdmaffinemodelswapinnervalue.hpp
     methods/finitedifferences/utilities/fdmaffinemodeltermstructure.hpp
     methods/finitedifferences/utilities/fdmboundaryconditionset.hpp
     methods/finitedifferences/utilities/fdmdirichletboundary.hpp
     methods/finitedifferences/utilities/fdmdiscountdirichletboundary.hpp
     methods/finitedifferences/utilities/fdmdividendhandler.hpp
+    methods/finitedifferences/utilities/fdmescrowedloginnervaluecalculator.hpp
+    methods/finitedifferences/utilities/fdmhestongreensfct.hpp
     methods/finitedifferences/utilities/fdmindicesonboundary.hpp
     methods/finitedifferences/utilities/fdminnervaluecalculator.hpp
+    methods/finitedifferences/utilities/fdmshoutloginnervaluecalculator.hpp
     methods/finitedifferences/utilities/fdmmesherintegral.hpp
     methods/finitedifferences/utilities/fdmquantohelper.hpp
     methods/finitedifferences/utilities/fdmtimedepdirichletboundary.hpp
@@ -1673,15 +1670,14 @@ set(QuantLib_HDR
     methods/finitedifferences/utilities/riskneutraldensitycalculator.hpp
     methods/finitedifferences/utilities/squarerootprocessrndcalculator.hpp
     methods/finitedifferences/zerocondition.hpp
-    methods/lattices/all.hpp
     methods/lattices/binomialtree.hpp
     methods/lattices/bsmlattice.hpp
     methods/lattices/lattice.hpp
     methods/lattices/lattice1d.hpp
     methods/lattices/lattice2d.hpp
+    methods/lattices/tflattice.hpp
     methods/lattices/tree.hpp
     methods/lattices/trinomialtree.hpp
-    methods/montecarlo/all.hpp
     methods/montecarlo/brownianbridge.hpp
     methods/montecarlo/earlyexercisepathpricer.hpp
     methods/montecarlo/exercisestrategy.hpp
@@ -1698,21 +1694,18 @@ set(QuantLib_HDR
     methods/montecarlo/pathgenerator.hpp
     methods/montecarlo/pathpricer.hpp
     methods/montecarlo/sample.hpp
-    models/all.hpp
     models/calibrationhelper.hpp
-    models/equity/all.hpp
     models/equity/batesmodel.hpp
     models/equity/gjrgarchmodel.hpp
     models/equity/hestonmodel.hpp
     models/equity/hestonmodelhelper.hpp
+    models/equity/hestonslvfdmmodel.hpp
+    models/equity/hestonslvmcmodel.hpp
     models/equity/piecewisetimedependenthestonmodel.hpp
     models/marketmodels/accountingengine.hpp
-    models/marketmodels/all.hpp
     models/marketmodels/browniangenerator.hpp
-    models/marketmodels/browniangenerators/all.hpp
     models/marketmodels/browniangenerators/mtbrowniangenerator.hpp
     models/marketmodels/browniangenerators/sobolbrowniangenerator.hpp
-    models/marketmodels/callability/all.hpp
     models/marketmodels/callability/bermudanswaptionexercisevalue.hpp
     models/marketmodels/callability/collectnodedata.hpp
     models/marketmodels/callability/exercisevalue.hpp
@@ -1728,17 +1721,14 @@ set(QuantLib_HDR
     models/marketmodels/callability/triggeredswapexercise.hpp
     models/marketmodels/callability/upperboundengine.hpp
     models/marketmodels/constrainedevolver.hpp
-    models/marketmodels/correlations/all.hpp
     models/marketmodels/correlations/cotswapfromfwdcorrelation.hpp
     models/marketmodels/correlations/expcorrelations.hpp
     models/marketmodels/correlations/timehomogeneousforwardcorrelation.hpp
     models/marketmodels/curvestate.hpp
-    models/marketmodels/curvestates/all.hpp
     models/marketmodels/curvestates/cmswapcurvestate.hpp
     models/marketmodels/curvestates/coterminalswapcurvestate.hpp
     models/marketmodels/curvestates/lmmcurvestate.hpp
     models/marketmodels/discounter.hpp
-    models/marketmodels/driftcomputation/all.hpp
     models/marketmodels/driftcomputation/cmsmmdriftcalculator.hpp
     models/marketmodels/driftcomputation/lmmdriftcalculator.hpp
     models/marketmodels/driftcomputation/lmmnormaldriftcalculator.hpp
@@ -1746,7 +1736,6 @@ set(QuantLib_HDR
     models/marketmodels/duffsdeviceinnerproduct.hpp
     models/marketmodels/evolutiondescription.hpp
     models/marketmodels/evolver.hpp
-    models/marketmodels/evolvers/all.hpp
     models/marketmodels/evolvers/lognormalcmswapratepc.hpp
     models/marketmodels/evolvers/lognormalcotswapratepc.hpp
     models/marketmodels/evolvers/lognormalfwdrateballand.hpp
@@ -1758,7 +1747,6 @@ set(QuantLib_HDR
     models/marketmodels/evolvers/marketmodelvolprocess.hpp
     models/marketmodels/evolvers/normalfwdratepc.hpp
     models/marketmodels/evolvers/svddfwdratepc.hpp
-    models/marketmodels/evolvers/volprocesses/all.hpp
     models/marketmodels/evolvers/volprocesses/squarerootandersen.hpp
     models/marketmodels/forwardforwardmappings.hpp
     models/marketmodels/historicalforwardratesanalysis.hpp
@@ -1766,7 +1754,6 @@ set(QuantLib_HDR
     models/marketmodels/marketmodel.hpp
     models/marketmodels/marketmodeldifferences.hpp
     models/marketmodels/models/abcdvol.hpp
-    models/marketmodels/models/all.hpp
     models/marketmodels/models/alphafinder.hpp
     models/marketmodels/models/alphaform.hpp
     models/marketmodels/models/alphaformconcrete.hpp
@@ -1787,19 +1774,16 @@ set(QuantLib_HDR
     models/marketmodels/multiproduct.hpp
     models/marketmodels/pathwiseaccountingengine.hpp
     models/marketmodels/pathwisediscounter.hpp
-    models/marketmodels/pathwisegreeks/all.hpp
     models/marketmodels/pathwisegreeks/bumpinstrumentjacobian.hpp
     models/marketmodels/pathwisegreeks/ratepseudorootjacobian.hpp
     models/marketmodels/pathwisegreeks/swaptionpseudojacobian.hpp
     models/marketmodels/pathwisegreeks/vegabumpcluster.hpp
     models/marketmodels/pathwisemultiproduct.hpp
     models/marketmodels/piecewiseconstantcorrelation.hpp
-    models/marketmodels/products/all.hpp
     models/marketmodels/products/compositeproduct.hpp
     models/marketmodels/products/multiproductcomposite.hpp
     models/marketmodels/products/multiproductmultistep.hpp
     models/marketmodels/products/multiproductonestep.hpp
-    models/marketmodels/products/multistep/all.hpp
     models/marketmodels/products/multistep/callspecifiedmultiproduct.hpp
     models/marketmodels/products/multistep/cashrebate.hpp
     models/marketmodels/products/multistep/exerciseadapter.hpp
@@ -1816,12 +1800,10 @@ set(QuantLib_HDR
     models/marketmodels/products/multistep/multistepswap.hpp
     models/marketmodels/products/multistep/multistepswaption.hpp
     models/marketmodels/products/multistep/multisteptarn.hpp
-    models/marketmodels/products/onestep/all.hpp
     models/marketmodels/products/onestep/onestepcoinitialswaps.hpp
     models/marketmodels/products/onestep/onestepcoterminalswaps.hpp
     models/marketmodels/products/onestep/onestepforwards.hpp
     models/marketmodels/products/onestep/onestepoptionlets.hpp
-    models/marketmodels/products/pathwise/all.hpp
     models/marketmodels/products/pathwise/pathwiseproductcallspecified.hpp
     models/marketmodels/products/pathwise/pathwiseproductcaplet.hpp
     models/marketmodels/products/pathwise/pathwiseproductcashrebate.hpp
@@ -1834,12 +1816,9 @@ set(QuantLib_HDR
     models/marketmodels/utilities.hpp
     models/model.hpp
     models/parameter.hpp
-    models/shortrate/all.hpp
-    models/shortrate/calibrationhelpers/all.hpp
     models/shortrate/calibrationhelpers/caphelper.hpp
     models/shortrate/calibrationhelpers/swaptionhelper.hpp
     models/shortrate/onefactormodel.hpp
-    models/shortrate/onefactormodels/all.hpp
     models/shortrate/onefactormodels/blackkarasinski.hpp
     models/shortrate/onefactormodels/coxingersollross.hpp
     models/shortrate/onefactormodels/extendedcoxingersollross.hpp
@@ -1849,9 +1828,7 @@ set(QuantLib_HDR
     models/shortrate/onefactormodels/markovfunctional.hpp
     models/shortrate/onefactormodels/vasicek.hpp
     models/shortrate/twofactormodel.hpp
-    models/shortrate/twofactormodels/all.hpp
     models/shortrate/twofactormodels/g2.hpp
-    models/volatility/all.hpp
     models/volatility/constantestimator.hpp
     models/volatility/garch.hpp
     models/volatility/garmanklass.hpp
@@ -1859,7 +1836,7 @@ set(QuantLib_HDR
     money.hpp
     numericalmethod.hpp
     option.hpp
-    patterns/all.hpp
+    optional.hpp
     patterns/composite.hpp
     patterns/curiouslyrecurring.hpp
     patterns/lazyobject.hpp
@@ -1870,29 +1847,31 @@ set(QuantLib_HDR
     position.hpp
     prices.hpp
     pricingengine.hpp
-    pricingengines/all.hpp
     pricingengines/americanpayoffatexpiry.hpp
     pricingengines/americanpayoffathit.hpp
-    pricingengines/asian/all.hpp
     pricingengines/asian/analytic_cont_geom_av_price.hpp
     pricingengines/asian/analytic_discr_geom_av_price.hpp
     pricingengines/asian/analytic_discr_geom_av_strike.hpp
     pricingengines/asian/fdblackscholesasianengine.hpp
     pricingengines/asian/mc_discr_arith_av_price.hpp
+    pricingengines/asian/mc_discr_arith_av_price_heston.hpp
     pricingengines/asian/mc_discr_arith_av_strike.hpp
     pricingengines/asian/mc_discr_geom_av_price.hpp
-    pricingengines/asian/mcdiscreteasianengine.hpp
-    pricingengines/barrier/all.hpp
+    pricingengines/asian/mc_discr_geom_av_price_heston.hpp
+    pricingengines/asian/mcdiscreteasianenginebase.hpp
+    pricingengines/asian/turnbullwakemanasianengine.hpp
     pricingengines/barrier/analyticbarrierengine.hpp
     pricingengines/barrier/analyticbinarybarrierengine.hpp
+    pricingengines/barrier/analyticdoublebarrierbinaryengine.hpp
+    pricingengines/barrier/analyticdoublebarrierengine.hpp
     pricingengines/barrier/binomialbarrierengine.hpp
     pricingengines/barrier/discretizedbarrieroption.hpp
     pricingengines/barrier/fdblackscholesbarrierengine.hpp
     pricingengines/barrier/fdblackscholesrebateengine.hpp
     pricingengines/barrier/fdhestonbarrierengine.hpp
+    pricingengines/barrier/fdhestondoublebarrierengine.hpp
     pricingengines/barrier/fdhestonrebateengine.hpp
     pricingengines/barrier/mcbarrierengine.hpp
-    pricingengines/basket/all.hpp
     pricingengines/basket/fd2dblackscholesvanillaengine.hpp
     pricingengines/basket/kirkengine.hpp
     pricingengines/basket/mcamericanbasketengine.hpp
@@ -1901,10 +1880,11 @@ set(QuantLib_HDR
     pricingengines/blackcalculator.hpp
     pricingengines/blackformula.hpp
     pricingengines/blackscholescalculator.hpp
-    pricingengines/bond/all.hpp
+    pricingengines/bond/binomialconvertibleengine.hpp
     pricingengines/bond/bondfunctions.hpp
     pricingengines/bond/discountingbondengine.hpp
-    pricingengines/capfloor/all.hpp
+    pricingengines/bond/discretizedconvertible.hpp
+    pricingengines/bond/riskybondengine.hpp
     pricingengines/capfloor/analyticcapfloorengine.hpp
     pricingengines/capfloor/bacheliercapfloorengine.hpp
     pricingengines/capfloor/blackcapfloorengine.hpp
@@ -1912,39 +1892,35 @@ set(QuantLib_HDR
     pricingengines/capfloor/gaussian1dcapfloorengine.hpp
     pricingengines/capfloor/mchullwhiteengine.hpp
     pricingengines/capfloor/treecapfloorengine.hpp
-    pricingengines/cliquet/all.hpp
     pricingengines/cliquet/analyticcliquetengine.hpp
     pricingengines/cliquet/analyticperformanceengine.hpp
     pricingengines/cliquet/mcperformanceengine.hpp
-    pricingengines/credit/all.hpp
     pricingengines/credit/integralcdsengine.hpp
     pricingengines/credit/isdacdsengine.hpp
     pricingengines/credit/midpointcdsengine.hpp
-    pricingengines/forward/all.hpp
     pricingengines/forward/forwardengine.hpp
     pricingengines/forward/forwardperformanceengine.hpp
+    pricingengines/forward/mcforwardeuropeanbsengine.hpp
+    pricingengines/forward/mcforwardeuropeanhestonengine.hpp
+    pricingengines/forward/mcforwardvanillaengine.hpp
     pricingengines/forward/mcvarianceswapengine.hpp
     pricingengines/forward/replicatingvarianceswapengine.hpp
     pricingengines/genericmodelengine.hpp
     pricingengines/greeks.hpp
-    pricingengines/inflation/all.hpp
     pricingengines/inflation/inflationcapfloorengines.hpp
     pricingengines/latticeshortratemodelengine.hpp
-    pricingengines/lookback/all.hpp
     pricingengines/lookback/analyticcontinuousfixedlookback.hpp
     pricingengines/lookback/analyticcontinuousfloatinglookback.hpp
     pricingengines/lookback/analyticcontinuouspartialfixedlookback.hpp
     pricingengines/lookback/analyticcontinuouspartialfloatinglookback.hpp
+    pricingengines/lookback/mclookbackengine.hpp
     pricingengines/mclongstaffschwartzengine.hpp
     pricingengines/mcsimulation.hpp
-    pricingengines/quanto/all.hpp
     pricingengines/quanto/quantoengine.hpp
-    pricingengines/swap/all.hpp
     pricingengines/swap/cvaswapengine.hpp
     pricingengines/swap/discountingswapengine.hpp
     pricingengines/swap/discretizedswap.hpp
     pricingengines/swap/treeswapengine.hpp
-    pricingengines/swaption/all.hpp
     pricingengines/swaption/basketgeneratingengine.hpp
     pricingengines/swaption/blackswaptionengine.hpp
     pricingengines/swaption/discretizedswaption.hpp
@@ -1957,12 +1933,12 @@ set(QuantLib_HDR
     pricingengines/swaption/gaussian1dswaptionengine.hpp
     pricingengines/swaption/jamshidianswaptionengine.hpp
     pricingengines/swaption/treeswaptionengine.hpp
-    pricingengines/vanilla/all.hpp
     pricingengines/vanilla/analyticbsmhullwhiteengine.hpp
     pricingengines/vanilla/analyticcevengine.hpp
     pricingengines/vanilla/analyticdigitalamericanengine.hpp
     pricingengines/vanilla/analyticdividendeuropeanengine.hpp
     pricingengines/vanilla/analyticeuropeanengine.hpp
+    pricingengines/vanilla/analyticeuropeanvasicekengine.hpp
     pricingengines/vanilla/analyticgjrgarchengine.hpp
     pricingengines/vanilla/analytich1hwengine.hpp
     pricingengines/vanilla/analytichestonengine.hpp
@@ -1974,22 +1950,18 @@ set(QuantLib_HDR
     pricingengines/vanilla/bjerksundstenslandengine.hpp
     pricingengines/vanilla/coshestonengine.hpp
     pricingengines/vanilla/discretizedvanillaoption.hpp
-    pricingengines/vanilla/fdamericanengine.hpp
+    pricingengines/vanilla/exponentialfittinghestonengine.hpp
     pricingengines/vanilla/fdbatesvanillaengine.hpp
-    pricingengines/vanilla/fdbermudanengine.hpp
     pricingengines/vanilla/fdblackscholesvanillaengine.hpp
+    pricingengines/vanilla/fdblackscholesshoutengine.hpp
+    pricingengines/vanilla/fdcirvanillaengine.hpp
     pricingengines/vanilla/fdcevvanillaengine.hpp
     pricingengines/vanilla/fdconditions.hpp
-    pricingengines/vanilla/fddividendamericanengine.hpp
     pricingengines/vanilla/fddividendengine.hpp
-    pricingengines/vanilla/fddividendeuropeanengine.hpp
-    pricingengines/vanilla/fddividendshoutengine.hpp
-    pricingengines/vanilla/fdeuropeanengine.hpp
     pricingengines/vanilla/fdhestonhullwhitevanillaengine.hpp
     pricingengines/vanilla/fdhestonvanillaengine.hpp
     pricingengines/vanilla/fdmultiperiodengine.hpp
     pricingengines/vanilla/fdsabrvanillaengine.hpp
-    pricingengines/vanilla/fdshoutengine.hpp
     pricingengines/vanilla/fdsimplebsswingengine.hpp
     pricingengines/vanilla/fdstepconditionengine.hpp
     pricingengines/vanilla/fdvanillaengine.hpp
@@ -2004,7 +1976,8 @@ set(QuantLib_HDR
     pricingengines/vanilla/mceuropeanhestonengine.hpp
     pricingengines/vanilla/mchestonhullwhiteengine.hpp
     pricingengines/vanilla/mcvanillaengine.hpp
-    processes/all.hpp
+    pricingengines/vanilla/qdfpamericanengine.hpp
+    pricingengines/vanilla/qdplusamericanengine.hpp
     processes/batesprocess.hpp
     processes/blackscholesprocess.hpp
     processes/endeulerdiscretization.hpp
@@ -2016,18 +1989,17 @@ set(QuantLib_HDR
     processes/gsrprocess.hpp
     processes/gsrprocesscore.hpp
     processes/hestonprocess.hpp
+    processes/hestonslvprocess.hpp
     processes/hullwhiteprocess.hpp
     processes/hybridhestonhullwhiteprocess.hpp
     processes/jointstochasticprocess.hpp
     processes/merton76process.hpp
     processes/mfstateprocess.hpp
     processes/ornsteinuhlenbeckprocess.hpp
+    processes/coxingersollrossprocess.hpp
     processes/squarerootprocess.hpp
     processes/stochasticprocessarray.hpp
-    qldefines.hpp
-    quantlib.hpp
     quote.hpp
-    quotes/all.hpp
     quotes/compositequote.hpp
     quotes/derivedquote.hpp
     quotes/eurodollarfuturesquote.hpp
@@ -2042,10 +2014,8 @@ set(QuantLib_HDR
     shared_ptr.hpp
     stochasticprocess.hpp
     termstructure.hpp
-    termstructures/all.hpp
     termstructures/bootstraperror.hpp
     termstructures/bootstraphelper.hpp
-    termstructures/credit/all.hpp
     termstructures/credit/defaultdensitystructure.hpp
     termstructures/credit/defaultprobabilityhelpers.hpp
     termstructures/credit/flathazardrate.hpp
@@ -2057,7 +2027,7 @@ set(QuantLib_HDR
     termstructures/credit/probabilitytraits.hpp
     termstructures/credit/survivalprobabilitystructure.hpp
     termstructures/defaulttermstructure.hpp
-    termstructures/inflation/all.hpp
+    termstructures/globalbootstrap.hpp
     termstructures/inflation/inflationhelpers.hpp
     termstructures/inflation/inflationtraits.hpp
     termstructures/inflation/interpolatedyoyinflationcurve.hpp
@@ -2071,15 +2041,12 @@ set(QuantLib_HDR
     termstructures/localbootstrap.hpp
     termstructures/volatility/abcd.hpp
     termstructures/volatility/abcdcalibration.hpp
-    termstructures/volatility/all.hpp
     termstructures/volatility/atmadjustedsmilesection.hpp
     termstructures/volatility/atmsmilesection.hpp
-    termstructures/volatility/capfloor/all.hpp
     termstructures/volatility/capfloor/capfloortermvolatilitystructure.hpp
     termstructures/volatility/capfloor/capfloortermvolcurve.hpp
     termstructures/volatility/capfloor/capfloortermvolsurface.hpp
     termstructures/volatility/capfloor/constantcapfloortermvol.hpp
-    termstructures/volatility/equityfx/all.hpp
     termstructures/volatility/equityfx/andreasenhugelocalvoladapter.hpp
     termstructures/volatility/equityfx/andreasenhugevolatilityadapter.hpp
     termstructures/volatility/equityfx/andreasenhugevolatilityinterpl.hpp
@@ -2098,13 +2065,11 @@ set(QuantLib_HDR
     termstructures/volatility/equityfx/noexceptlocalvolsurface.hpp
     termstructures/volatility/flatsmilesection.hpp
     termstructures/volatility/gaussian1dsmilesection.hpp
-    termstructures/volatility/inflation/all.hpp
     termstructures/volatility/inflation/constantcpivolatility.hpp
     termstructures/volatility/inflation/cpivolatilitystructure.hpp
     termstructures/volatility/inflation/yoyinflationoptionletvolatilitystructure.hpp
     termstructures/volatility/interpolatedsmilesection.hpp
     termstructures/volatility/kahalesmilesection.hpp
-    termstructures/volatility/optionlet/all.hpp
     termstructures/volatility/optionlet/capletvariancecurve.hpp
     termstructures/volatility/optionlet/constantoptionletvol.hpp
     termstructures/volatility/optionlet/optionletstripper.hpp
@@ -2121,10 +2086,11 @@ set(QuantLib_HDR
     termstructures/volatility/smilesection.hpp
     termstructures/volatility/smilesectionutils.hpp
     termstructures/volatility/spreadedsmilesection.hpp
-    termstructures/volatility/swaption/all.hpp
     termstructures/volatility/swaption/cmsmarket.hpp
     termstructures/volatility/swaption/cmsmarketcalibration.hpp
     termstructures/volatility/swaption/gaussian1dswaptionvolatility.hpp
+    termstructures/volatility/swaption/interpolatedswaptionvolatilitycube.hpp
+    termstructures/volatility/swaption/sabrswaptionvolatilitycube.hpp
     termstructures/volatility/swaption/spreadedswaptionvol.hpp
     termstructures/volatility/swaption/swaptionconstantvol.hpp
     termstructures/volatility/swaption/swaptionvolcube.hpp
@@ -2135,7 +2101,6 @@ set(QuantLib_HDR
     termstructures/volatility/swaption/swaptionvolstructure.hpp
     termstructures/volatility/volatilitytype.hpp
     termstructures/voltermstructure.hpp
-    termstructures/yield/all.hpp
     termstructures/yield/bondhelpers.hpp
     termstructures/yield/bootstraptraits.hpp
     termstructures/yield/compositezeroyieldstructure.hpp
@@ -2147,21 +2112,22 @@ set(QuantLib_HDR
     termstructures/yield/forwardspreadedtermstructure.hpp
     termstructures/yield/forwardstructure.hpp
     termstructures/yield/impliedtermstructure.hpp
+    termstructures/yield/interpolatedsimplezerocurve.hpp
     termstructures/yield/nonlinearfittingmethods.hpp
     termstructures/yield/oisratehelper.hpp
+    termstructures/yield/overnightindexfutureratehelper.hpp
     termstructures/yield/piecewiseyieldcurve.hpp
     termstructures/yield/piecewisezerospreadedtermstructure.hpp
     termstructures/yield/quantotermstructure.hpp
     termstructures/yield/ratehelpers.hpp
+    termstructures/yield/ultimateforwardtermstructure.hpp
     termstructures/yield/zerocurve.hpp
     termstructures/yield/zerospreadedtermstructure.hpp
     termstructures/yield/zeroyieldstructure.hpp
     termstructures/yieldtermstructure.hpp
-    time/all.hpp
     time/asx.hpp
     time/businessdayconvention.hpp
     time/calendar.hpp
-    time/calendars/all.hpp
     time/calendars/argentina.hpp
     time/calendars/australia.hpp
     time/calendars/austria.hpp
@@ -2169,6 +2135,7 @@ set(QuantLib_HDR
     time/calendars/botswana.hpp
     time/calendars/brazil.hpp
     time/calendars/canada.hpp
+    time/calendars/chile.hpp
     time/calendars/china.hpp
     time/calendars/czechrepublic.hpp
     time/calendars/denmark.hpp
@@ -2210,13 +2177,17 @@ set(QuantLib_HDR
     time/dategenerationrule.hpp
     time/daycounter.hpp
     time/daycounters/actual360.hpp
+    time/daycounters/actual364.hpp
     time/daycounters/actual365fixed.hpp
+    time/daycounters/actual366.hpp
+    time/daycounters/actual36525.hpp
     time/daycounters/actualactual.hpp
-    time/daycounters/all.hpp
     time/daycounters/business252.hpp
     time/daycounters/one.hpp
     time/daycounters/simpledaycounter.hpp
     time/daycounters/thirty360.hpp
+    time/daycounters/thirty365.hpp
+    time/daycounters/yearfractiontodate.hpp
     time/ecb.hpp
     time/frequency.hpp
     time/imm.hpp
@@ -2226,13 +2197,12 @@ set(QuantLib_HDR
     time/weekday.hpp
     timegrid.hpp
     timeseries.hpp
+    tuple.hpp
     types.hpp
     userconfig.hpp
-    utilities/all.hpp
     utilities/clone.hpp
     utilities/dataformatters.hpp
     utilities/dataparsers.hpp
-    utilities/disposable.hpp
     utilities/null.hpp
     utilities/null_deleter.hpp
     utilities/observablevalue.hpp
@@ -2243,26 +2213,219 @@ set(QuantLib_HDR
     volatilitymodel.hpp
 )
 
-get_quantlib_library_name(QL_OUTPUT_NAME)
+set(QL_CONFIGURED_HEADERS
+    ${PROJECT_BINARY_DIR}/ql/config.hpp
+    ${PROJECT_BINARY_DIR}/ql/qldefines.hpp)
 
-if(WIN32)
-    if (${BUILD_SHARED_LIBS})
-        # Windows needs to link static library (nothing is declared to export in QuantLib)
-        message(FATAL_ERROR "You should build QuantLib in STATIC mode as nothing is exported from the library. Use BUILD_SHARED_LIBS=OFF")
-    endif()
-    add_library(${QL_OUTPUT_NAME} ${QuantLib_SRC})
-    set_property(TARGET ${QL_OUTPUT_NAME} PROPERTY PROJECT_LABEL "QuantLib")
-else()
-    add_library(${QL_OUTPUT_NAME} ${QuantLib_SRC})
+set(QL_GENERATED_HEADERS
+    ${PROJECT_BINARY_DIR}/ql/quantlib.hpp
+    ${PROJECT_BINARY_DIR}/ql/cashflows/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/currencies/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/amortizingbonds/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/asian/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/averageois/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/barrieroption/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/basismodels/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/callablebonds/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/catbonds/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/commodities/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/coupons/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/credit/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/exoticoptions/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/finitedifferences/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/forward/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/fx/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/inflation/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/lattices/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/math/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/mcbasket/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/models/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/processes/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/risk/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/shortrate/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/swaptions/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/termstructures/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/variancegamma/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/varianceoption/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/experimental/volatility/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/indexes/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/indexes/ibor/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/indexes/inflation/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/indexes/swap/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/instruments/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/instruments/bonds/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/legacy/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/legacy/libormarketmodels/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/copulas/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/distributions/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/integrals/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/interpolations/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/matrixutilities/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/ode/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/optimization/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/randomnumbers/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/solvers1d/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/math/statistics/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/meshers/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/operators/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/schemes/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/solvers/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/stepconditions/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/finitedifferences/utilities/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/lattices/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/methods/montecarlo/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/equity/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/browniangenerators/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/callability/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/correlations/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/curvestates/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/driftcomputation/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/evolvers/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/evolvers/volprocesses/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/models/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/pathwisegreeks/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/products/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/products/multistep/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/products/onestep/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/marketmodels/products/pathwise/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/shortrate/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/shortrate/calibrationhelpers/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/shortrate/onefactormodels/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/shortrate/twofactormodels/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/models/volatility/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/patterns/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/asian/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/barrier/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/basket/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/bond/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/capfloor/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/cliquet/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/credit/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/forward/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/inflation/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/lookback/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/quanto/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/swap/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/swaption/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/pricingengines/vanilla/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/processes/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/quotes/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/credit/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/inflation/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/volatility/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/volatility/capfloor/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/volatility/equityfx/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/volatility/inflation/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/volatility/optionlet/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/volatility/swaption/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/termstructures/yield/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/time/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/time/calendars/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/time/daycounters/all.hpp
+    ${PROJECT_BINARY_DIR}/ql/utilities/all.hpp)
+
+add_custom_command(OUTPUT ${QL_GENERATED_HEADERS}
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${PROJECT_SOURCE_DIR}
+        -DBINARY_DIR=${PROJECT_BINARY_DIR}
+        -P ${PROJECT_SOURCE_DIR}/cmake/GenerateHeaders.cmake
+    COMMENT "Generating headers..."
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+add_library(ql_library
+    ${QL_SOURCES}
+    ${QL_HEADERS}
+    ${QL_CONFIGURED_HEADERS}
+    ${QL_GENERATED_HEADERS})
+
+set_target_properties(ql_library PROPERTIES
+    EXPORT_NAME ${PACKAGE_NAME}
+    OUTPUT_NAME ${PACKAGE_NAME}
+    VERSION ${QUANTLIB_VERSION}
+    SOVERSION ${QUANTLIB_VERSION_MAJOR})
+
+target_compile_definitions(ql_library PRIVATE
+    QL_COMPILATION)
+
+target_compile_options(ql_library PRIVATE
+    ${OpenMP_CXX_FLAGS})
+
+if(MSVC AND CMAKE_UNITY_BUILD)
+    # for Unity builds, we need to add /bigobj
+    target_compile_options(ql_library PRIVATE "/bigobj")
 endif()
-set(QL_LINK_LIBRARY ${QL_OUTPUT_NAME} PARENT_SCOPE)
 
+if(NOT "${QL_EXTRA_LINK_LIBRARIES}" STREQUAL "")
+    target_link_libraries(ql_library PUBLIC ${QL_EXTRA_LINK_LIBRARIES})
+endif()
 
-install(FILES ${QuantLib_HDR} DESTINATION include/ql)
+target_include_directories(ql_library PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${QL_INSTALL_INCLUDEDIR}>)
 
-install(TARGETS ${QL_OUTPUT_NAME}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-        )
+target_include_directories(ql_library SYSTEM PUBLIC
+    ${Boost_INCLUDE_DIRS}
+    ${OpenMP_CXX_INCLUDE_DIRS})
 
+target_link_libraries(ql_library PUBLIC
+    ${OpenMP_CXX_LIBRARIES})
+
+install(TARGETS ql_library EXPORT QuantLibTargets
+    ARCHIVE DESTINATION ${QL_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${QL_INSTALL_LIBDIR})
+
+# Install ql source headers preserving ql hierarchy
+foreach(file ${QL_HEADERS})
+    get_filename_component(dir ${file} DIRECTORY)
+    install(FILES ${file} DESTINATION "${QL_INSTALL_INCLUDEDIR}/ql/${dir}")
+endforeach()
+
+# Install configured headers from the build directory
+foreach(file ${QL_CONFIGURED_HEADERS})
+    install(FILES ${file} DESTINATION "${QL_INSTALL_INCLUDEDIR}/ql/")
+endforeach()
+
+# Install generated headers from the build directory
+foreach(file ${QL_GENERATED_HEADERS})
+    get_filename_component(dir ${file} DIRECTORY)
+    file(RELATIVE_PATH path ${PROJECT_BINARY_DIR} ${dir})
+    install(FILES ${file} DESTINATION "${QL_INSTALL_INCLUDEDIR}/${path}")
+endforeach()
+
+# Install config scripts for people using `find_package(QuantLib::QuantLib CONFIG ...)`
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${PROJECT_BINARY_DIR}/cmake/QuantLibConfigVersion.cmake"
+    VERSION ${QL_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+export(EXPORT QuantLibTargets
+    FILE "${PROJECT_BINARY_DIR}/cmake/QuantLibTargets.cmake"
+    NAMESPACE QuantLib::
+)
+configure_file("${PROJECT_SOURCE_DIR}/cmake/QuantLibConfig.cmake.in"
+    "${PROJECT_BINARY_DIR}/cmake/QuantLibConfig.cmake"
+    COPYONLY
+)
+configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/QuantLibConfig.cmake.in"
+    "${PROJECT_BINARY_DIR}/cmake/QuantLibConfig.cmake"
+    INSTALL_DESTINATION "${QL_INSTALL_CMAKEDIR}"
+)
+install(EXPORT QuantLibTargets
+    FILE QuantLibTargets.cmake
+    NAMESPACE QuantLib::
+    DESTINATION "${QL_INSTALL_CMAKEDIR}"
+)
+install(FILES "${PROJECT_BINARY_DIR}/cmake/QuantLibConfig.cmake"
+    "${PROJECT_BINARY_DIR}/cmake/QuantLibConfigVersion.cmake"
+    DESTINATION "${QL_INSTALL_CMAKEDIR}"
+)
