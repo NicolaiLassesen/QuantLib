@@ -589,8 +589,8 @@ int bootstrapSwap() {
 
     // output rate curve
     std::cout << "Rate curve: " << std::endl;
-    for (Size i = 0; i < bootstrap_helpers.size(); i++) {
-        Date d = bootstrap_helpers[i]->latestDate();
+    for (auto & bootstrap_helper : bootstrap_helpers) {
+        Date d = bootstrap_helper->latestDate();
         std::cout << d << "\t" << setprecision(6)
                   << rateTs->zeroRate(d, Actual365Fixed(), Continuous).rate() << "\t"
                   << rateTs->discount(d) << std::endl;

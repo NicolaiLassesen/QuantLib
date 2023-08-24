@@ -29,6 +29,7 @@
 #include <ql/indexes/ibor/euribor.hpp>
 #include <ql/pricingengines/credit/midpointcdsengine.hpp>
 #include <ql/pricingengines/credit/isdacdsengine.hpp>
+#include <ql/shared_ptr.hpp>
 #include <ql/termstructures/credit/piecewisedefaultcurve.hpp>
 #include <ql/termstructures/credit/defaultprobabilityhelpers.hpp>
 #include <ql/termstructures/credit/flathazardrate.hpp>
@@ -699,9 +700,9 @@ void example04() {
 
     // reference CDS
     ext::shared_ptr<CreditDefaultSwap> trade1 =
-        ext::shared_ptr<CreditDefaultSwap>(new CreditDefaultSwap(
+        ext::make_shared<CreditDefaultSwap>(
             Protection::Buyer, 100000000.0, 0.05, cdsSchedule, Following, Actual360(), true, true,
-            evaluationDate + Period(1, Days), ext::shared_ptr<Claim>(), Actual360(true), true));
+            evaluationDate + Period(1, Days), ext::shared_ptr<Claim>(), Actual360(true), true);
 
     ext::shared_ptr<FixedRateCoupon> cp =
         ext::dynamic_pointer_cast<FixedRateCoupon>(trade1->coupons()[1]);
@@ -736,8 +737,8 @@ void example04() {
     //        0, WeekendsOnly(), isdaCdsHelper, Actual365Fixed()));
 
     std::cout << "ISDA credit curve: " << std::endl;
-    for (Size i = 0; i < isdaCdsHelper.size(); i++) {
-        Date d = isdaCdsHelper[i]->latestDate();
+    for (auto & i : isdaCdsHelper) {
+        Date d = i->latestDate();
         Real pd = defaultTs->defaultProbability(d);
         Real t = defaultTs->timeFromReference(d);
         std::cout << d << ";" << pd << ";" << 1.0 - pd << ";" << -std::log(1.0 - pd) / t
