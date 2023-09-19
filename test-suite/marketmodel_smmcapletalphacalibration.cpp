@@ -55,23 +55,14 @@
 #include <ql/utilities/dataformatters.hpp>
 #include <ql/math/integrals/segmentintegral.hpp>
 #include <ql/math/statistics/convergencestatistics.hpp>
-#include <ql/math/functional.hpp>
 #include <ql/math/optimization/simplex.hpp>
 #include <ql/math/statistics/sequencestatistics.hpp>
 #include <sstream>
 
-#if defined(BOOST_MSVC)
-#include <float.h>
-//namespace { unsigned int u = _controlfp(_EM_INEXACT, _MCW_EM); }
-#endif
-
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-#define BEGIN(x) (x+0)
-#define END(x) (x+LENGTH(x))
-
-namespace {
+namespace market_model_smm_caplet_alpha_calibration_test {
 
     Date todaysDate_, startDate_, endDate_;
     std::vector<Time> rateTimes_;
@@ -226,6 +217,8 @@ void MarketModelSmmCapletAlphaCalibrationTest::testFunction() {
     BOOST_TEST_MESSAGE("Testing alpha caplet calibration "
                        "in a lognormal coterminal swap market model...");
 
+    using namespace market_model_smm_caplet_alpha_calibration_test;
+
     setup();
 
     Size numberOfRates = todaysForwards_.size();
@@ -353,10 +346,9 @@ void MarketModelSmmCapletAlphaCalibrationTest::testFunction() {
 
 // --- Call the desired tests
 test_suite* MarketModelSmmCapletAlphaCalibrationTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("SMM Caplet alpha calibration test");
-    #if !defined(QL_NO_UBLAS_SUPPORT)
-    suite->add(QUANTLIB_TEST_CASE(
-                    &MarketModelSmmCapletAlphaCalibrationTest::testFunction));
-    #endif
+    auto* suite = BOOST_TEST_SUITE("SMM Caplet alpha calibration test");
+
+    suite->add(QUANTLIB_TEST_CASE(&MarketModelSmmCapletAlphaCalibrationTest::testFunction));
+
     return suite;
 }

@@ -1,7 +1,7 @@
 /* -*- mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
 /*
- Copyright (C) 2015 Johannes Goettker-Schnetmann
+ Copyright (C) 2015 Johannes Göttker-Schnetmann
  Copyright (C) 2015 Klaus Spanderen
 
  This file is part of QuantLib, a free-software/open-source library
@@ -26,31 +26,29 @@
 #include <ql/experimental/models/hestonslvmcmodel.hpp>
 #include <ql/experimental/processes/hestonslvprocess.hpp>
 
-#if defined(__GNUC__) && (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || (__GNUC__ > 4))
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#pragma push_macro("BOOST_DISABLE_ASSERTS")
+#ifndef BOOST_DISABLE_ASSERTS
+#define BOOST_DISABLE_ASSERTS
 #endif
 #include <boost/multi_array.hpp>
-#if defined(__GNUC__) && (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || (__GNUC__ > 4))
-#pragma GCC diagnostic pop
-#endif
+#pragma pop_macro("BOOST_DISABLE_ASSERTS")
+
+#include <utility>
 
 namespace QuantLib {
     HestonSLVMCModel::HestonSLVMCModel(
-        const Handle<LocalVolTermStructure>& localVol,
-        const Handle<HestonModel>& hestonModel,
-        const ext::shared_ptr<BrownianGeneratorFactory>& brownianGeneratorFactory,
+        Handle<LocalVolTermStructure> localVol,
+        Handle<HestonModel> hestonModel,
+        ext::shared_ptr<BrownianGeneratorFactory> brownianGeneratorFactory,
         const Date& endDate,
         Size timeStepsPerYear,
         Size nBins,
         Size calibrationPaths,
-        const std::vector<Date>& mandatoryDates)
-    : localVol_(localVol),
-      hestonModel_(hestonModel),
-      brownianGeneratorFactory_(brownianGeneratorFactory),
-      endDate_(endDate),
-      nBins_(nBins),
-      calibrationPaths_(calibrationPaths) {
+        const std::vector<Date>& mandatoryDates,
+        const Real mixingFactor)
+    : localVol_(std::move(localVol)), hestonModel_(std::move(hestonModel)),
+      brownianGeneratorFactory_(std::move(brownianGeneratorFactory)), endDate_(endDate),
+      nBins_(nBins), calibrationPaths_(calibrationPaths), mixingFactor_(mixingFactor) {
 
         registerWith(localVol_);
         registerWith(hestonModel_);
@@ -60,9 +58,8 @@ namespace QuantLib {
 
         std::vector<Time> gridTimes;
         gridTimes.reserve(mandatoryDates.size()+1);
-        for (Size i=0; i < mandatoryDates.size(); ++i) {
-            gridTimes.push_back(dc.yearFraction(refDate, mandatoryDates[i]));
-
+        for (auto mandatoryDate : mandatoryDates) {
+            gridTimes.push_back(dc.yearFraction(refDate, mandatoryDate));
         }
         gridTimes.push_back(dc.yearFraction(refDate, endDate));
 
@@ -120,7 +117,7 @@ namespace QuantLib {
             vStrikes, L, dc);
 
         const ext::shared_ptr<HestonSLVProcess> slvProcess
-            = ext::make_shared<HestonSLVProcess>(hestonProcess, leverageFunction_);
+            = ext::make_shared<HestonSLVProcess>(hestonProcess, leverageFunction_, mixingFactor_);
 
         std::vector<std::pair<Real, Real> > pairs(
                 calibrationPaths_, std::make_pair(spot->value(), v0));
@@ -167,9 +164,9 @@ namespace QuantLib {
 
             std::sort(pairs.begin(), pairs.end());
 
-            Size s = 0u, e = 0u;
+            Size s = 0U, e = 0U;
             for (Size i=0; i < nBins_; ++i) {
-                const Size inc = k + (i < m);
+                const Size inc = k + static_cast<unsigned long>(i < m);
                 e = s + inc;
 
                 Real sum=0.0;
@@ -179,8 +176,7 @@ namespace QuantLib {
                 sum/=inc;
 
                 vStrikes[n]->at(i) = 0.5*(pairs[e-1].first + pairs[s].first);
-                (*L)[i][n] = std::sqrt(square<Real>()(
-                     localVol_->localVol(t, vStrikes[n]->at(i), true))/sum);
+                (*L)[i][n] = std::sqrt(squared(localVol_->localVol(t, vStrikes[n]->at(i), true))/sum);
 
                 s = e;
             }

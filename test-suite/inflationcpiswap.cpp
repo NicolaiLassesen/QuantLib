@@ -17,6 +17,8 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
  */
 
+#include "utilities.hpp"
+#include "inflationcpiswap.hpp"
 #include <ql/types.hpp>
 #include <ql/indexes/inflation/ukrpi.hpp>
 #include <ql/termstructures/bootstraphelper.hpp>
@@ -32,10 +34,6 @@
 #include <ql/pricingengines/swap/discountingswapengine.hpp>
 #include <ql/instruments/zerocouponinflationswap.hpp>
 #include <ql/pricingengines/bond/discountingbondengine.hpp>
-
-#include "utilities.hpp"
-
-#include "inflationcpiswap.hpp"
 #include <ql/cashflows/cpicoupon.hpp>
 #include <ql/cashflows/cpicouponpricer.hpp>
 #include <ql/instruments/cpiswap.hpp>
@@ -48,7 +46,7 @@ using namespace boost::unit_test_framework;
 
 using std::fabs;
 
-namespace {
+namespace inflation_cpi_swap_test {
     struct Datum {
         Date date;
         Rate rate;
@@ -68,9 +66,9 @@ namespace {
             Date maturity = iiData[i].date;
             Handle<Quote> quote(ext::shared_ptr<Quote>(
                                 new SimpleQuote(iiData[i].rate/100.0)));
-            ext::shared_ptr<BootstrapHelper<T> > anInstrument(new U(
-                                quote, observationLag, maturity,
-                                calendar, bdc, dc, ii, discountCurve));
+            ext::shared_ptr<BootstrapHelper<T> > anInstrument(new U(quote, observationLag, maturity,
+                                                                    calendar, bdc, dc, ii,
+                                                                    CPI::AsIndex, discountCurve));
             instruments.push_back(anInstrument);
         }
 
@@ -80,7 +78,7 @@ namespace {
 
     struct CommonVars {
         // common data
-
+    
         Size length;
         Date startDate;
         Real volatility;
@@ -128,8 +126,8 @@ namespace {
             fixingDays = 0;
             settlement = calendar.advance(today,settlementDays,Days);
             startDate = settlement;
-            dcZCIIS = ActualActual();
-            dcNominal = ActualActual();
+            dcZCIIS = ActualActual(ActualActual::ISDA);
+            dcNominal = ActualActual(ActualActual::ISDA);
 
             // uk rpi index
             //      fixing data
@@ -149,9 +147,7 @@ namespace {
                 -999.0, -999.0 };
 
             // link from cpi index to cpi TS
-            bool interp = false;// this MUST be false because the observation lag is only 2 months
-                                // for ZCIIS; but not for contract if the contract uses a bigger lag.
-            ii = ext::make_shared<UKRPI>(interp, hcpi);
+            ii = ext::make_shared<UKRPI>(hcpi);
             for (Size i=0; i<rpiSchedule.size();i++) {
                 ii->addFixing(rpiSchedule[i], fixData[i], true);// force overwrite in case multiple use
             };
@@ -164,7 +160,7 @@ namespace {
                 { Date(25, February, 2010), 0.59955 },
                 { Date(18, March, 2010), 0.65361 },
                 { Date(25, May, 2010), 0.82830 },
-                //  { Date(17, June, 2010), 0.7 },  // can't boostrap with this data point
+                //  { Date(17, June, 2010), 0.7 },  // can't bootstrap with this data point
                 { Date(16, September, 2010), 0.78960 },
                 { Date(16, December, 2010), 0.93762 },
                 { Date(17, March, 2011), 1.12037 },
@@ -189,18 +185,15 @@ namespace {
                 { Date(25, November, 2069), 3.72677 },
                 { Date(27, November, 2079), 3.63082 }
             };
-            const Size nominalDataLength = 30-1;
 
             std::vector<Date> nomD;
             std::vector<Rate> nomR;
-            for (Size i = 0; i < nominalDataLength; i++) {
-                nomD.push_back(nominalData[i].date);
-                nomR.push_back(nominalData[i].rate/100.0);
+            for (auto& i : nominalData) {
+                nomD.push_back(i.date);
+                nomR.push_back(i.rate / 100.0);
             }
             ext::shared_ptr<YieldTermStructure> nominal =
-            ext::make_shared<InterpolatedZeroCurve<Linear>
-            >(nomD,nomR,dcNominal);
-
+                ext::make_shared<InterpolatedZeroCurve<Linear>>(nomD,nomR,dcNominal);
 
             nominalTS.linkTo(nominal);
 
@@ -248,8 +241,7 @@ namespace {
             ext::shared_ptr<PiecewiseZeroInflationCurve<Linear> > pCPIts(
                                 new PiecewiseZeroInflationCurve<Linear>(
                                     evaluationDate, calendar, dcZCIIS, observationLag,
-                                    ii->frequency(),ii->interpolated(), baseZeroRate,
-                                    Handle<YieldTermStructure>(nominalTS), helpers));
+                                    ii->frequency(), baseZeroRate, helpers));
             pCPIts->recalculate();
             cpiTS = ext::dynamic_pointer_cast<ZeroInflationTermStructure>(pCPIts);
 
@@ -264,13 +256,18 @@ namespace {
 
 
 void CPISwapTest::consistency() {
+    BOOST_TEST_MESSAGE("Checking CPI swap against inflation term structure...");
+
+    using namespace inflation_cpi_swap_test;
+
+    bool usingAtParCoupons  = IborCoupon::Settings::instance().usingAtParCoupons();
 
     // check inflation leg vs calculation directly from inflation TS
     CommonVars common;
 
     // ZeroInflationSwap aka CPISwap
 
-    CPISwap::Type type = CPISwap::Payer;
+    Swap::Type type = Swap::Payer;
     Real nominal = 1000000.0;
     bool subtractInflationNominal = true;
     // float+spread leg
@@ -325,20 +322,17 @@ void CPISwapTest::consistency() {
 
         ext::shared_ptr<CPICoupon>
         zic = ext::dynamic_pointer_cast<CPICoupon>(zisV.cpiLeg()[i]);
-        if (zic) {
+        if (zic != nullptr) {
             if (zic->fixingDate() < (common.evaluationDate - Period(1,Months))) {
                 fixedIndex->addFixing(zic->fixingDate(), cpiFix[i],true);
             }
         }
     }
 
-
     // simple structure so simple pricing engine - most work done by index
-    ext::shared_ptr<DiscountingSwapEngine>
-        dse(new DiscountingSwapEngine(common.nominalTS));
-
+    ext::shared_ptr<DiscountingSwapEngine> dse(new DiscountingSwapEngine(common.nominalTS));
     zisV.setPricingEngine(dse);
-
+    
     // get float+spread & fixed*inflation leg prices separately
     Real testInfLegNPV = 0.0;
     for(Size i=0;i<zisV.leg(0).size(); i++){
@@ -350,7 +344,7 @@ void CPISwapTest::consistency() {
 
         ext::shared_ptr<CPICoupon>
             zicV = ext::dynamic_pointer_cast<CPICoupon>(zisV.cpiLeg()[i]);
-        if (zicV) {
+        if (zicV != nullptr) {
             Real diff = fabs( zicV->rate() - (fixedRate*(zicV->indexFixing()/baseCPI)) );
             QL_REQUIRE(diff<1e-8,"failed "<<i<<"th coupon reconstruction as "
                        << (fixedRate*(zicV->indexFixing()/baseCPI)) << " vs rate = "
@@ -365,11 +359,7 @@ void CPISwapTest::consistency() {
 
     Real diff = fabs(1-zisV.NPV()/4191660.0);
     
-    Real max_diff;
-    if (IborCoupon::usingAtParCoupons())
-        max_diff = 1e-5;
-    else
-        max_diff = 3e-5;
+    Real max_diff = usingAtParCoupons ? 1e-5 : 3e-5;
 
     QL_REQUIRE(diff<max_diff,
                "failed stored consistency value test, ratio = " << diff);
@@ -380,21 +370,24 @@ void CPISwapTest::consistency() {
 
 
 void CPISwapTest::zciisconsistency() {
+    BOOST_TEST_MESSAGE("Checking CPI swap against zero-coupon inflation swap...");
+
+    using namespace inflation_cpi_swap_test;
+
     CommonVars common;
 
-    ZeroCouponInflationSwap::Type ztype = ZeroCouponInflationSwap::Payer;
+    Swap::Type ztype = Swap::Payer;
     Real  nominal = 1000000.0;
     Date startDate(common.evaluationDate);
     Date endDate(25, November, 2059);
     Calendar cal = UnitedKingdom();
     BusinessDayConvention paymentConvention = ModifiedFollowing;
-    DayCounter dummyDC, dc = ActualActual();
+    DayCounter dummyDC, dc = ActualActual(ActualActual::ISDA);
     Period observationLag(2,Months);
 
     Rate quote = 0.03714;
-    ZeroCouponInflationSwap zciis(ztype, nominal, startDate, endDate, cal,
-                                  paymentConvention, dc, quote, common.ii,
-                                  observationLag);
+    ZeroCouponInflationSwap zciis(ztype, nominal, startDate, endDate, cal, paymentConvention, dc,
+                                  quote, common.ii, observationLag, CPI::AsIndex);
 
     // simple structure so simple pricing engine - most work done by index
     ext::shared_ptr<DiscountingSwapEngine>
@@ -403,11 +396,10 @@ void CPISwapTest::zciisconsistency() {
     zciis.setPricingEngine(dse);
     QL_REQUIRE(fabs(zciis.NPV())<1e-3,"zciis does not reprice to zero");
 
-    std::vector<Date> oneDate;
-    oneDate.push_back(endDate);
+    std::vector<Date> oneDate = {endDate};
     Schedule schOneDate(oneDate, cal, paymentConvention);
 
-    CPISwap::Type stype = CPISwap::Payer;
+    Swap::Type stype = Swap::Payer;
     Real inflationNominal = nominal;
     Real floatNominal = inflationNominal * std::pow(1.0+quote,50);
     bool subtractInflationNominal = true;
@@ -435,11 +427,15 @@ void CPISwapTest::zciisconsistency() {
 
 
 void CPISwapTest::cpibondconsistency() {
+    BOOST_TEST_MESSAGE("Checking CPI swap against CPI bond...");
+
+    using namespace inflation_cpi_swap_test;
+
     CommonVars common;
 
     // ZeroInflationSwap aka CPISwap
 
-    CPISwap::Type type = CPISwap::Payer;
+    Swap::Type type = Swap::Payer;
     Real nominal = 1000000.0;
     bool subtractInflationNominal = true;
     // float+spread leg
@@ -493,7 +489,7 @@ void CPISwapTest::cpibondconsistency() {
 
         ext::shared_ptr<CPICoupon>
         zic = ext::dynamic_pointer_cast<CPICoupon>(zisV.cpiLeg()[i]);
-        if (zic) {
+        if (zic != nullptr) {
             if (zic->fixingDate() < (common.evaluationDate - Period(1,Months))) {
                 fixedIndex->addFixing(zic->fixingDate(), cpiFix[i],true);
             }
@@ -502,9 +498,7 @@ void CPISwapTest::cpibondconsistency() {
 
 
     // simple structure so simple pricing engine - most work done by index
-    ext::shared_ptr<DiscountingSwapEngine>
-    dse(new DiscountingSwapEngine(common.nominalTS));
-
+    ext::shared_ptr<DiscountingSwapEngine> dse(new DiscountingSwapEngine(common.nominalTS));
     zisV.setPricingEngine(dse);
 
     // now do the bond equivalent
@@ -516,18 +510,17 @@ void CPISwapTest::cpibondconsistency() {
                  observationInterpolation, fixedSchedule,
                  fixedRates, fixedDayCount, fixedPaymentConvention);
 
-    ext::shared_ptr<DiscountingBondEngine>
-    dbe(new DiscountingBondEngine(common.nominalTS));
+    ext::shared_ptr<DiscountingBondEngine> dbe(new DiscountingBondEngine(common.nominalTS));
     cpiB.setPricingEngine(dbe);
 
     QL_REQUIRE(fabs(cpiB.NPV() - zisV.legNPV(0))<1e-5,"cpi bond does not equal equivalent cpi swap leg");
-    // remove circular refernce
+    // remove circular reference
     common.hcpi.linkTo(ext::shared_ptr<ZeroInflationTermStructure>());
 }
 
 
 test_suite* CPISwapTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("CPISwap tests");
+    auto* suite = BOOST_TEST_SUITE("CPISwap tests");
 
     suite->add(QUANTLIB_TEST_CASE(&CPISwapTest::consistency));
     suite->add(QUANTLIB_TEST_CASE(&CPISwapTest::zciisconsistency));

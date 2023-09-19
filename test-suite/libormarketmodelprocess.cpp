@@ -34,18 +34,14 @@
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-namespace {
+namespace libor_market_model_process_test {
 
     Size len = 10;
 
     ext::shared_ptr<IborIndex> makeIndex() {
         DayCounter dayCounter = Actual360();
-        std::vector<Date> dates;
-        std::vector<Rate> rates;
-        dates.push_back(Date(4,September,2005));
-        dates.push_back(Date(4,September,2018));
-        rates.push_back(0.01);
-        rates.push_back(0.08);
+        std::vector<Date> dates = {{4,September,2005}, {4,September,2018}};
+        std::vector<Rate> rates = {0.01, 0.08};
 
         RelinkableHandle<YieldTermStructure> termStructure(
                       ext::shared_ptr<YieldTermStructure>(
@@ -81,9 +77,8 @@ namespace {
             dates.push_back(process->fixingDates()[i+1]);
         }
 
-        return ext::make_shared<CapletVarianceCurve>(
-                         todaysDate, dates,
-                                                 capletVols, ActualActual());
+        return ext::make_shared<CapletVarianceCurve>(todaysDate, dates, capletVols,
+                                                     ActualActual(ActualActual::ISDA));
     }
 
     ext::shared_ptr<LiborForwardModelProcess>
@@ -154,6 +149,8 @@ void LiborMarketModelProcessTest::testInitialisation() {
 void LiborMarketModelProcessTest::testLambdaBootstrapping() {
     BOOST_TEST_MESSAGE("Testing caplet LMM lambda bootstrapping...");
 
+    using namespace libor_market_model_process_test;
+
     SavedSettings backup;
 
     Real tolerance = 1e-10;
@@ -181,9 +178,9 @@ void LiborMarketModelProcessTest::testLambdaBootstrapping() {
     std::vector<Time> tmp = process->fixingTimes();
     TimeGrid grid(tmp.begin(), tmp.end(), 14);
 
-    for (Size t=0; t<grid.size(); ++t) {
-        Matrix diff = (param->integratedCovariance(grid[t])
-        - param->LfmCovarianceParameterization::integratedCovariance(grid[t]));
+    for (Real t : grid) {
+        Matrix diff = (param->integratedCovariance(t) -
+                       param->LfmCovarianceParameterization::integratedCovariance(t));
 
         for (Size i=0; i<diff.rows(); ++i) {
             for (Size j=0; j<diff.columns(); ++j) {
@@ -200,6 +197,8 @@ void LiborMarketModelProcessTest::testLambdaBootstrapping() {
 
 void LiborMarketModelProcessTest::testMonteCarloCapletPricing() {
     BOOST_TEST_MESSAGE("Testing caplet LMM Monte-Carlo caplet pricing...");
+
+    using namespace libor_market_model_process_test;
 
     SavedSettings backup;
 
@@ -333,7 +332,7 @@ void LiborMarketModelProcessTest::testMonteCarloCapletPricing() {
 }
 
 test_suite* LiborMarketModelProcessTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("Libor market model process tests");
+    auto* suite = BOOST_TEST_SUITE("Libor market model process tests");
 
     suite->add(QUANTLIB_TEST_CASE(
          &LiborMarketModelProcessTest::testInitialisation));

@@ -17,16 +17,16 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
+#include <ql/exercise.hpp>
 #include <ql/experimental/barrieroption/analyticdoublebarrierengine.hpp>
 #include <ql/pricingengines/blackcalculator.hpp>
-#include <ql/exercise.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     AnalyticDoubleBarrierEngine::AnalyticDoubleBarrierEngine(
-            const ext::shared_ptr<GeneralizedBlackScholesProcess>& process,
-            int series)
-    : process_(process), series_(series) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process, int series)
+    : process_(std::move(process)), series_(series) {
         registerWith(process_);
     }
 
@@ -44,7 +44,7 @@ namespace QuantLib {
                    "strike must be positive");
 
         Real spot = underlying();
-        QL_REQUIRE(spot >= 0.0, "negative or null underlying given");
+        QL_REQUIRE(spot > 0.0, "negative or null underlying given");
         QL_REQUIRE(!triggered(spot), "barrier(s) already touched");
 
         DoubleBarrier::Type barrierType = arguments_.barrierType;

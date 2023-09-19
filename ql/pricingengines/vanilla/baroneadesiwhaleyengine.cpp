@@ -18,18 +18,19 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/vanilla/baroneadesiwhaleyengine.hpp>
+#include <ql/exercise.hpp>
+#include <ql/math/comparison.hpp>
+#include <ql/math/distributions/normaldistribution.hpp>
 #include <ql/pricingengines/blackcalculator.hpp>
 #include <ql/pricingengines/blackformula.hpp>
-#include <ql/math/distributions/normaldistribution.hpp>
-#include <ql/math/comparison.hpp>
-#include <ql/exercise.hpp>
+#include <ql/pricingengines/vanilla/baroneadesiwhaleyengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     BaroneAdesiWhaleyApproximationEngine::BaroneAdesiWhaleyApproximationEngine(
-              const ext::shared_ptr<GeneralizedBlackScholesProcess>& process)
-    : process_(process) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process)
+    : process_(std::move(process)) {
         registerWith(process_);
     }
 
@@ -75,8 +76,8 @@ namespace QuantLib {
             std::sqrt(variance);
         CumulativeNormalDistribution cumNormalDist;
         Real K = (!close(riskFreeDiscount, 1.0, 1000))
-                ? -2.0*std::log(riskFreeDiscount)
-                   / (variance*(1.0-riskFreeDiscount))
+                ? Real(-2.0*std::log(riskFreeDiscount)
+                   / (variance*(1.0-riskFreeDiscount)))
                  : 2.0/variance;
         Real temp = blackFormula(payoff->optionType(), payoff->strike(),
                 forwardSi, std::sqrt(variance))*riskFreeDiscount;
@@ -197,8 +198,8 @@ namespace QuantLib {
                 /std::sqrt(variance);
             Real n = 2.0*std::log(dividendDiscount/riskFreeDiscount)/variance;
             Real K = (!close(riskFreeDiscount, 1.0, 1000))
-                    ? -2.0*std::log(riskFreeDiscount)
-                       / (variance*(1.0-riskFreeDiscount))
+                    ? Real(-2.0*std::log(riskFreeDiscount)
+                       / (variance*(1.0-riskFreeDiscount)))
                      : 2.0/variance;
             Real Q, a;
             switch (payoff->optionType()) {

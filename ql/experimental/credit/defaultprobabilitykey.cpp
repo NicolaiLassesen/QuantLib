@@ -25,6 +25,7 @@
 #endif
 #include <algorithm>
 #include <set>
+#include <utility>
 
 namespace QuantLib {
 
@@ -55,18 +56,12 @@ namespace QuantLib {
         return true;
     }
 
-    DefaultProbKey::DefaultProbKey()
-        : eventTypes_(),
-          obligationCurrency_(Currency()),
-          seniority_(NoSeniority) {}
+    DefaultProbKey::DefaultProbKey() = default;
 
-    DefaultProbKey::DefaultProbKey(
-        const std::vector<ext::shared_ptr<DefaultType> >& eventTypes,
-                   const Currency cur,
-                   Seniority sen)
-        : eventTypes_(eventTypes),
-          obligationCurrency_(cur),
-          seniority_(sen) {
+    DefaultProbKey::DefaultProbKey(std::vector<ext::shared_ptr<DefaultType> > eventTypes,
+                                   Currency cur,
+                                   Seniority sen)
+    : eventTypes_(std::move(eventTypes)), obligationCurrency_(std::move(cur)), seniority_(sen) {
         std::set<AtomicDefault::Type> buffer;
         Size numEvents = eventTypes_.size();
         for(Size i=0; i< numEvents; i++)
@@ -96,3 +91,7 @@ namespace QuantLib {
     }
 
 }
+
+#if defined(QL_PATCH_MSVC)
+#pragma warning(pop)
+#endif

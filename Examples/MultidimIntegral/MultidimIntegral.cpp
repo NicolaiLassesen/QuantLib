@@ -18,12 +18,13 @@ FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
 #include <ql/experimental/math/multidimintegrator.hpp>
 #include <ql/experimental/math/multidimquadrature.hpp>
 #include <ql/math/integrals/trapezoidintegral.hpp>
+#include <ql/patterns/singleton.hpp>
 #include <ql/functional.hpp>
 
 
@@ -33,32 +34,27 @@ FOR A PARTICULAR PURPOSE.  See the license for more details.
 using namespace QuantLib;
 using namespace std;
 
-#if defined(QL_ENABLE_SESSIONS)
-namespace QuantLib {
-
-    Integer sessionId() { return 0; }
-
-}
-#endif
-
 // Correct value is: (e^{-.25} \sqrt{\pi})^{dimension}
 struct integrand {
     Real operator()(const std::vector<Real>& arg) const {
         Real sum = 1.;
-        for(Size i=0; i<arg.size(); i++) 
-            sum *= std::exp(-arg[i]*arg[i]) * std::cos(arg[i]);
+        for (Real i : arg)
+            sum *= std::exp(-i * i) * std::cos(i);
         return sum;
     }
 };
 
 int main() {
+
+  try {
+
     std::cout << std::endl;
 
     /* 
     Integrates the function above over several dimensions, the size of the 
     vector argument is the dimension one.
     Both algorithms are not really on the same stand since the quadrature 
-    will be incorrect to use if the integrand is not appropiately behaved. Over 
+    will be incorrect to use if the integrand is not appropriately behaved. Over 
     dimension 3 you might need to modify the points in the integral to retain a 
     sensible computing time.
     */
@@ -94,4 +90,12 @@ int main() {
          << endl;
 
     return 0;
+
+  } catch (std::exception& e) {
+      std::cerr << e.what() << std::endl;
+      return 1;
+  } catch (...) {
+      std::cerr << "unknown error" << std::endl;
+      return 1;
+  }
 }

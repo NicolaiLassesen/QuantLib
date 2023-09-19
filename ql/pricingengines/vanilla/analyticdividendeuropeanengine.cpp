@@ -17,15 +17,16 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/vanilla/analyticdividendeuropeanengine.hpp>
-#include <ql/pricingengines/blackcalculator.hpp>
 #include <ql/exercise.hpp>
+#include <ql/pricingengines/blackcalculator.hpp>
+#include <ql/pricingengines/vanilla/analyticdividendeuropeanengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     AnalyticDividendEuropeanEngine::AnalyticDividendEuropeanEngine(
-              const ext::shared_ptr<GeneralizedBlackScholesProcess>& process)
-    : process_(process) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process)
+    : process_(std::move(process)) {
         registerWith(process_);
     }
 
@@ -92,8 +93,8 @@ namespace QuantLib {
                 && d <= arguments_.exercise->lastDate()) {
 
                 delta_theta -= arguments_.cashFlow[i]->amount() *
-                  (  process_->riskFreeRate()->zeroRate(d,rfdc,Continuous,Annual)
-                   - process_->dividendYield()->zeroRate(d,dydc,Continuous,Annual)) *
+                  (  process_->riskFreeRate()->zeroRate(d,rfdc,Continuous,Annual).rate()
+                   - process_->dividendYield()->zeroRate(d,dydc,Continuous,Annual).rate()) *
                   process_->riskFreeRate()->discount(d) /
                   process_->dividendYield()->discount(d);
 

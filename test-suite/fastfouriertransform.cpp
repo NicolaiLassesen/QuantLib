@@ -68,7 +68,7 @@ void FastFourierTransformTest::testInverse() {
 
     fft.inverse_transform(x.begin(), x.end(), ft.begin());
     for (Size i=0; i<nFrq; ++i) {
-        tmp[i] = std::norm<Real>(ft[i]);
+        tmp[i] = std::norm(ft[i]);
         ft[i] = z;
     }
     fft.inverse_transform(tmp.begin(), tmp.end(), ft.begin());
@@ -105,7 +105,7 @@ void FastFourierTransformTest::testInverse() {
 
 
 test_suite* FastFourierTransformTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("fast fourier transform tests");
+    auto* suite = BOOST_TEST_SUITE("fast fourier transform tests");
     suite->add(QUANTLIB_TEST_CASE(&FastFourierTransformTest::testSimple));
     suite->add(QUANTLIB_TEST_CASE(&FastFourierTransformTest::testInverse));
     return suite;

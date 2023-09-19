@@ -24,6 +24,7 @@
 #define quantlib_test_interpolations_hpp
 
 #include <boost/test/unit_test.hpp>
+#include "speedlevel.hpp"
 
 /* remember to document new and/or updated tests in the Doxygen
    comment block of the corresponding class */
@@ -62,8 +63,12 @@ class InterpolationTest {
     static void testLagrangeInterpolationOnChebyshevPoints();
     static void testBSplines();
     static void testBackwardFlatOnSinglePoint();
+    static void testChebyshevInterpolation();
+    static void testChebyshevInterpolationOnNodes();
+    static void testChebyshevInterpolationUpdateY();
 
-    static boost::unit_test_framework::test_suite* suite();
+
+    static boost::unit_test_framework::test_suite* suite(SpeedLevel);
 };
 
 

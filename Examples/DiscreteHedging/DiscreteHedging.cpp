@@ -46,7 +46,7 @@
 */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
 #include <ql/methods/montecarlo/montecarlomodel.hpp>
@@ -62,15 +62,6 @@
 #include <iomanip>
 
 using namespace QuantLib;
-
-#if defined(QL_ENABLE_SESSIONS)
-namespace QuantLib {
-
-    Integer sessionId() { return 0; }
-
-}
-#endif
-
 
 /* The ReplicationError class carries out Monte Carlo simulations to evaluate
    the outcome (the replication error) of the discrete hedging strategy over
@@ -155,7 +146,7 @@ class ReplicationPathPricer : public PathPricer<Path> {
 
     }
     // The value() method encapsulates the pricing code
-    Real operator()(const Path& path) const;
+    Real operator()(const Path& path) const override;
 
   private:
     Option::Type type_;

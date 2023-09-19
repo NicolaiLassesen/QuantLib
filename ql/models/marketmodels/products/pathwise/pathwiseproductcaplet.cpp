@@ -17,11 +17,11 @@ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/models/marketmodels/products/pathwise/pathwiseproductcaplet.hpp>
-#include <ql/models/marketmodels/products/multistep/multistepforwards.hpp>
 #include <ql/models/marketmodels/curvestate.hpp>
+#include <ql/models/marketmodels/products/multistep/multistepforwards.hpp>
+#include <ql/models/marketmodels/products/pathwise/pathwiseproductcaplet.hpp>
 #include <ql/models/marketmodels/utilities.hpp>
-#include <ql/auto_ptr.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -91,11 +91,10 @@ namespace QuantLib {
         return (currentIndex_ == strikes_.size());
     }
 
-    QL_UNIQUE_OR_AUTO_PTR<MarketModelPathwiseMultiProduct>
+    std::unique_ptr<MarketModelPathwiseMultiProduct>
     MarketModelPathwiseMultiCaplet::clone() const 
     {
-        return QL_UNIQUE_OR_AUTO_PTR<MarketModelPathwiseMultiProduct>(
-                                   new MarketModelPathwiseMultiCaplet(*this));
+        return std::unique_ptr<MarketModelPathwiseMultiProduct>(new MarketModelPathwiseMultiCaplet(*this));
     }
 
     std::vector<Size> MarketModelPathwiseMultiCaplet::suggestedNumeraires() const
@@ -239,11 +238,10 @@ namespace QuantLib {
         return (currentIndex_ == strikes_.size());
     }
 
-    QL_UNIQUE_OR_AUTO_PTR<MarketModelPathwiseMultiProduct>
+    std::unique_ptr<MarketModelPathwiseMultiProduct>
     MarketModelPathwiseMultiDeflatedCaplet::clone() const 
     {
-        return QL_UNIQUE_OR_AUTO_PTR<MarketModelPathwiseMultiProduct>(
-                           new MarketModelPathwiseMultiDeflatedCaplet(*this));
+        return std::unique_ptr<MarketModelPathwiseMultiProduct>(new MarketModelPathwiseMultiDeflatedCaplet(*this));
     }
 
     std::vector<Size> MarketModelPathwiseMultiDeflatedCaplet::suggestedNumeraires() const
@@ -286,10 +284,9 @@ namespace QuantLib {
         const std::vector<Real>& accruals,
         const std::vector<Time>& paymentTimes,
         Rate strike,
-        const std::vector<std::pair<Size, Size> >& startsAndEnds) 
-        : underlyingCaplets_(rateTimes, accruals, paymentTimes, strike),numberRates_(accruals.size()),
-        startsAndEnds_(startsAndEnds)
-    {
+        std::vector<std::pair<Size, Size> > startsAndEnds)
+    : underlyingCaplets_(rateTimes, accruals, paymentTimes, strike), numberRates_(accruals.size()),
+      startsAndEnds_(std::move(startsAndEnds)) {
         for (Size j=0; j < startsAndEnds_.size(); ++j)
         {
             QL_REQUIRE(startsAndEnds_[j].first < startsAndEnds_[j].second,"a cap must start before it ends: " << j << startsAndEnds_[j].first << startsAndEnds_[j].second );
@@ -299,15 +296,11 @@ namespace QuantLib {
 
         innerCashFlowSizes_.resize(accruals.size());
         innerCashFlowsGenerated_.resize(accruals.size());
-        for (Size i=0; i <  innerCashFlowsGenerated_.size(); ++i)
-        {
-            innerCashFlowsGenerated_[i].resize(underlyingCaplets_.maxNumberOfCashFlowsPerProductPerStep());
+        for (auto& i : innerCashFlowsGenerated_) {
+            i.resize(underlyingCaplets_.maxNumberOfCashFlowsPerProductPerStep());
             for (Size j=0; j < underlyingCaplets_.maxNumberOfCashFlowsPerProductPerStep(); ++j)
-                innerCashFlowsGenerated_[i][j].amount.resize(accruals.size()+1);
-
-
+                i[j].amount.resize(accruals.size() + 1);
         }
- 
     }
 
 
@@ -379,11 +372,10 @@ namespace QuantLib {
         return done;
     }
 
-    QL_UNIQUE_OR_AUTO_PTR<MarketModelPathwiseMultiProduct>
+    std::unique_ptr<MarketModelPathwiseMultiProduct>
     MarketModelPathwiseMultiDeflatedCap::clone() const
     {
-        return QL_UNIQUE_OR_AUTO_PTR<MarketModelPathwiseMultiProduct>(
-                              new MarketModelPathwiseMultiDeflatedCap(*this));
+        return std::unique_ptr<MarketModelPathwiseMultiProduct>(new MarketModelPathwiseMultiDeflatedCap(*this));
     }
 
 }

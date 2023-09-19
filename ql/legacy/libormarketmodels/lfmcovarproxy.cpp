@@ -19,16 +19,14 @@
 
 #include <ql/legacy/libormarketmodels/lfmcovarproxy.hpp>
 #include <ql/math/integrals/kronrodintegral.hpp>
-#include <ql/math/functional.hpp>
+#include <utility>
 
 namespace QuantLib {
-    LfmCovarianceProxy::LfmCovarianceProxy(
-        const ext::shared_ptr<LmVolatilityModel>& volaModel,
-        const ext::shared_ptr<LmCorrelationModel>& corrModel)
+    LfmCovarianceProxy::LfmCovarianceProxy(ext::shared_ptr<LmVolatilityModel> volaModel,
+                                           const ext::shared_ptr<LmCorrelationModel>& corrModel)
 
     : LfmCovarianceParameterization(corrModel->size(), corrModel->factors()),
-      volaModel_(volaModel),
-      corrModel_(corrModel) {
+      volaModel_(std::move(volaModel)), corrModel_(corrModel) {
 
         QL_REQUIRE(volaModel_->size() == corrModel_->size(),
             "different size for the volatility (" << volaModel_->size() <<
@@ -46,22 +44,20 @@ namespace QuantLib {
         return corrModel_;
     }
 
-    Disposable<Matrix> LfmCovarianceProxy::diffusion(Time t,
-                                                     const Array& x) const {
+    Matrix LfmCovarianceProxy::diffusion(Time t, const Array& x) const {
 
         Matrix pca = corrModel_->pseudoSqrt(t, x);
         Array  vol = volaModel_->volatility(t, x);
         for (Size i=0; i<size_; ++i) {
             std::transform(pca.row_begin(i), pca.row_end(i),
                            pca.row_begin(i),
-                           multiply_by<Real>(vol[i]));
+                           [&](Real x){ return x * vol[i]; });
         }
 
         return pca;
     }
 
-    Disposable<Matrix> LfmCovarianceProxy::covariance(Time t,
-                                                      const Array& x) const {
+    Matrix LfmCovarianceProxy::covariance(Time t, const Array& x) const {
 
         Array  volatility  = volaModel_->volatility(t, x);
         Matrix correlation = corrModel_->correlation(t, x);

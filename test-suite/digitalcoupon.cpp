@@ -36,7 +36,7 @@
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 
-namespace {
+namespace digital_coupon_test {
 
     struct CommonVars {
         // global data
@@ -74,6 +74,8 @@ void DigitalCouponTest::testAssetOrNothing() {
 
     BOOST_TEST_MESSAGE("Testing European asset-or-nothing digital coupon...");
 
+    using namespace digital_coupon_test;
+
     /*  Call Payoff = (aL+b)Heaviside(aL+b-X) =  a Max[L-X'] + (b+aX')Heaviside(L-X')
         Value Call = aF N(d1') + bN(d2')
         Put Payoff =  (aL+b)Heaviside(X-aL-b) = -a Max[X-L'] + (b+aX')Heaviside(X'-L)
@@ -93,16 +95,12 @@ void DigitalCouponTest::testAssetOrNothing() {
                         with black formula result */
     ext::shared_ptr<DigitalReplication>
         replication(new DigitalReplication(Replication::Central, gap));
-    for (Size i = 0; i< LENGTH(vols); i++) {
-            Volatility capletVol = vols[i];
-            RelinkableHandle<OptionletVolatilityStructure> vol;
-            vol.linkTo(ext::shared_ptr<OptionletVolatilityStructure>(new
-                ConstantOptionletVolatility(vars.today,
-                                            vars.calendar, Following,
-                                            capletVol, Actual360())));
-        for (Size j=0; j<LENGTH(strikes); j++) {
-            Rate strike = strikes[j];
-            for (Size k=9; k<10; k++) {
+    for (Real capletVol : vols) {
+        RelinkableHandle<OptionletVolatilityStructure> vol;
+        vol.linkTo(ext::shared_ptr<OptionletVolatilityStructure>(new ConstantOptionletVolatility(
+            vars.today, vars.calendar, Following, capletVol, Actual360())));
+        for (Real strike : strikes) {
+            for (Size k = 9; k < 10; k++) {
                 Date startDate = vars.calendar.advance(vars.settlement,(k+1)*Years);
                 Date endDate = vars.calendar.advance(vars.settlement,(k+2)*Years);
                 Rate nullstrike = Null<Rate>();
@@ -264,6 +262,8 @@ void DigitalCouponTest::testAssetOrNothingDeepInTheMoney() {
     BOOST_TEST_MESSAGE("Testing European deep in-the-money asset-or-nothing "
                        "digital coupon...");
 
+    using namespace digital_coupon_test;
+
     CommonVars vars;
 
     Real gearing = 1.0;
@@ -375,6 +375,8 @@ void DigitalCouponTest::testAssetOrNothingDeepOutTheMoney() {
 
     BOOST_TEST_MESSAGE("Testing European deep out-the-money asset-or-nothing "
                        "digital coupon...");
+
+    using namespace digital_coupon_test;
 
     CommonVars vars;
 
@@ -493,6 +495,8 @@ void DigitalCouponTest::testCashOrNothing() {
         d2' = ln(F/X')/stdDev - 0.5*stdDev;
     */
 
+    using namespace digital_coupon_test;
+
     CommonVars vars;
 
     Volatility vols[] = { 0.05, 0.15, 0.30 };
@@ -506,16 +510,12 @@ void DigitalCouponTest::testCashOrNothing() {
     ext::shared_ptr<DigitalReplication> replication(new
         DigitalReplication(Replication::Central, gap));
 
-    for (Size i = 0; i< LENGTH(vols); i++) {
-            Volatility capletVol = vols[i];
-            RelinkableHandle<OptionletVolatilityStructure> vol;
-            vol.linkTo(ext::shared_ptr<OptionletVolatilityStructure>(new
-                ConstantOptionletVolatility(vars.today,
-                                            vars.calendar, Following,
-                                            capletVol, Actual360())));
-        for (Size j = 0; j< LENGTH(strikes); j++) {
-            Rate strike = strikes[j];
-            for (Size k = 0; k<10; k++) {
+    for (Real capletVol : vols) {
+        RelinkableHandle<OptionletVolatilityStructure> vol;
+        vol.linkTo(ext::shared_ptr<OptionletVolatilityStructure>(new ConstantOptionletVolatility(
+            vars.today, vars.calendar, Following, capletVol, Actual360())));
+        for (Real strike : strikes) {
+            for (Size k = 0; k < 10; k++) {
                 Date startDate = vars.calendar.advance(vars.settlement,(k+1)*Years);
                 Date endDate = vars.calendar.advance(vars.settlement,(k+2)*Years);
                 Rate nullstrike = Null<Rate>();
@@ -641,6 +641,8 @@ void DigitalCouponTest::testCashOrNothingDeepInTheMoney() {
     BOOST_TEST_MESSAGE("Testing European deep in-the-money cash-or-nothing "
                        "digital coupon...");
 
+    using namespace digital_coupon_test;
+
     CommonVars vars;
 
     Real gearing = 1.0;
@@ -750,6 +752,8 @@ void DigitalCouponTest::testCashOrNothingDeepOutTheMoney() {
 
     BOOST_TEST_MESSAGE("Testing European deep out-the-money cash-or-nothing "
                        "digital coupon...");
+
+    using namespace digital_coupon_test;
 
     CommonVars vars;
 
@@ -862,6 +866,8 @@ void DigitalCouponTest::testCallPutParity() {
 
     BOOST_TEST_MESSAGE("Testing call/put parity for European digital coupon...");
 
+    using namespace digital_coupon_test;
+
     CommonVars vars;
 
     Volatility vols[] = { 0.05, 0.15, 0.30 };
@@ -874,15 +880,13 @@ void DigitalCouponTest::testCallPutParity() {
     ext::shared_ptr<DigitalReplication> replication(new
         DigitalReplication(Replication::Central, gap));
 
-    for (Size i = 0; i< LENGTH(vols); i++) {
-            Volatility capletVolatility = vols[i];
-            RelinkableHandle<OptionletVolatilityStructure> volatility;
-            volatility.linkTo(ext::shared_ptr<OptionletVolatilityStructure>(new
-                ConstantOptionletVolatility(vars.today, vars.calendar, Following,
-                                            capletVolatility, Actual360())));
-        for (Size j = 0; j< LENGTH(strikes); j++) {
-            Rate strike = strikes[j];
-            for (Size k = 0; k<10; k++) {
+    for (Real capletVolatility : vols) {
+        RelinkableHandle<OptionletVolatilityStructure> volatility;
+        volatility.linkTo(
+            ext::shared_ptr<OptionletVolatilityStructure>(new ConstantOptionletVolatility(
+                vars.today, vars.calendar, Following, capletVolatility, Actual360())));
+        for (Real strike : strikes) {
+            for (Size k = 0; k < 10; k++) {
                 Date startDate = vars.calendar.advance(vars.settlement,(k+1)*Years);
                 Date endDate = vars.calendar.advance(vars.settlement,(k+2)*Years);
                 Rate nullstrike = Null<Rate>();
@@ -965,6 +969,8 @@ void DigitalCouponTest::testReplicationType() {
 
     BOOST_TEST_MESSAGE("Testing replication type for European digital coupon...");
 
+    using namespace digital_coupon_test;
+
     CommonVars vars;
 
     Volatility vols[] = { 0.05, 0.15, 0.30 };
@@ -981,15 +987,13 @@ void DigitalCouponTest::testReplicationType() {
     ext::shared_ptr<DigitalReplication> superReplication(new
         DigitalReplication(Replication::Super, gap));
 
-    for (Size i = 0; i< LENGTH(vols); i++) {
-        Volatility capletVolatility = vols[i];
+    for (Real capletVolatility : vols) {
         RelinkableHandle<OptionletVolatilityStructure> volatility;
         volatility.linkTo(ext::shared_ptr<OptionletVolatilityStructure>(new
         ConstantOptionletVolatility(vars.today, vars.calendar, Following,
                                     capletVolatility, Actual360())));
-        for (Size j = 0; j< LENGTH(strikes); j++) {
-            Rate strike = strikes[j];
-            for (Size k = 0; k<10; k++) {
+        for (Real strike : strikes) {
+            for (Size k = 0; k < 10; k++) {
                 Date startDate = vars.calendar.advance(vars.settlement,(k+1)*Years);
                 Date endDate = vars.calendar.advance(vars.settlement,(k+2)*Years);
                 Rate nullstrike = Null<Rate>();
@@ -1140,7 +1144,7 @@ void DigitalCouponTest::testReplicationType() {
 
 
 test_suite* DigitalCouponTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("Digital coupon tests");
+    auto* suite = BOOST_TEST_SUITE("Digital coupon tests");
     suite->add(QUANTLIB_TEST_CASE(&DigitalCouponTest::testAssetOrNothing));
     suite->add(QUANTLIB_TEST_CASE(
                        &DigitalCouponTest::testAssetOrNothingDeepInTheMoney));

@@ -23,7 +23,7 @@
  */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
 #include <ql/time/calendars/weekendsonly.hpp>
@@ -134,9 +134,9 @@ int stdExample() {
 
         Real marketQuotes[] = {100.390625, 106.21875, 100.59375, 101.6875, 102.140625};
 
-        std::vector<ext::shared_ptr<SimpleQuote> > quote;
-        for (Size i = 0; i < numberOfBonds; i++) {
-            ext::shared_ptr<SimpleQuote> cp(new SimpleQuote(marketQuotes[i]));
+        std::vector< ext::shared_ptr<SimpleQuote> > quote;
+        for (Real marketQuote : marketQuotes) {
+            ext::shared_ptr<SimpleQuote> cp(new SimpleQuote(marketQuote));
             quote.push_back(cp);
         }
 
@@ -514,54 +514,56 @@ int bootstrapSwap() {
 
     // check if indexed coupon is defined (it should not to be 100% consistent with
     // the ISDA spec)
-    if (!IborCoupon::usingAtParCoupons()) {
+    if (!IborCoupon::Settings::instance().usingAtParCoupons()) {
         std::cout << "Warning: IborCoupon::usingAtParCoupons() == false is used, "
                   << "which is not precisely consistent with the specification "
                   << "of the ISDA rate curve." << std::endl;
     }
 
+    DayCounter thirty360 = Thirty360(Thirty360::BondBasis);
+
     ext::shared_ptr<SwapRateHelper> sw2y =
         ext::make_shared<SwapRateHelper>(0.002473, 2 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw3y =
         ext::make_shared<SwapRateHelper>(0.0026516, 3 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw4y =
         ext::make_shared<SwapRateHelper>(0.0030825, 4 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw5y =
         ext::make_shared<SwapRateHelper>(0.00372, 5 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw6y =
         ext::make_shared<SwapRateHelper>(0.000452, 6 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw7y =
         ext::make_shared<SwapRateHelper>(0.005357, 7 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw8y =
         ext::make_shared<SwapRateHelper>(0.0061475, 8 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw9y =
         ext::make_shared<SwapRateHelper>(0.006874, 9 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw10y =
         ext::make_shared<SwapRateHelper>(0.00753, 10 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw11y =
         ext::make_shared<SwapRateHelper>(0.008103, 11 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw12y =
         ext::make_shared<SwapRateHelper>(0.008611, 12 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw15y =
         ext::make_shared<SwapRateHelper>(0.0097065, 15 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw20y =
         ext::make_shared<SwapRateHelper>(0.0107923, 20 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
     ext::shared_ptr<SwapRateHelper> sw30y =
         ext::make_shared<SwapRateHelper>(0.011445, 30 * Years, rateHelperCalendar, Semiannual,
-                                         ModifiedFollowing, Thirty360(), usdLibor3M);
+                                         ModifiedFollowing, thirty360, usdLibor3M);
 
     std::vector<ext::shared_ptr<RateHelper> > bootstrap_helpers;
 

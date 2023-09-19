@@ -110,26 +110,7 @@ namespace QuantLib {
         std::copy(m.a22_.get(), m.a22_.get()+size, a22_.get());
     }
 
-    NinePointLinearOp& NinePointLinearOp::operator=(
-        const NinePointLinearOp& m) {
-        NinePointLinearOp temp(m);
-        swap(temp);
-        return *this;
-    }
-
-    NinePointLinearOp& NinePointLinearOp::operator=(
-        const Disposable<NinePointLinearOp>& m) {
-        swap(const_cast<Disposable<NinePointLinearOp>&>(m));
-        return *this;
-    }
-
-    NinePointLinearOp::NinePointLinearOp(
-        const Disposable<NinePointLinearOp>& from) {
-        swap(const_cast<Disposable<NinePointLinearOp>&>(from));
-    }
-
-    Disposable<Array> NinePointLinearOp::apply(const Array& u)
-        const {
+    Array NinePointLinearOp::apply(const Array& u) const {
 
         const ext::shared_ptr<FdmLinearOpLayout> index=mesher_->layout();
         QL_REQUIRE(u.size() == index->size(),"inconsistent length of r "
@@ -159,8 +140,7 @@ namespace QuantLib {
         return retVal;
     }
 
-#if !defined(QL_NO_UBLAS_SUPPORT)
-    Disposable<SparseMatrix> NinePointLinearOp::toMatrix() const {
+    SparseMatrix NinePointLinearOp::toMatrix() const {
         const ext::shared_ptr<FdmLinearOpLayout> index = mesher_->layout();
         const Size n = index->size();
 
@@ -179,11 +159,9 @@ namespace QuantLib {
 
         return retVal;
     }
-#endif
 
 
-    Disposable<NinePointLinearOp>
-        NinePointLinearOp::mult(const Array & u) const {
+    NinePointLinearOp NinePointLinearOp::mult(const Array & u) const {
 
         NinePointLinearOp retVal(d0_, d1_, mesher_);
         const Size size = mesher_->layout()->size();

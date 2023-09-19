@@ -21,19 +21,20 @@
 /*! \file lineartsrpricer.cpp
 */
 
-#include <ql/cashflows/lineartsrpricer.hpp>
+#include <ql/cashflows/cmscoupon.hpp>
 #include <ql/cashflows/fixedratecoupon.hpp>
 #include <ql/cashflows/iborcoupon.hpp>
-#include <ql/cashflows/cmscoupon.hpp>
-#include <ql/termstructures/yieldtermstructure.hpp>
-#include <ql/quotes/simplequote.hpp>
+#include <ql/cashflows/lineartsrpricer.hpp>
 #include <ql/indexes/iborindex.hpp>
-#include <ql/time/schedule.hpp>
 #include <ql/instruments/vanillaswap.hpp>
-#include <ql/math/solvers1d/brent.hpp>
 #include <ql/math/integrals/kronrodintegral.hpp>
+#include <ql/math/solvers1d/brent.hpp>
 #include <ql/pricingengines/blackformula.hpp>
+#include <ql/quotes/simplequote.hpp>
 #include <ql/termstructures/volatility/atmsmilesection.hpp>
+#include <ql/termstructures/yieldtermstructure.hpp>
+#include <ql/time/schedule.hpp>
+#include <utility>
 
 namespace QuantLib {
 
@@ -49,20 +50,19 @@ namespace QuantLib {
     const Real LinearTsrPricer::defaultLowerBound = 0.0001,
              LinearTsrPricer::defaultUpperBound = 2.0000;
 
-    LinearTsrPricer::LinearTsrPricer(
-        const Handle<SwaptionVolatilityStructure> &swaptionVol,
-        const Handle<Quote> &meanReversion,
-        const Handle<YieldTermStructure> &couponDiscountCurve,
-        const Settings &settings,
-        const ext::shared_ptr<Integrator> &integrator)
-        : CmsCouponPricer(swaptionVol), meanReversion_(meanReversion),
-          couponDiscountCurve_(couponDiscountCurve), settings_(settings),
-          volDayCounter_(swaptionVol->dayCounter()), integrator_(integrator) {
+    LinearTsrPricer::LinearTsrPricer(const Handle<SwaptionVolatilityStructure>& swaptionVol,
+                                     Handle<Quote> meanReversion,
+                                     Handle<YieldTermStructure> couponDiscountCurve,
+                                     const Settings& settings,
+                                     ext::shared_ptr<Integrator> integrator)
+    : CmsCouponPricer(swaptionVol), meanReversion_(std::move(meanReversion)),
+      couponDiscountCurve_(std::move(couponDiscountCurve)), settings_(settings),
+      volDayCounter_(swaptionVol->dayCounter()), integrator_(std::move(integrator)) {
 
         if (!couponDiscountCurve_.empty())
             registerWith(couponDiscountCurve_);
 
-        if (integrator_ == NULL)
+        if (integrator_ == nullptr)
             integrator_ =
                 ext::make_shared<GaussKronrodNonAdaptive>(1E-10, 5000, 1E-10);
     }
@@ -169,9 +169,8 @@ namespace QuantLib {
             // compute linear model's parameters
 
             Real gx = 0.0, gy = 0.0;
-            for (Size i = 0; i < swap_->fixedLeg().size(); i++) {
-                ext::shared_ptr<Coupon> c =
-                    ext::dynamic_pointer_cast<Coupon>(swap_->fixedLeg()[i]);
+            for (const auto& i : swap_->fixedLeg()) {
+                ext::shared_ptr<Coupon> c = ext::dynamic_pointer_cast<Coupon>(i);
                 Real yf = c->accrualPeriod();
                 Date d = c->date();
                 Real pv = yf * discountCurve_->discount(d);
@@ -200,9 +199,11 @@ namespace QuantLib {
         if (optionType == Option::Call) {
             a = swapRateValue_;
             min = referenceStrike;
+            // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
             b = max = k =
                 std::min(smileSection_->maxStrike(), adjustedUpperBound_);
         } else {
+            // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
             a = min = k =
                 std::max(smileSection_->minStrike(), adjustedLowerBound_);
             b = swapRateValue_;
@@ -230,9 +231,11 @@ namespace QuantLib {
         if (optionType == Option::Call) {
             a = swapRateValue_;
             min = referenceStrike;
+            // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
             b = max = k =
                 std::min(smileSection_->maxStrike(), adjustedUpperBound_);
         } else {
+            // NOLINTNEXTLINE(clang-analyzer-deadcode.DeadStores)
             a = min = k =
                 std::max(smileSection_->minStrike(), adjustedLowerBound_);
             b = swapRateValue_;

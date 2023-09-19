@@ -18,7 +18,7 @@
 */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
 #include <ql/instruments/floatfloatswap.hpp>
@@ -48,13 +48,6 @@
 
 using namespace QuantLib;
 
-#if defined(QL_ENABLE_SESSIONS)
-namespace QuantLib {
-
-Integer sessionId() { return 0; }
-}
-#endif
-
 // helper function that prints a basket of calibrating swaptions to std::cout
 
 void printBasket(
@@ -69,27 +62,26 @@ void printBasket(
                  "===================="
                  "===================="
                  "==================" << std::endl;
-    for (Size j = 0; j < basket.size(); ++j) {
-        ext::shared_ptr<SwaptionHelper> helper =
-            ext::dynamic_pointer_cast<SwaptionHelper>(basket[j]);
+    for (const auto& j : basket) {
+        ext::shared_ptr<SwaptionHelper> helper = ext::dynamic_pointer_cast<SwaptionHelper>(j);
         Date endDate = helper->underlyingSwap()->fixedSchedule().dates().back();
         Real nominal = helper->underlyingSwap()->nominal();
         Real vol = helper->volatility()->value();
         Real rate = helper->underlyingSwap()->fixedRate();
         Date expiry = helper->swaption()->exercise()->date(0);
-        VanillaSwap::Type type = helper->swaption()->type();
+        Swap::Type type = helper->swaption()->type();
         std::ostringstream expiryString, endDateString;
         expiryString << expiry;
         endDateString << endDate;
         std::cout << std::setw(20) << expiryString.str() << std::setw(20)
                   << endDateString.str() << std::setw(20) << nominal
                   << std::setw(14) << rate << std::setw(12)
-                  << (type == VanillaSwap::Payer ? "Payer" : "Receiver")
+                  << (type == Swap::Payer ? "Payer" : "Receiver")
                   << std::setw(14) << vol << std::endl;
     }
 }
 
-// helper function that prints the result of a model calibraiton to std::cout
+// helper function that prints the result of a model calibration to std::cout
 
 void printModelCalibration(
     const std::vector<ext::shared_ptr<BlackCalibrationHelper> > &basket,
@@ -193,7 +185,7 @@ int main(int argc, char *argv[]) {
 
         ext::shared_ptr<NonstandardSwap> underlying =
             ext::make_shared<NonstandardSwap>(VanillaSwap(
-                VanillaSwap::Payer, 1.0, fixedSchedule, strike, Thirty360(),
+                Swap::Payer, 1.0, fixedSchedule, strike, Thirty360(Thirty360::BondBasis),
                 floatingSchedule, euribor6m, 0.00, Actual360()));
 
         std::vector<Date> exerciseDates;
@@ -265,8 +257,8 @@ int main(int argc, char *argv[]) {
                "\nthe calibrating vanilla swaptions. The result of this is as "
                "follows:" << std::endl;
 
-        for (Size i = 0; i < basket.size(); ++i)
-            basket[i]->setPricingEngine(swaptionEngine);
+        for (auto& i : basket)
+            i->setPricingEngine(swaptionEngine);
 
         LevenbergMarquardt method;
         EndCriteria ec(1000, 10, 1E-8, 1E-8,
@@ -317,10 +309,10 @@ int main(int argc, char *argv[]) {
         std::cout << "\nLet's see how this affects the exotics npv. The "
                      "\nrecalibrated model is:" << std::endl;
 
-        for (Size i = 0; i < basket.size(); ++i)
-            basket[i]->setPricingEngine(swaptionEngine);
+        for (auto& i : basket)
+            i->setPricingEngine(swaptionEngine);
 
-        
+
         gsr->calibrateVolatilitiesIterative(basket, method, ec);
         
 
@@ -355,8 +347,8 @@ int main(int argc, char *argv[]) {
         std::vector<Real> strikes(nominalFixed.size(), strike);
 
         ext::shared_ptr<NonstandardSwap> underlying2(new NonstandardSwap(
-            VanillaSwap::Payer, nominalFixed, nominalFloating, fixedSchedule,
-            strikes, Thirty360(), floatingSchedule, euribor6m, 1.0, 0.0,
+            Swap::Payer, nominalFixed, nominalFloating, fixedSchedule,
+            strikes, Thirty360(Thirty360::BondBasis), floatingSchedule, euribor6m, 1.0, 0.0,
             Actual360()));
         ext::shared_ptr<NonstandardSwaption> swaption2 =
             ext::make_shared<NonstandardSwaption>(underlying2, exercise);
@@ -391,8 +383,8 @@ int main(int argc, char *argv[]) {
                                            0.0); // null the second leg
 
         ext::shared_ptr<NonstandardSwap> underlying3(new NonstandardSwap(
-            VanillaSwap::Receiver, nominalFixed2, nominalFloating2,
-            fixedSchedule, strikes, Thirty360(), floatingSchedule, euribor6m,
+            Swap::Receiver, nominalFixed2, nominalFloating2,
+            fixedSchedule, strikes, Thirty360(Thirty360::BondBasis), floatingSchedule, euribor6m,
             1.0, 0.0, Actual360(), false,
             true)); // final capital exchange
 
@@ -433,10 +425,10 @@ int main(int argc, char *argv[]) {
             << "\nThe npv of the call right is (after recalibrating the model)"
             << std::endl;
 
-        for (Size i = 0; i < basket.size(); i++)
-            basket[i]->setPricingEngine(swaptionEngine);
+        for (auto& i : basket)
+            i->setPricingEngine(swaptionEngine);
 
-        
+
         gsr->calibrateVolatilitiesIterative(basket, method, ec);
         Real npv3 = swaption3->NPV();
         
@@ -468,10 +460,10 @@ int main(int argc, char *argv[]) {
 
         std::cout << "\nThe npv becomes:" << std::endl;
 
-        for (Size i = 0; i < basket.size(); i++)
-            basket[i]->setPricingEngine(swaptionEngine);
+        for (auto& i : basket)
+            i->setPricingEngine(swaptionEngine);
 
-        
+
         gsr->calibrateVolatilitiesIterative(basket, method, ec);
         Real npv4 = swaption3->NPV();
         
@@ -486,8 +478,8 @@ int main(int argc, char *argv[]) {
                "\nis exercisable on a yearly basis" << std::endl;
 
         ext::shared_ptr<FloatFloatSwap> underlying4(new FloatFloatSwap(
-                VanillaSwap::Payer, 1.0, 1.0, fixedSchedule, swapBase,
-                Thirty360(), floatingSchedule, euribor6m, Actual360(), false,
+                Swap::Payer, 1.0, 1.0, fixedSchedule, swapBase,
+                Thirty360(Thirty360::BondBasis), floatingSchedule, euribor6m, Actual360(), false,
                 false, 1.0, 0.0, Null<Real>(), Null<Real>(), 1.0, 0.0010));
 
         ext::shared_ptr<FloatFloatSwaption> swaption4 =
@@ -540,8 +532,8 @@ int main(int argc, char *argv[]) {
         
         basket = swaption4->calibrationBasket(swapBase, *swaptionVol,
                                               BasketGeneratingEngine::Naive);
-        for (Size i = 0; i < basket.size(); ++i)
-            basket[i]->setPricingEngine(swaptionEngine);
+        for (auto& i : basket)
+            i->setPricingEngine(swaptionEngine);
         gsr->calibrateVolatilitiesIterative(basket, method, ec);
         
 
@@ -579,7 +571,7 @@ int main(int argc, char *argv[]) {
 
         std::vector<Date> markovStepDates(exerciseDates.begin(),
                                           exerciseDates.end());
-        std::vector<Date> cmsFixingDates(markovStepDates);
+        const std::vector<Date>& cmsFixingDates(markovStepDates);
         std::vector<Real> markovSigmas(markovStepDates.size() + 1, 0.01);
         std::vector<Period> tenors(cmsFixingDates.size(), 10 * Years);
         ext::shared_ptr<MarkovFunctional> markov =
@@ -636,10 +628,10 @@ int main(int argc, char *argv[]) {
                      "\ndepending on your machine, this may take a"
                      "\nwhile now..." << std::endl;
 
-        for (Size i = 0; i < basket.size(); ++i)
-            basket[i]->setPricingEngine(swaptionEngineMarkov);
+        for (auto& i : basket)
+            i->setPricingEngine(swaptionEngineMarkov);
 
-        
+
         markov->calibrate(basket, method, ec);
         
 

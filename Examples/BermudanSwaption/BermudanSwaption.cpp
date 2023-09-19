@@ -20,7 +20,7 @@
 */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
 #include <ql/instruments/swaption.hpp>
@@ -46,21 +46,12 @@
 
 using namespace QuantLib;
 
-#if defined(QL_ENABLE_SESSIONS)
-namespace QuantLib {
-
-    Integer sessionId() { return 0; }
-
-}
-#endif
-
-
 //Number of swaptions to be calibrated to...
 
 Size numRows = 5;
 Size numCols = 5;
 
-Integer swapLenghts[] = {
+Integer swapLengths[] = {
       1,     2,     3,     4,     5};
 Volatility swaptionVols[] = {
   0.1490, 0.1340, 0.1228, 0.1189, 0.1148,
@@ -87,7 +78,7 @@ void calibrateModel(
                                                              1000, 0.05, 0.50);
         Volatility diff = implied - swaptionVols[k];
 
-        std::cout << i+1 << "x" << swapLenghts[j]
+        std::cout << i+1 << "x" << swapLengths[j]
                   << std::setprecision(5) << std::noshowpos
                   << ": model " << std::setw(7) << io::volatility(implied)
                   << ", market " << std::setw(7)
@@ -121,7 +112,7 @@ int main(int, char* []) {
         BusinessDayConvention floatingLegConvention = ModifiedFollowing;
         DayCounter fixedLegDayCounter = Thirty360(Thirty360::European);
         Frequency floatingLegFrequency = Semiannual;
-        VanillaSwap::Type type = VanillaSwap::Payer;
+        Swap::Type type = Swap::Payer;
         Rate dummyFixedRate = 0.03;
         ext::shared_ptr<IborIndex> indexSixMonths(new
             Euribor6M(rhTermStructure));
@@ -166,11 +157,11 @@ int main(int, char* []) {
 
         // defining the swaptions to be used in model calibration
         std::vector<Period> swaptionMaturities;
-        swaptionMaturities.push_back(Period(1, Years));
-        swaptionMaturities.push_back(Period(2, Years));
-        swaptionMaturities.push_back(Period(3, Years));
-        swaptionMaturities.push_back(Period(4, Years));
-        swaptionMaturities.push_back(Period(5, Years));
+        swaptionMaturities.emplace_back(1, Years);
+        swaptionMaturities.emplace_back(2, Years);
+        swaptionMaturities.emplace_back(3, Years);
+        swaptionMaturities.emplace_back(4, Years);
+        swaptionMaturities.emplace_back(5, Years);
 
         std::vector<ext::shared_ptr<BlackCalibrationHelper> > swaptions;
 
@@ -184,7 +175,7 @@ int main(int, char* []) {
             ext::shared_ptr<Quote> vol(new SimpleQuote(swaptionVols[k]));
             swaptions.push_back(ext::shared_ptr<BlackCalibrationHelper>(new
                 SwaptionHelper(swaptionMaturities[i],
-                               Period(swapLenghts[j], Years),
+                               Period(swapLengths[j], Years),
                                Handle<Quote>(vol),
                                indexSixMonths,
                                indexSixMonths->tenor(),

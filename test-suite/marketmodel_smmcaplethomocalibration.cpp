@@ -60,18 +60,11 @@
 #include <ql/utilities/dataformatters.hpp>
 #include <ql/math/integrals/segmentintegral.hpp>
 #include <ql/math/statistics/convergencestatistics.hpp>
-#include <ql/math/functional.hpp>
 #include <ql/math/optimization/simplex.hpp>
 #include <ql/math/statistics/sequencestatistics.hpp>
-#include <sstream>
 #include <ql/models/marketmodels/models/capletcoterminalperiodic.hpp>
-
 #include <ql/models/marketmodels/models/volatilityinterpolationspecifierabcd.hpp>
-
-#if defined(BOOST_MSVC)
-#include <float.h>
-//namespace { unsigned int u = _controlfp(_EM_INEXACT, _MCW_EM); }
-#endif
+#include <sstream>
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
@@ -79,10 +72,7 @@ using namespace boost::unit_test_framework;
 using std::fabs;
 using std::sqrt;
 
-#define BEGIN(x) (x+0)
-#define END(x) (x+LENGTH(x))
-
-namespace {
+namespace market_model_smm_caplet_homo_calibration_test {
 
     Date todaysDate_, startDate_, endDate_;
     std::vector<Time> rateTimes_;
@@ -239,6 +229,8 @@ void MarketModelSmmCapletHomoCalibrationTest::testFunction() {
     BOOST_TEST_MESSAGE("Testing max homogeneity caplet calibration "
                        "in a lognormal coterminal swap market model...");
 
+    using namespace market_model_smm_caplet_homo_calibration_test;
+
     setup();
 
     Size numberOfRates = todaysForwards_.size();
@@ -375,6 +367,8 @@ void MarketModelSmmCapletHomoCalibrationTest::testPeriodFunction()
     BOOST_TEST_MESSAGE("Testing max homogeneity periodic caplet calibration "
                        "in a lognormal coterminal swap market model...");
 
+    using namespace market_model_smm_caplet_homo_calibration_test;
+
     setup();
 
     Size numberOfRates = todaysForwards_.size();
@@ -403,9 +397,7 @@ void MarketModelSmmCapletHomoCalibrationTest::testPeriodFunction()
     std::vector<PiecewiseConstantAbcdVariance >
                                     swapVariances;
     for (Size i=0; i<numberBigRates; ++i) {
-        swapVariances.push_back(
-            PiecewiseConstantAbcdVariance(a_, b_, c_, d_,
-                                          i, bigRateTimes));
+        swapVariances.emplace_back(a_, b_, c_, d_, i, bigRateTimes);
     }
 
     VolatilityInterpolationSpecifierabcd varianceInterpolator(period, offset, swapVariances, // these should be associated with the long rates
@@ -635,16 +627,13 @@ void MarketModelSmmCapletHomoCalibrationTest::testSphereCylinder() {
 
 // --- Call the desired tests
 test_suite* MarketModelSmmCapletHomoCalibrationTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("SMM Caplet homogeneous calibration test");
+    auto* suite = BOOST_TEST_SUITE("SMM Caplet homogeneous calibration test");
 
-    #if !defined(QL_NO_UBLAS_SUPPORT)
     suite->add(QUANTLIB_TEST_CASE(
                      &MarketModelSmmCapletHomoCalibrationTest::testFunction));
     suite->add(QUANTLIB_TEST_CASE(
                &MarketModelSmmCapletHomoCalibrationTest::testPeriodFunction));
-    #endif
 
-    // FLOATING_POINT_EXCEPTION
     suite->add(QUANTLIB_TEST_CASE(
                &MarketModelSmmCapletHomoCalibrationTest::testSphereCylinder));
 

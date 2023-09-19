@@ -20,12 +20,13 @@
 #include <ql/experimental/barrieroption/vannavolgabarrierengine.hpp>
 #include <ql/experimental/barrieroption/vannavolgainterpolation.hpp>
 #include <ql/experimental/fx/blackdeltacalculator.hpp>
+#include <ql/math/matrix.hpp>
 #include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
+#include <ql/pricingengines/blackformula.hpp>
 #include <ql/quotes/simplequote.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
-#include <ql/pricingengines/blackformula.hpp>
-#include <ql/math/matrix.hpp>
 #include <ql/time/calendars/nullcalendar.hpp>
+#include <utility>
 
 using std::pow;
 using std::log;
@@ -33,38 +34,35 @@ using std::sqrt;
 
 namespace QuantLib {
 
-    VannaVolgaBarrierEngine::VannaVolgaBarrierEngine(
-            const Handle<DeltaVolQuote>& atmVol,
-            const Handle<DeltaVolQuote>& vol25Put,
-            const Handle<DeltaVolQuote>& vol25Call,
-            const Handle<Quote>& spotFX,
-            const Handle<YieldTermStructure>& domesticTS,
-            const Handle<YieldTermStructure>& foreignTS,
-            const bool adaptVanDelta,
-            const Real bsPriceWithSmile
-            )
-    : GenericEngine<DividendBarrierOption::arguments,
-                    DividendBarrierOption::results>(),
-      atmVol_(atmVol), vol25Put_(vol25Put), vol25Call_(vol25Call), T_(atmVol_->maturity()),
-      spotFX_(spotFX), domesticTS_(domesticTS), foreignTS_(foreignTS),
-      adaptVanDelta_(adaptVanDelta), bsPriceWithSmile_(bsPriceWithSmile)
-      {
-          QL_REQUIRE(vol25Put_->delta() == -0.25, "25 delta put is required by vanna volga method");
-          QL_REQUIRE(vol25Call_->delta() == 0.25, "25 delta call is required by vanna volga method");
+    VannaVolgaBarrierEngine::VannaVolgaBarrierEngine(Handle<DeltaVolQuote> atmVol,
+                                                     Handle<DeltaVolQuote> vol25Put,
+                                                     Handle<DeltaVolQuote> vol25Call,
+                                                     Handle<Quote> spotFX,
+                                                     Handle<YieldTermStructure> domesticTS,
+                                                     Handle<YieldTermStructure> foreignTS,
+                                                     const bool adaptVanDelta,
+                                                     const Real bsPriceWithSmile)
+    : atmVol_(std::move(atmVol)), vol25Put_(std::move(vol25Put)), vol25Call_(std::move(vol25Call)),
+      T_(atmVol_->maturity()), spotFX_(std::move(spotFX)), domesticTS_(std::move(domesticTS)),
+      foreignTS_(std::move(foreignTS)), adaptVanDelta_(adaptVanDelta),
+      bsPriceWithSmile_(bsPriceWithSmile) {
+        QL_REQUIRE(vol25Put_->delta() == -0.25, "25 delta put is required by vanna volga method");
+        QL_REQUIRE(vol25Call_->delta() == 0.25, "25 delta call is required by vanna volga method");
 
-          QL_REQUIRE(vol25Put_->maturity() == vol25Call_->maturity() && vol25Put_->maturity() == atmVol_->maturity(),
-              "Maturity of 3 vols are not the same");
+        QL_REQUIRE(vol25Put_->maturity() == vol25Call_->maturity() &&
+                       vol25Put_->maturity() == atmVol_->maturity(),
+                   "Maturity of 3 vols are not the same");
 
-          QL_REQUIRE(!domesticTS_.empty(), "domestic yield curve is not defined");
-          QL_REQUIRE(!foreignTS_.empty(), "foreign yield curve is not defined");
+        QL_REQUIRE(!domesticTS_.empty(), "domestic yield curve is not defined");
+        QL_REQUIRE(!foreignTS_.empty(), "foreign yield curve is not defined");
 
-          registerWith(atmVol_);
-          registerWith(vol25Put_);
-          registerWith(vol25Call_);
-          registerWith(spotFX_);
-          registerWith(domesticTS_);
-          registerWith(foreignTS_);
-      }
+        registerWith(atmVol_);
+        registerWith(vol25Put_);
+        registerWith(vol25Call_);
+        registerWith(spotFX_);
+        registerWith(domesticTS_);
+        registerWith(foreignTS_);
+    }
 
     void VannaVolgaBarrierEngine::calculate() const {
 
@@ -319,7 +317,7 @@ namespace QuantLib {
 
             //touch probability
             CumulativeNormalDistribution cnd;
-            Real mu = domesticTS_->zeroRate(T_, Continuous) - foreignTS_->zeroRate(T_, Continuous) - pow(atmVol_->value(), 2.0)/2.0;
+            Real mu = domesticTS_->zeroRate(T_, Continuous).rate() - foreignTS_->zeroRate(T_, Continuous).rate() - pow(atmVol_->value(), 2.0)/2.0;
             Real h2 = (log(arguments_.barrier/x0Quote->value()) + mu*T_)/(atmVol_->value()*sqrt(T_));
             Real h2Prime = (log(x0Quote->value()/arguments_.barrier) + mu*T_)/(atmVol_->value()*sqrt(T_));
             Real probTouch = 0.0;
@@ -337,7 +335,7 @@ namespace QuantLib {
             Real inPrice;
 
             //adapt Vanilla delta
-            if(adaptVanDelta_ == true){
+            if (adaptVanDelta_) {
                 outPrice += lambda*(bsPriceWithSmile_ - vanillaOption);
                 //capfloored by (0, vanilla)
                 outPrice = std::max(0.0, std::min(bsPriceWithSmile_, outPrice));

@@ -27,7 +27,7 @@
 */
 
 #include <ql/qldefines.hpp>
-#ifdef BOOST_MSVC
+#if !defined(BOOST_ALL_NO_LIB) && defined(BOOST_MSVC)
 #  include <ql/auto_link.hpp>
 #endif
 #include <ql/termstructures/yield/fittedbonddiscountcurve.hpp>
@@ -46,12 +46,6 @@
 
 using namespace std;
 using namespace QuantLib;
-
-#if defined(QL_ENABLE_SESSIONS)
-namespace QuantLib {
-    Integer sessionId() { return 0; }
-}
-#endif
 
 // par-rate approximation
 Rate parRate(const YieldTermStructure& yts,
@@ -89,13 +83,13 @@ int main(int, char* []) {
         const Size numberOfBonds = 15;
         Real cleanPrice[numberOfBonds];
 
-        for (Size i=0; i<numberOfBonds; i++) {
-            cleanPrice[i]=100.0;
+        for (Real& i : cleanPrice) {
+            i = 100.0;
         }
 
         std::vector< ext::shared_ptr<SimpleQuote> > quote;
-        for (Size i=0; i<numberOfBonds; i++) {
-            ext::shared_ptr<SimpleQuote> cp(new SimpleQuote(cleanPrice[i]));
+        for (Real i : cleanPrice) {
+            ext::shared_ptr<SimpleQuote> cp(new SimpleQuote(i));
             quote.push_back(cp);
         }
 
@@ -227,8 +221,8 @@ int main(int, char* []) {
                            20.0,  25.0, 30.0, 40.0, 50.0 };
 
         std::vector<Time> knotVector;
-        for (Size i=0; i< LENGTH(knots); i++) {
-            knotVector.push_back(knots[i]);
+        for (Real& knot : knots) {
+            knotVector.push_back(knot);
         }
 
         CubicBSplinesFitting cubicBSplines(knotVector, constrainAtZero);
@@ -273,8 +267,21 @@ int main(int, char* []) {
                                                     tolerance,
                                                     max));
 
-        printOutput("(f) Nelson-Siegel spreaded", ts6);
+        printOutput("(f) Nelson-Siegel spread", ts6);
 
+        //Fixed kappa, and 7 coefficients
+        ExponentialSplinesFitting exponentialSplinesFixed(constrainAtZero,7,0.02);
+
+        ext::shared_ptr<FittedBondDiscountCurve> ts7(
+                        new FittedBondDiscountCurve(curveSettlementDays,
+                                                    calendar, 
+                                                    instrumentsA, 
+                                                    dc, 
+                                                    exponentialSplinesFixed, 
+                                                    tolerance, 
+                                                    max));
+
+        printOutput("(g) exponential splines, fixed kappa", ts7);
 
         cout << "Output par rates for each curve. In this case, "
              << endl
@@ -290,7 +297,8 @@ int main(int, char* []) {
              << setw(6) << "(c)" << " | "
              << setw(6) << "(d)" << " | "
              << setw(6) << "(e)" << " | "
-             << setw(6) << "(f)" << endl;
+             << setw(6) << "(f)" << " | "
+             << setw(6) << "(g)" << endl;
 
         for (Size i=0; i<instrumentsA.size(); i++) {
 
@@ -331,9 +339,12 @@ int main(int, char* []) {
                  // Svensson
                  << setw(6) << fixed << setprecision(3)
                  << 100.*parRate(*ts5,keyDates,dc)  << " | "
-                 // Nelson-Siegel Spreaded
+                 // Nelson-Siegel Spread
                  << setw(6) << fixed << setprecision(3)
-                 << 100.*parRate(*ts6,keyDates,dc) << endl;
+                 << 100.*parRate(*ts6,keyDates,dc) << " | "
+                 // Exponential, fixed kappa
+                 << setw(6) << fixed << setprecision(3) 
+                 << 100. *parRate(*ts7, keyDates, dc) << endl;
         }
 
         cout << endl << endl << endl;
@@ -360,7 +371,9 @@ int main(int, char* []) {
 
         printOutput("(e) Svensson", ts5);
 
-        printOutput("(f) Nelson-Siegel spreaded", ts6);
+        printOutput("(f) Nelson-Siegel spread", ts6);
+
+        printOutput("(g) exponential spline, fixed kappa", ts7);
 
         cout << endl
              << endl;
@@ -374,7 +387,8 @@ int main(int, char* []) {
              << setw(6) << "(c)" << " | "
              << setw(6) << "(d)" << " | "
              << setw(6) << "(e)" << " | "
-             << setw(6) << "(f)" << endl;
+             << setw(6) << "(f)" << " | "
+             << setw(6) << "(g)" << endl;
 
         for (Size i=0; i<instrumentsA.size(); i++) {
 
@@ -415,9 +429,12 @@ int main(int, char* []) {
                  // Svensson
                  << setw(6) << fixed << setprecision(3)
                  << 100.*parRate(*ts5,keyDates,dc) << " | "
-                 // Nelson-Siegel Spreaded
+                 // Nelson-Siegel Spread
                  << setw(6) << fixed << setprecision(3)
-                 << 100.*parRate(*ts6,keyDates,dc) << endl;
+                 << 100.*parRate(*ts6,keyDates,dc) << " | "
+                 // exponential, fixed kappa
+                 << setw(6) << fixed << setprecision(3) 
+                 << 100. * parRate(*ts7, keyDates, dc) << endl;
         }
 
         cout << endl << endl << endl;
@@ -510,7 +527,18 @@ int main(int, char* []) {
                                                     tolerance,
                                                     max));
 
-        printOutput("(f) Nelson-Siegel spreaded", ts66);
+        printOutput("(f) Nelson-Siegel spread", ts66);
+
+        ext::shared_ptr<FittedBondDiscountCurve> ts77(
+                        new FittedBondDiscountCurve(curveSettlementDays, 
+                                                    calendar, 
+                                                    instrumentsA, 
+                                                    dc, 
+                                                    exponentialSplinesFixed, 
+                                                    tolerance, 
+                                                    max));
+
+        printOutput("(g) exponential, fixed kappa", ts77);
 
         cout << setw(6) << "tenor" << " | "
              << setw(6) << "coupon" << " | "
@@ -520,7 +548,8 @@ int main(int, char* []) {
              << setw(6) << "(c)" << " | "
              << setw(6) << "(d)" << " | "
              << setw(6) << "(e)" << " | "
-             << setw(6) << "(f)" << endl;
+             << setw(6) << "(f)" << " | "
+             << setw(6) << "(g)" << endl;
 
         for (Size i=0; i<instrumentsA.size(); i++) {
 
@@ -561,9 +590,12 @@ int main(int, char* []) {
                  // Svensson
                  << setw(6) << fixed << setprecision(3)
                  << 100.*parRate(*ts55,keyDates,dc) << " | "
-                 // Nelson-Siegel Spreaded
+                 // Nelson-Siegel Spread
                  << setw(6) << fixed << setprecision(3)
-                 << 100.*parRate(*ts66,keyDates,dc) << endl;
+                 << 100.*parRate(*ts66,keyDates,dc) << " | "
+                 // exponential, fixed kappa
+                 << setw(6) << fixed << setprecision(3) 
+                 << 100. *parRate(*ts77, keyDates, dc) << endl;
         }
 
 
@@ -602,7 +634,8 @@ int main(int, char* []) {
              << setw(6) << "(c)" << " | "
              << setw(6) << "(d)" << " | "
              << setw(6) << "(e)" << " | "
-             << setw(6) << "(f)" << endl;
+             << setw(6) << "(f)" << " | "
+             << setw(6) << "(g)" << endl;
 
         for (Size i=0; i<instrumentsA.size(); i++) {
 
@@ -643,9 +676,12 @@ int main(int, char* []) {
                  // Svensson
                  << setw(6) << fixed << setprecision(3)
                  << 100.*parRate(*ts55,keyDates,dc) << " | "
-                 // Nelson-Siegel Spreaded
+                 // Nelson-Siegel Spread
                  << setw(6) << fixed << setprecision(3)
-                 << 100.*parRate(*ts66,keyDates,dc) << endl;
+                 << 100.*parRate(*ts66,keyDates,dc) << " | "
+                 // exponential spline, fixed kappa
+                 << setw(6) << fixed << setprecision(3) 
+                 << 100. *parRate(*ts77, keyDates, dc) << endl;
         }
 
         return 0;

@@ -59,6 +59,9 @@
     <ClCompile Include="calendars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="callablebonds.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="capfloor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -164,6 +167,9 @@
     <ClCompile Include="fdheston.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="fdcir.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="fdmlinearop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -192,6 +198,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="hybridhestonhullwhiteprocess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="indexes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="inflation.cpp">
@@ -299,6 +308,9 @@
     <ClCompile Include="optionletstripper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="overnightindexedcoupon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="overnightindexedswap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -342,6 +354,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="schedule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="shortratemodels.cpp">
@@ -465,6 +480,30 @@
     <ClCompile Include="fittedbonddiscountcurve.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ultimateforwardtermstructure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="basisswapratehelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crosscurrencyratehelpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="subperiodcoupons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="zerocouponswap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="currency.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bondforward.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="svivolatility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="americanoption.hpp">
@@ -513,6 +552,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="calendars.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="callablebonds.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="capfloor.hpp">
@@ -620,6 +662,9 @@
     <ClInclude Include="fdheston.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="fdcir.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="fdmlinearop.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -648,6 +693,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="hybridhestonhullwhiteprocess.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="indexes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="inflation.hpp">
@@ -755,6 +803,9 @@
     <ClInclude Include="optionletstripper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="overnightindexedcoupon.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="overnightindexedswap.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -801,6 +852,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="schedule.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="settings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="shortratemodels.hpp">
@@ -927,6 +981,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fittedbonddiscountcurve.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ultimateforwardtermstructure.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="basisswapratehelpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crosscurrencyratehelpers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="subperiodcoupons.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zerocouponswap.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="currency.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bondforward.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="svivolatility.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

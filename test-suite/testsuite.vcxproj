@@ -207,7 +207,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -266,7 +266,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -326,7 +326,7 @@
       <CompileAs>Default</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -386,7 +386,7 @@
       <CompileAs>Default</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -442,7 +442,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -499,7 +499,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -557,7 +557,7 @@
       <CompileAs>Default</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -617,7 +617,7 @@
       <CompileAs>Default</CompileAs>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <IncludeInUnityFile>false</IncludeInUnityFile>
+      <IncludeInUnityFile>true</IncludeInUnityFile>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -653,16 +653,19 @@
     <ClCompile Include="autocovariances.cpp" />
     <ClCompile Include="barrieroption.cpp" />
     <ClCompile Include="basismodels.cpp" />
+    <ClCompile Include="basisswapratehelpers.cpp" />
     <ClCompile Include="basketoption.cpp" />
     <ClCompile Include="batesmodel.cpp" />
     <ClCompile Include="bermudanswaption.cpp" />
     <ClCompile Include="binaryoption.cpp" />
     <ClCompile Include="blackdeltacalculator.cpp" />
     <ClCompile Include="blackformula.cpp" />
+    <ClCompile Include="bondforward.cpp" />
     <ClCompile Include="bonds.cpp" />
     <ClCompile Include="brownianbridge.cpp" />
     <ClCompile Include="businessdayconventions.cpp" />
     <ClCompile Include="calendars.cpp" />
+    <ClCompile Include="callablebonds.cpp" />
     <ClCompile Include="capfloor.cpp" />
     <ClCompile Include="capflooredcoupon.cpp" />
     <ClCompile Include="cashflows.cpp" />
@@ -680,6 +683,8 @@
     <ClCompile Include="covariance.cpp" />
     <ClCompile Include="creditdefaultswap.cpp" />
     <ClCompile Include="creditriskplus.cpp" />
+    <ClCompile Include="crosscurrencyratehelpers.cpp" />
+    <ClCompile Include="currency.cpp" />
     <ClCompile Include="curvestates.cpp" />
     <ClCompile Include="dates.cpp" />
     <ClCompile Include="daycounters.cpp" />
@@ -701,6 +706,7 @@
     <ClCompile Include="functions.cpp" />
     <ClCompile Include="fastfouriertransform.cpp" />
     <ClCompile Include="fdheston.cpp" />
+    <ClCompile Include="fdcir.cpp" />
     <ClCompile Include="fdmlinearop.cpp" />
     <ClCompile Include="forwardoption.cpp" />
     <ClCompile Include="forwardrateagreement.cpp" />
@@ -712,6 +718,7 @@
     <ClCompile Include="hestonslvmodel.cpp" />
     <ClCompile Include="himalayaoption.cpp" />
     <ClCompile Include="hybridhestonhullwhiteprocess.cpp" />
+    <ClCompile Include="indexes.cpp" />
     <ClCompile Include="inflation.cpp" />
     <ClCompile Include="inflationcapfloor.cpp" />
     <ClCompile Include="inflationcapflooredcoupon.cpp" />
@@ -752,6 +759,7 @@
     <ClCompile Include="operators.cpp" />
     <ClCompile Include="optimizers.cpp" />
     <ClCompile Include="optionletstripper.cpp" />
+    <ClCompile Include="overnightindexedcoupon.cpp" />
     <ClCompile Include="overnightindexedswap.cpp" />
     <ClCompile Include="pagodaoption.cpp" />
     <ClCompile Include="partialtimebarrieroption.cpp" />
@@ -768,12 +776,15 @@
     <ClCompile Include="rounding.cpp" />
     <ClCompile Include="sampledcurve.cpp" />
     <ClCompile Include="schedule.cpp" />
+    <ClCompile Include="settings.cpp" />
     <ClCompile Include="shortratemodels.cpp" />
     <ClCompile Include="sofrfutures.cpp" />
     <ClCompile Include="solvers.cpp" />
     <ClCompile Include="spreadoption.cpp" />
     <ClCompile Include="squarerootclvmodel.cpp" />
     <ClCompile Include="stats.cpp" />
+    <ClCompile Include="subperiodcoupons.cpp" />
+    <ClCompile Include="svivolatility.cpp" />
     <ClCompile Include="swap.cpp" />
     <ClCompile Include="swapforwardmappings.cpp" />
     <ClCompile Include="swaption.cpp" />
@@ -788,6 +799,7 @@
     <ClCompile Include="transformedgrid.cpp" />
     <ClCompile Include="twoassetbarrieroption.cpp" />
     <ClCompile Include="twoassetcorrelationoption.cpp" />
+    <ClCompile Include="ultimateforwardtermstructure.cpp" />
     <ClCompile Include="utilities.cpp" />
     <ClCompile Include="variancegamma.cpp" />
     <ClCompile Include="varianceoption.cpp" />
@@ -795,6 +807,7 @@
     <ClCompile Include="volatilitymodels.cpp" />
     <ClCompile Include="vpp.cpp" />
     <ClCompile Include="zabr.cpp" />
+    <ClCompile Include="zerocouponswap.cpp" />
     <ClCompile Include="quantlibtestsuite.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -807,16 +820,19 @@
     <ClInclude Include="autocovariances.hpp" />
     <ClInclude Include="barrieroption.hpp" />
     <ClInclude Include="basismodels.hpp" />
+    <ClInclude Include="basisswapratehelpers.hpp" />
     <ClInclude Include="basketoption.hpp" />
     <ClInclude Include="batesmodel.hpp" />
     <ClInclude Include="bermudanswaption.hpp" />
     <ClInclude Include="binaryoption.hpp" />
     <ClInclude Include="blackdeltacalculator.hpp" />
     <ClInclude Include="blackformula.hpp" />
+    <ClInclude Include="bondforward.hpp" />
     <ClInclude Include="bonds.hpp" />
     <ClInclude Include="brownianbridge.hpp" />
     <ClInclude Include="businessdayconventions.hpp" />
     <ClInclude Include="calendars.hpp" />
+    <ClInclude Include="callablebonds.hpp" />
     <ClInclude Include="capfloor.hpp" />
     <ClInclude Include="capflooredcoupon.hpp" />
     <ClInclude Include="cashflows.hpp" />
@@ -834,6 +850,8 @@
     <ClInclude Include="covariance.hpp" />
     <ClInclude Include="creditdefaultswap.hpp" />
     <ClInclude Include="creditriskplus.hpp" />
+    <ClInclude Include="crosscurrencyratehelpers.hpp" />
+    <ClInclude Include="currency.hpp" />
     <ClInclude Include="curvestates.hpp" />
     <ClInclude Include="dates.hpp" />
     <ClInclude Include="daycounters.hpp" />
@@ -855,6 +873,7 @@
     <ClInclude Include="functions.hpp" />
     <ClInclude Include="fastfouriertransform.hpp" />
     <ClInclude Include="fdheston.hpp" />
+    <ClInclude Include="fdcir.hpp" />
     <ClInclude Include="fdmlinearop.hpp" />
     <ClInclude Include="forwardoption.hpp" />
     <ClInclude Include="forwardrateagreement.hpp" />
@@ -866,6 +885,7 @@
     <ClInclude Include="hestonslvmodel.hpp" />
     <ClInclude Include="himalayaoption.hpp" />
     <ClInclude Include="hybridhestonhullwhiteprocess.hpp" />
+    <ClInclude Include="indexes.hpp" />
     <ClInclude Include="inflation.hpp" />
     <ClInclude Include="inflationcapfloor.hpp" />
     <ClInclude Include="inflationcapflooredcoupon.hpp" />
@@ -906,6 +926,7 @@
     <ClInclude Include="operators.hpp" />
     <ClInclude Include="optimizers.hpp" />
     <ClInclude Include="optionletstripper.hpp" />
+    <ClInclude Include="overnightindexedcoupon.hpp" />
     <ClInclude Include="overnightindexedswap.hpp" />
     <ClInclude Include="pagodaoption.hpp" />
     <ClInclude Include="partialtimebarrieroption.hpp" />
@@ -923,6 +944,7 @@
     <ClInclude Include="rounding.hpp" />
     <ClInclude Include="sampledcurve.hpp" />
     <ClInclude Include="schedule.hpp" />
+    <ClInclude Include="settings.hpp" />
     <ClInclude Include="shortratemodels.hpp" />
     <ClInclude Include="sofrfutures.hpp" />
     <ClInclude Include="solvers.hpp" />
@@ -930,6 +952,8 @@
     <ClInclude Include="spreadoption.hpp" />
     <ClInclude Include="squarerootclvmodel.hpp" />
     <ClInclude Include="stats.hpp" />
+    <ClInclude Include="subperiodcoupons.hpp" />
+    <ClInclude Include="svivolatility.hpp" />
     <ClInclude Include="swap.hpp" />
     <ClInclude Include="swapforwardmappings.hpp" />
     <ClInclude Include="swaption.hpp" />
@@ -945,6 +969,7 @@
     <ClInclude Include="transformedgrid.hpp" />
     <ClInclude Include="twoassetbarrieroption.hpp" />
     <ClInclude Include="twoassetcorrelationoption.hpp" />
+    <ClInclude Include="ultimateforwardtermstructure.hpp" />
     <ClInclude Include="utilities.hpp" />
     <ClInclude Include="variancegamma.hpp" />
     <ClInclude Include="varianceoption.hpp" />
@@ -952,6 +977,7 @@
     <ClInclude Include="volatilitymodels.hpp" />
     <ClInclude Include="vpp.hpp" />
     <ClInclude Include="zabr.hpp" />
+    <ClInclude Include="zerocouponswap.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\QuantLib.vcxproj">

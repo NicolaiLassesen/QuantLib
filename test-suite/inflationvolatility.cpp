@@ -39,16 +39,12 @@
 #include <ql/indexes/inflation/euhicp.hpp>
 #include <ql/indexes/inflation/ukrpi.hpp>
 
-#ifndef LENGTH
-#define LENGTH(a) (sizeof(a)/sizeof(a[0]))
-#endif
-
 #include <iostream>
 
 
-// anonymous local namespace for data
+// local namespace for data
 //*************************************************************************
-namespace {
+namespace inflation_volatility_test {
 
     using namespace std;
     using namespace QuantLib;
@@ -195,7 +191,7 @@ namespace {
         ext::shared_ptr<InterpolatedYoYInflationCurve<Linear> >
             pYTSEU( new InterpolatedYoYInflationCurve<Linear>(
                     eval, TARGET(), Actual365Fixed(), Period(2,Months), Monthly,
-                    indexIsInterpolated, nominalGBP, d, r) );
+                    indexIsInterpolated, d, r) );
         yoyEU.linkTo(pYTSEU);
 
         // price data
@@ -226,9 +222,12 @@ namespace {
         cStrikesEU.clear();
         fStrikesEU.clear();
         cfMaturitiesEU.clear();
-        for(Size i = 0; i < ncStrikesEU; i++) cStrikesEU.push_back(capStrikesEU[i]);
-        for(Size i = 0; i < nfStrikesEU; i++) fStrikesEU.push_back(floorStrikesEU[i]);
-        for(Size i = 0; i < ncfMaturitiesEU; i++) cfMaturitiesEU.push_back(capMaturitiesEU[i]);
+        for (Real& i : capStrikesEU)
+            cStrikesEU.push_back(i);
+        for (Real& i : floorStrikesEU)
+            fStrikesEU.push_back(i);
+        for (auto& i : capMaturitiesEU)
+            cfMaturitiesEU.push_back(i);
         ext::shared_ptr<Matrix> tcPriceEU(new Matrix(ncStrikesEU, ncfMaturitiesEU));
         ext::shared_ptr<Matrix> tfPriceEU(new Matrix(nfStrikesEU, ncfMaturitiesEU));
         for(Size i = 0; i < ncStrikesEU; i++) {
@@ -260,8 +259,7 @@ namespace {
         DayCounter dc = Actual365Fixed();
         TARGET cal;
         BusinessDayConvention bdc = ModifiedFollowing;
-        ext::shared_ptr<QuantLib::YieldTermStructure> pn =
-            nominalEUR.currentLink();
+        const ext::shared_ptr<QuantLib::YieldTermStructure>& pn = nominalEUR.currentLink();
         Handle<QuantLib::YieldTermStructure> n(pn,false);
         ext::shared_ptr<InterpolatedYoYCapFloorTermPriceSurface<Bicubic,Cubic> >
         cfEUprices(new InterpolatedYoYCapFloorTermPriceSurface<Bicubic,Cubic>(
@@ -284,6 +282,8 @@ namespace {
 void InflationVolTest::testYoYPriceSurfaceToVol() {
     BOOST_TEST_MESSAGE("Testing conversion from YoY price surface "
                        "to YoY volatility surface...");
+
+    using namespace inflation_volatility_test;
 
     SavedSettings backup;
 
@@ -375,6 +375,8 @@ void InflationVolTest::testYoYPriceSurfaceToATM() {
     BOOST_TEST_MESSAGE("Testing conversion from YoY cap-floor surface "
                        "to YoY inflation term structure...");
 
+    using namespace inflation_volatility_test;
+
     SavedSettings backup;
 
     setup();
@@ -414,8 +416,7 @@ void InflationVolTest::testYoYPriceSurfaceToATM() {
 
 
 boost::unit_test_framework::test_suite* InflationVolTest::suite() {
-    boost::unit_test_framework::test_suite* suite
-        = BOOST_TEST_SUITE("yoyOptionletStripper (yoy inflation vol) tests");
+    auto* suite = BOOST_TEST_SUITE("yoyOptionletStripper (yoy inflation vol) tests");
 
     suite->add(QUANTLIB_TEST_CASE(&InflationVolTest::testYoYPriceSurfaceToATM));
     suite->add(QUANTLIB_TEST_CASE(&InflationVolTest::testYoYPriceSurfaceToVol));

@@ -1,100 +1,129 @@
-Changes for QuantLib 1.17:
+Changes for QuantLib 1.28:
 ==========================
 
-QuantLib 1.17 includes 30 pull requests from several contributors.
+QuantLib 1.28 includes 33 pull requests from several contributors.
 
-The most notable changes are included below.
+Some of the most notable changes are included below.
 A detailed list of changes is available in ChangeLog.txt and at
-<https://github.com/lballabio/QuantLib/milestone/13?closed=1>.
+<https://github.com/lballabio/QuantLib/milestone/24?closed=1>.
 
 Portability
 -----------
 
-- As of this release, support of Visual C++ 2010 is deprecated; it
-  will be dropped in next release.  Also, we'll probably deprecate
-  Visual C++ 2012 in one of the next few releases in order to drop it
-  around the end of 2020.
+- **New language standard:** as announced in the notes for the
+  previous release, this release started using some C++14 syntax.
+  This should be supported by most compilers released in the past
+  several years.
 
-Configuration
--------------
+- **End of support:** as announced in the notes for the previous
+  release, this release is the last to manage thread-local singletons
+  via a user-provided `sessionId` function.  Future releases will use
+  the built-in language support for thread-local variables.
 
-- A new function `compiledBoostVersion()` is available, (thanks to
-  Andrew Smith).  It returns the version of Boost used to compile the
-  library, as reported by the `BOOST_VERSION` macro.  This can help
-  avoid linking the library with user code compiled with a different
-  Boost version (which can result in erratic behavior).
-
-- It is now possible to specify at run time whether to use indexed
-  coupons (thanks to Ralf Konrad).  The compile-time configuration is
-  still used as a default, but it is also possible to call either of
-  the static methods `IborCoupon::createAtParCoupons` or
-  `IborCoupon::createIndexedCoupons` to specify your preference.  For
-  the time being, the methods above must necessarily be called before
-  creating any instance of `IborCoupon` or of its derived classes.
-
-Build
------
-
-- As of this version, the names of the binaries produced by the
-  included Visual C++ solution no longer contain the toolset version
-  (e.g., v142).
-
-Instruments
------------
-
-- Added ex-coupon functionality to floating-rate bonds (thanks to
-  Steven Van Haren).
-
-- The inner structure `Callability::Price` was moved to the class
-  `Bond` and can now be used to specify what kind of price was passed
-  to the `BondFunctions::yield` method (thanks to Francois Botha).
-
-- It is now possible to use a par-coupon approximation for FRAs like
-  the one used in Ibor coupons (thanks to Peter Caspers).
-
-Pricing engines
----------------
-
-- Added escrowed dividend model to the new-style FD engine for
-  `DividendVanillaOption` (thanks to Klaus Spanderen).
-
-- Black cap/floor engine now also returns caplet deltas (thanks to
-  Wojciech Slusarski).
-
-Term structures
----------------
-
-- OIS rate helpers can now choose whether to use as a pillar for the
-  bootstrap either their maturity date or the end date of the last
-  underlying fixing.  This provides an alternative if the bootstrap
-  should fail.  (Thanks to Drew Saunders for the heads-up.)
-
-- Instances of the `FittedBondDiscountCurve` class now behave as
-  simple evaluators (that is, they use the given paramters without
-  performing root-solving) when the `maxIterations` parameter is set
-  to 0.  (Thanks to Nick Firoozye for the heads-up.)
+- **Future end of support:** after the next two or three releases,
+  using `std::tuple`, `std::function` and `std::bind` (instead of
+  their `boost` counterparts) will become the default.  If you're
+  using `ext::tuple` etc. in your code (which is suggested), this
+  should be a transparent change.  If not, you'll still be able to
+  choose the `boost` versions via a configure switch for a while.
 
 Date/time
 ---------
 
-- Added a few special closing days to the US government bond calendar
-  (thanks to Mike DelMedico).
+- Added Act/366 and Act/365.25 day counters; thanks to Ignacio Anguita
+  (@IgnacioAnguita).
 
-- Fixed an incorrect 2019 holiday in Chinese calendar (thanks to Cheng Li).
+- Added H.M. the Queen's funeral to the UK calendars; thanks to Tomass
+  Wilson (@Wilsontomass).
 
-- Added missing holiday to Swedish calendar (thanks to GitHub users
-  `periculus` and `tonyzhipengzhou`).
+Instruments
+-----------
+
+- Amortizing bonds were moved out of the experimental folder.  Also, a
+  couple of utility functions were provided to calculate amortization
+  schedules and notionals.
+
+Pricing engines
+---------------
+
+- Fixed results from `COSHestonEngine` in the case of an option with
+  short time to expiration and deep ITM or deep OTM strike prices;
+  thanks to Ignacio Anguita (@IgnacioAnguita).
+
+- The ISDA engine for CDS could calculate the fair upfront with the
+  wrong sign; this is now fixed, thanks to Gualtiero Chiaia
+  (@gchiaia).
+
+Term structures
+---------------
+
+- The constructor for `OISRateHelper` now allows to specify the
+  `endOfMonth` parameter; thanks to Guillaume Horel (@thrasibule).
+
+Finite differences
+------------------
+
+- Fixed computation of cds boundaries in `LocalVolRNDCalculator`;
+  thanks to @mdotlic.
+
+Experimental folder
+-------------------
+
+The `ql/experimental` folder contains code whose interface is not
+fully stable, but is released in order to get user
+feedback. Experimental classes make no guarantees of backward
+compatibility; their interfaces might change in future releases.
+
+- **Breaking change**: the constructor of the
+  `CPICapFloorTermPriceSurface` class now also takes an explicit
+  interpolation type.
+
+- **Possibly breaking**: the protected constructor for `CallableBond`
+  changes its arguments.  If you inherited from this class, you'll
+  need to update your code.  If you're using the existing derived bond
+  classes, the change will be transparent.
+
+- Pricing engines for callable bonds worked incorrectly when the face
+  amount was not 100. This is now fixed.
+
+- The `impliedVolatility` method for callable bonds was taking a
+  target NPV, not a price. This implementation is now deprecated, and
+  a new overload was added taking a price in base 100.
 
 Deprecated features
 -------------------
 
-- The classes `FDEuropeanEngine`, `FDAmericanEngine`,
-  `FDBermudanEngine`, `FDDividendEuropeanEngine`,
-  `FDDividendEuropeanEngineShiftScale`, `FDDividendAmericanEngine`,
-  `FDDividendAmericanEngineShiftScale` are now deprecated.  They are
-  superseded by `FdBlackScholesVanillaEngine`.
+- **Removed** features deprecated in version 1.23:
+  - the constructors of `ZeroCouponInflationSwap` and
+    `ZeroCouponInflationSwapHelper` missing an explicit CPI
+    interpolation type;
+  - the constructors of `ActualActual` and `Thirty360` missing an
+    explicit choice of convention, and the constructor of `Thirty360`
+    passing an `isLastPeriod` boolean flag.
+
+- Deprecated the constructors of `FixedRateBond` taking an
+  `InterestRate` instance or not taking a `Schedule` instance.
+
+- Deprecated the constructor of `FloatingRateBond` not taking a
+  `Schedule` instance.
+
+- Deprecated the constructors of `AmortizingFixedRateBond` taking a
+  sinking frequency or a vector of `InterestRate` instances.
+
+- Deprecated the constructor of `CPICapFloor` taking a `Handle` to an
+  inflation index, and its `inflationIndex` method returning a `Handle`.
+  New versions of both were added using `shared_ptr` instead.
+
+- Deprecated one of the constructors of `SabrSmileSection`; a new
+  version was added also taking an optional reference date.
+
+- Deprecated the old `impliedVolatility` method for callable bonds;
+  see above.
 
 
-Thanks go also to Joel King, Kai Striega, Francis Duffy, Tom Anderson
-and GitHub user `lab4quant` for smaller fixes, enhancements, and bug
-reports.
+**Thanks go also** to Konstantin Novitsky (@novitk), Peter Caspers
+(@pcaspers), Klaus Spanderen (@klausspanderen), Fredrik Gerdin
+Börjesson (@gbfredrik) and Dirk Eddelbuettel (@eddelbuettel) for a
+number of smaller fixes, and to Jonathan Sweemer (@sweemer) for
+various improvements to the automated CI builds.
+

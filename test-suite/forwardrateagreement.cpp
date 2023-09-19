@@ -43,10 +43,11 @@ void ForwardRateAgreementTest::testConstructionWithoutACurve() {
         Date settlementDate = index->fixingCalendar().advance(today, index->fixingDays() * Days);
 
         // set up quotes with no values
-        std::vector<ext::shared_ptr<SimpleQuote> > quotes;
-        quotes.push_back(ext::make_shared<SimpleQuote>());
-        quotes.push_back(ext::make_shared<SimpleQuote>());
-        quotes.push_back(ext::make_shared<SimpleQuote>());
+        std::vector<ext::shared_ptr<SimpleQuote> > quotes = {
+            ext::make_shared<SimpleQuote>(),
+            ext::make_shared<SimpleQuote>(),
+            ext::make_shared<SimpleQuote>()
+        };
 
 #ifdef QL_USE_INDEXED_COUPON
         bool useIndexedFra = false;
@@ -89,14 +90,14 @@ void ForwardRateAgreementTest::testConstructionWithoutACurve() {
         quotes[1]->setValue(0.02);
         quotes[2]->setValue(0.03);
 
-        double rate = fra.forwardRate();
+        Real rate = fra.forwardRate();
         if (std::fabs(rate - 0.01) > 1e-6) {
             BOOST_ERROR("grid creation failed, got rate " << rate << " expected " << 0.01);
         }
 }
 
 test_suite* ForwardRateAgreementTest::suite() {
-        test_suite* suite = BOOST_TEST_SUITE("forward rate agreement");
-        suite->add(QUANTLIB_TEST_CASE(&ForwardRateAgreementTest::testConstructionWithoutACurve));
-        return suite;
+    auto* suite = BOOST_TEST_SUITE("forward rate agreement");
+    suite->add(QUANTLIB_TEST_CASE(&ForwardRateAgreementTest::testConstructionWithoutACurve));
+    return suite;
 }

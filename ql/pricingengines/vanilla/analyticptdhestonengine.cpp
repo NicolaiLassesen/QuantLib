@@ -95,7 +95,7 @@ namespace QuantLib {
                 const Real theta = model_->theta(t);
 
                 const Real sigma2 = sigma*sigma;
-                const Real t0 = kappa - ((j_== 1)? rho*sigma : 0);
+                const Real t0 = kappa - ((j_== 1)? Real(rho*sigma) : 0);
                 const Real rpsig = rho*sigma*phi;
 
                 const std::complex<Real> t1 = t0+std::complex<Real>(0, -rpsig);
@@ -130,7 +130,7 @@ namespace QuantLib {
           sx_(std::log(strike)),
           dd_(x_-std::log(ratio)),
           enginePtr_(enginePtr) {
-            QL_REQUIRE(enginePtr != 0, "pricing engine required");
+            QL_REQUIRE(enginePtr != nullptr, "pricing engine required");
         }
 
         Real operator()(Real u) const {
@@ -300,7 +300,7 @@ namespace QuantLib {
         switch(cpxLog_) {
           case Gatheral: {
             const Real c_inf = std::min(0.2, std::max(0.0001,
-                std::sqrt(1.0-square<Real>()(rhoAvg))/sigmaAvg))
+                std::sqrt(1.0-squared(rhoAvg))/sigmaAvg))
                 *(v0 + kappaAvg*thetaAvg*term);
 
             const Real p1 = integration_->calculate(c_inf,
@@ -335,7 +335,7 @@ namespace QuantLib {
 
               const std::complex<Real> D_u_inf =
                   -std::complex<Real>(
-                      std::sqrt(1-square<Real>()(model_->rho(t05))),
+                      std::sqrt(1-squared(model_->rho(t05))),
                       model_->rho(t05)) / model_->sigma(t05);
 
               const Size lastI = std::distance(timeGrid.begin(),
@@ -366,8 +366,9 @@ namespace QuantLib {
 
               const Real c_inf = -(C_u_inf + D_u_inf*v0).real();
 
-              const Real uM = Integration::andersenPiterbargIntegrationLimit(
-                  c_inf, epsilon, v0, term);
+              const ext::function<Real()> uM = [=](){
+                  return Integration::andersenPiterbargIntegrationLimit(c_inf, epsilon, v0, term);
+              };
 
               const Real vAvg
                   = (1-std::exp(-kappaAvg*term))*(v0-thetaAvg)
@@ -402,5 +403,9 @@ namespace QuantLib {
             default:
               QL_FAIL("unknown complex log formula");
           }
+    }
+ 
+    Size AnalyticPTDHestonEngine::numberOfEvaluations() const {
+        return evaluations_;
     }
 }

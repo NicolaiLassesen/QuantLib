@@ -88,7 +88,7 @@ namespace QuantLib {
 
     // inline definitions
 
-    inline ExchangeRate::ExchangeRate() : rate_(Null<Decimal>()) {}
+    inline ExchangeRate::ExchangeRate() : rate_(Null<Decimal>()), type_(Direct) {}
 
     inline ExchangeRate::ExchangeRate(const Currency& source, const Currency& target, Decimal rate)
     : source_(source), target_(target), rate_(rate), type_(Direct) {}

@@ -19,6 +19,8 @@
 */
 
 
+#include "inflationcpicapfloor.hpp"
+#include "utilities.hpp"
 #include <ql/types.hpp>
 #include <ql/indexes/inflation/ukrpi.hpp>
 #include <ql/termstructures/bootstraphelper.hpp>
@@ -34,28 +36,23 @@
 #include <ql/instruments/zerocouponinflationswap.hpp>
 #include <ql/pricingengines/bond/discountingbondengine.hpp>
 #include <ql/math/interpolations/bilinearinterpolation.hpp>
-
-#include "utilities.hpp"
-
-#include "inflationcpicapfloor.hpp"
 #include <ql/cashflows/cpicoupon.hpp>
 #include <ql/cashflows/cpicouponpricer.hpp>
 #include <ql/instruments/cpiswap.hpp>
 #include <ql/instruments/bonds/cpibond.hpp>
 #include <ql/instruments/cpicapfloor.hpp>
-
 #include <ql/experimental/inflation/cpicapfloortermpricesurface.hpp>
 #include <ql/experimental/inflation/cpicapfloorengines.hpp>
+
+#include <iostream>
 
 
 using namespace QuantLib;
 using namespace boost::unit_test_framework;
 using namespace std;
 
-#include <iostream>
 
-
-namespace {
+namespace inflation_cpi_capfloor_test {
     struct Datum {
         Date date;
         Rate rate;
@@ -75,9 +72,9 @@ namespace {
             Date maturity = iiData[i].date;
             Handle<Quote> quote(ext::shared_ptr<Quote>(
                                 new SimpleQuote(iiData[i].rate/100.0)));
-            ext::shared_ptr<BootstrapHelper<T> > anInstrument(new U(
-                                quote, observationLag, maturity,
-                                calendar, bdc, dc, ii, discountCurve));
+            ext::shared_ptr<BootstrapHelper<T> > anInstrument(new U(quote, observationLag, maturity,
+                                                                    calendar, bdc, dc, ii,
+                                                                    CPI::AsIndex, discountCurve));
             instruments.push_back(anInstrument);
         }
 
@@ -86,6 +83,7 @@ namespace {
 
 
     struct CommonVars {
+    
         // common data
 
         Size length;
@@ -107,7 +105,6 @@ namespace {
         std::vector<Date> zciisD;
         std::vector<Rate> zciisR;
         ext::shared_ptr<UKRPI> ii;
-        RelinkableHandle<ZeroInflationIndex> hii;
         Size zciisDataLength;
 
         RelinkableHandle<YieldTermStructure> nominalUK;
@@ -144,8 +141,8 @@ namespace {
             fixingDays = 0;
             settlement = calendar.advance(today,settlementDays,Days);
             startDate = settlement;
-            dcZCIIS = ActualActual();
-            dcNominal = ActualActual();
+            dcZCIIS = ActualActual(ActualActual::ISDA);
+            dcNominal = ActualActual(ActualActual::ISDA);
 
             // uk rpi index
             //      fixing data
@@ -165,9 +162,7 @@ namespace {
                 -999};
 
             // link from cpi index to cpi TS
-            bool interp = false;// this MUST be false because the observation lag is only 2 months
-                                // for ZCIIS; but not for contract if the contract uses a bigger lag.
-            ii = ext::make_shared<UKRPI>(interp, hcpi);
+            ii = ext::make_shared<UKRPI>(hcpi);
             for (Size i=0; i<rpiSchedule.size();i++) {
                 ii->addFixing(rpiSchedule[i], fixData[i], true);// force overwrite in case multiple use
             };
@@ -208,18 +203,15 @@ namespace {
                 { Date( 2, June, 2070), 3.757542 },
                 { Date( 3, June, 2080), 3.651379 }
             };
-            const Size nominalDataLength = 33-1;
 
             std::vector<Date> nomD;
             std::vector<Rate> nomR;
-            for (Size i = 0; i < nominalDataLength; i++) {
-                nomD.push_back(nominalData[i].date);
-                nomR.push_back(nominalData[i].rate/100.0);
+            for (auto& i : nominalData) {
+                nomD.push_back(i.date);
+                nomR.push_back(i.rate / 100.0);
             }
-            ext::shared_ptr<YieldTermStructure>   nominalTS
-            =   ext::make_shared<InterpolatedZeroCurve<Linear>
-            >(nomD,nomR,dcNominal);
-
+            ext::shared_ptr<YieldTermStructure> nominalTS =
+                ext::make_shared<InterpolatedZeroCurve<Linear>>(nomD,nomR,dcNominal);
 
             nominalUK.linkTo(nominalTS);
 
@@ -268,11 +260,9 @@ namespace {
             ext::shared_ptr<PiecewiseZeroInflationCurve<Linear> > pCPIts(
                                 new PiecewiseZeroInflationCurve<Linear>(
                                     evaluationDate, calendar, dcZCIIS, observationLag,
-                                    ii->frequency(),ii->interpolated(), baseZeroRate,
-                                    Handle<YieldTermStructure>(nominalTS), helpers));
+                                    ii->frequency(), baseZeroRate, helpers));
             pCPIts->recalculate();
             cpiUK.linkTo(pCPIts);
-            hii.linkTo(ii);
 
             // make sure that the index has the latest zero inflation term structure
             hcpi.linkTo(pCPIts);
@@ -327,10 +317,11 @@ namespace {
 
 
 void InflationCPICapFloorTest::cpicapfloorpricesurface() {
-
-    // check inflation leg vs calculation directly from inflation TS
+    BOOST_TEST_MESSAGE("Checking CPI cap/floor against price surface...");
+    
+    using namespace inflation_cpi_capfloor_test;
+    
     CommonVars common;
-
 
     Real nominal = 1.0;
     InterpolatedCPICapFloorTermPriceSurface
@@ -340,7 +331,8 @@ void InflationCPICapFloorTest::cpicapfloorpricesurface() {
                        common.calendar,
                        common.convention,
                        common.dcZCIIS,
-                       common.hii,
+                       common.ii,
+                       CPI::Flat,
                        common.nominalUK,
                        common.cStrikesUK,
                        common.fStrikesUK,
@@ -394,6 +386,9 @@ void InflationCPICapFloorTest::cpicapfloorpricesurface() {
 
 
 void InflationCPICapFloorTest::cpicapfloorpricer() {
+    BOOST_TEST_MESSAGE("Checking CPI cap/floor pricer...");
+    
+    using namespace inflation_cpi_capfloor_test;
 
     CommonVars common;
     Real nominal = 1.0;
@@ -404,7 +399,8 @@ void InflationCPICapFloorTest::cpicapfloorpricer() {
                                                                common.calendar,
                                                                common.convention,
                                                                common.dcZCIIS,
-                                                               common.hii,
+                                                               common.ii,
+                                                               CPI::Flat,
                                                                common.nominalUK,
                                                                common.cStrikesUK,
                                                                common.fStrikesUK,
@@ -422,7 +418,7 @@ void InflationCPICapFloorTest::cpicapfloorpricer() {
     Calendar fixCalendar = UnitedKingdom(), payCalendar = UnitedKingdom();
     BusinessDayConvention fixConvention(Unadjusted), payConvention(ModifiedFollowing);
     Rate strike(0.03);
-    Real baseCPI = common.hii->fixing(fixCalendar.adjust(startDate-common.observationLag,fixConvention));
+    Real baseCPI = common.ii->fixing(fixCalendar.adjust(startDate-common.observationLag,fixConvention));
     CPI::InterpolationType observationInterpolation = CPI::AsIndex;
     CPICapFloor aCap(Option::Call,
                      nominal,
@@ -434,7 +430,7 @@ void InflationCPICapFloorTest::cpicapfloorpricer() {
                      payCalendar,
                      payConvention,
                      strike,
-                     common.hii,
+                     common.ii,
                      common.observationLag,
                      observationInterpolation);
 
@@ -457,7 +453,7 @@ void InflationCPICapFloorTest::cpicapfloorpricer() {
 
 
 test_suite* InflationCPICapFloorTest::suite() {
-    test_suite* suite = BOOST_TEST_SUITE("CPIswaption tests");
+    auto* suite = BOOST_TEST_SUITE("CPIswaption tests");
 
     suite->add(QUANTLIB_TEST_CASE(&InflationCPICapFloorTest::cpicapfloorpricesurface));
     suite->add(QUANTLIB_TEST_CASE(&InflationCPICapFloorTest::cpicapfloorpricer));

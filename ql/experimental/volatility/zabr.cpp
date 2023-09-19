@@ -34,7 +34,6 @@
 #include <ql/methods/finitedifferences/solvers/fdmbackwardsolver.hpp>
 #include <ql/experimental/finitedifferences/fdmdupire1dop.hpp>
 #include <ql/experimental/finitedifferences/fdmzabrop.hpp>
-#include <ql/functional.hpp>
 
 using std::pow;
 
@@ -67,14 +66,11 @@ Real ZabrModel::lognormalVolatility(const Real strike) const {
     return lognormalVolatility(std::vector<Real>(1, strike))[0];
 }
 
-Disposable<std::vector<Real> >
-ZabrModel::lognormalVolatility(const std::vector<Real> &strikes) const {
-    using namespace ext::placeholders;
+std::vector<Real> ZabrModel::lognormalVolatility(const std::vector<Real> &strikes) const {
     std::vector<Real> x_ = x(strikes);
     std::vector<Real> result(strikes.size());
     std::transform(strikes.begin(), strikes.end(), x_.begin(), result.begin(),
-                   ext::bind(&ZabrModel::lognormalVolatilityHelper,
-                               this, _1, _2));
+                   [&](Real _k, Real _x) { return lognormalVolatilityHelper(_k, _x); });
     return result;
 }
 
@@ -89,14 +85,11 @@ Real ZabrModel::normalVolatility(const Real strike) const {
     return normalVolatility(std::vector<Real>(1, strike))[0];
 }
 
-Disposable<std::vector<Real> >
-ZabrModel::normalVolatility(const std::vector<Real> &strikes) const {
-    using namespace ext::placeholders;
+std::vector<Real> ZabrModel::normalVolatility(const std::vector<Real> &strikes) const {
     std::vector<Real> x_ = x(strikes);
     std::vector<Real> result(strikes.size());
     std::transform(strikes.begin(), strikes.end(), x_.begin(), result.begin(),
-                   ext::bind(&ZabrModel::normalVolatilityHelper, this,
-                               _1, _2));
+                   [&](Real _k, Real _x) { return normalVolatilityHelper(_k, _x); });
     return result;
 }
 
@@ -111,14 +104,11 @@ Real ZabrModel::localVolatility(const Real f) const {
     return localVolatility(std::vector<Real>(1, f))[0];
 }
 
-Disposable<std::vector<Real> >
-ZabrModel::localVolatility(const std::vector<Real> &f) const {
-    using namespace ext::placeholders;
+std::vector<Real> ZabrModel::localVolatility(const std::vector<Real> &f) const {
     std::vector<Real> x_ = x(f);
     std::vector<Real> result(f.size());
     std::transform(f.begin(), f.end(), x_.begin(), result.begin(),
-                   ext::bind(&ZabrModel::localVolatilityHelper, this,
-                               _1, _2));
+                   [&](Real _f, Real _x) { return localVolatilityHelper(_f, _x); });
     return result;
 }
 
@@ -126,8 +116,7 @@ Real ZabrModel::fdPrice(const Real strike) const {
     return fdPrice(std::vector<Real>(1, strike))[0];
 }
 
-Disposable<std::vector<Real> >
-ZabrModel::fdPrice(const std::vector<Real> &strikes) const {
+std::vector<Real> ZabrModel::fdPrice(const std::vector<Real> &strikes) const {
 
     // TODO check strikes to be increasing
     // TODO put these parameters somewhere
@@ -282,9 +271,9 @@ Real ZabrModel::fullFdPrice(const Real strike) const {
         Real f = mesher->location(iter, 0);
         // Real v = mesher->location(iter, 0);
         rhs[iter.index()] = std::max(f - strike, 0.0);
-        if (!iter.coordinates()[1])
+        if (iter.coordinates()[1] == 0U)
             f_.push_back(mesher->location(iter, 0));
-        if (!iter.coordinates()[0])
+        if (iter.coordinates()[0] == 0U)
             v_.push_back(mesher->location(iter, 1));
     }
 
@@ -316,14 +305,11 @@ Real ZabrModel::x(const Real strike) const {
     return x(std::vector<Real>(1, strike))[0];
 }
 
-Disposable<std::vector<Real> >
-ZabrModel::x(const std::vector<Real> &strikes) const {
-    using namespace ext::placeholders;
+std::vector<Real> ZabrModel::x(const std::vector<Real> &strikes) const {
 
     QL_REQUIRE(strikes[0] > 0.0 || beta_ < 1.0,
                "strikes must be positive (" << strikes[0] << ") if beta = 1");
-    for (std::vector<Real>::const_iterator i = strikes.begin() + 1;
-         i != strikes.end(); ++i)
+    for (auto i = strikes.begin() + 1; i != strikes.end(); ++i)
         QL_REQUIRE(*i > *(i - 1), "strikes must be strictly ascending ("
                                       << *(i - 1) << "," << *i << ")");
 
@@ -333,7 +319,7 @@ ZabrModel::x(const std::vector<Real> &strikes) const {
                                       // the constructor
     std::vector<Real> y(strikes.size()), result(strikes.size());
     std::transform(strikes.rbegin(), strikes.rend(), y.begin(),
-                   ext::bind(&ZabrModel::y, this, _1));
+                   [&](Real _k) { return this->y(_k); });
 
     if (close(gamma_, 1.0)) {
         for (Size m = 0; m < y.size(); m++) {
@@ -354,7 +340,7 @@ ZabrModel::x(const std::vector<Real> &strikes) const {
             Real y0 = 0.0, u0 = 0.0;
             for (int m = ynz + (dir == -1 ? -1 : 0);
                  dir == -1 ? m >= 0 : m < (int)y.size(); m += dir) {
-                Real u = rk(ext::bind(&ZabrModel::F, this, _1, _2),
+                Real u = rk([&](Real _y, Real _u){ return F(_y, _u); },
                             u0, y0, y[m]);
                 result[y.size() - 1 - m] = u * pow(alpha_, 1.0 - gamma_);
                 u0 = u;
@@ -372,10 +358,10 @@ Real ZabrModel::y(const Real strike) const {
         return std::log(forward_ / strike) * std::pow(alpha_, gamma_ - 2.0);
     } else {
         return (strike < 0.0
-                    ? std::pow(forward_, 1.0 - beta_) +
-                          std::pow(-strike, 1.0 - beta_)
-                    : std::pow(forward_, 1.0 - beta_) -
-                          std::pow(strike, 1.0 - beta_)) *
+                    ? Real(std::pow(forward_, 1.0 - beta_) +
+                          std::pow(-strike, 1.0 - beta_))
+                    : Real(std::pow(forward_, 1.0 - beta_) -
+                          std::pow(strike, 1.0 - beta_))) *
                std::pow(alpha_, gamma_ - 2.0) / (1.0 - beta_);
     }
 }

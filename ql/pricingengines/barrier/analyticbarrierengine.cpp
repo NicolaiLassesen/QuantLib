@@ -21,14 +21,15 @@
  FOR A PARTICULAR PURPOSE.  See the license for more details.
 */
 
-#include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
 #include <ql/exercise.hpp>
+#include <ql/pricingengines/barrier/analyticbarrierengine.hpp>
+#include <utility>
 
 namespace QuantLib {
 
     AnalyticBarrierEngine::AnalyticBarrierEngine(
-            const ext::shared_ptr<GeneralizedBlackScholesProcess>& process)
-    : process_(process) {
+        ext::shared_ptr<GeneralizedBlackScholesProcess> process)
+    : process_(std::move(process)) {
         registerWith(process_);
     }
 
@@ -40,9 +41,12 @@ namespace QuantLib {
         QL_REQUIRE(payoff->strike()>0.0,
                    "strike must be positive");
 
+        QL_REQUIRE(arguments_.exercise->type() == Exercise::European,
+                   "only european style option are supported");
+
         Real strike = payoff->strike();
         Real spot = process_->x0();
-        QL_REQUIRE(spot >= 0.0, "negative or null underlying given");
+        QL_REQUIRE(spot > 0.0, "negative or null underlying given");
         QL_REQUIRE(!triggered(spot), "barrier touched");
 
         Barrier::Type barrierType = arguments_.barrierType;

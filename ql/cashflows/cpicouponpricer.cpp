@@ -18,21 +18,18 @@
  */
 
 #include <ql/cashflows/cpicouponpricer.hpp>
+#include <utility>
 
 namespace QuantLib {
 
-    CPICouponPricer::CPICouponPricer() {}
-
-    CPICouponPricer::CPICouponPricer(
-                       const Handle<CPIVolatilitySurface>& capletVol)
-    : capletVol_(capletVol) {
-        registerWith(capletVol_);
+    CPICouponPricer::CPICouponPricer(Handle<YieldTermStructure> nominalTermStructure)
+    : nominalTermStructure_(std::move(nominalTermStructure)) {
+        registerWith(nominalTermStructure_);
     }
 
-    CPICouponPricer::CPICouponPricer(
-                       const Handle<CPIVolatilitySurface>& capletVol,
-                       const Handle<YieldTermStructure>& nominalTermStructure)
-    : capletVol_(capletVol), nominalTermStructure_(nominalTermStructure) {
+    CPICouponPricer::CPICouponPricer(Handle<CPIVolatilitySurface> capletVol,
+                                     Handle<YieldTermStructure> nominalTermStructure)
+    : capletVol_(std::move(capletVol)), nominalTermStructure_(std::move(nominalTermStructure)) {
         registerWith(capletVol_);
         registerWith(nominalTermStructure_);
     }
@@ -40,7 +37,7 @@ namespace QuantLib {
 
     void CPICouponPricer::setCapletVolatility(
        const Handle<CPIVolatilitySurface>& capletVol) {
-        QL_REQUIRE(!capletVol.empty(),"empty capletVol handle")
+        QL_REQUIRE(!capletVol.empty(),"empty capletVol handle");
         capletVol_ = capletVol;
         registerWith(capletVol_);
     }
@@ -111,11 +108,10 @@ namespace QuantLib {
 
 
     Rate CPICouponPricer::adjustedFixing(Rate fixing) const {
-
         if (fixing == Null<Rate>())
             fixing = coupon_->indexFixing() / coupon_->baseCPI();
-        //std::cout << " adjustedFixing " << fixing << std::endl;
-        // no adjustment
+
+        // no further adjustment
         return fixing;
     }
 
@@ -125,24 +121,17 @@ namespace QuantLib {
         gearing_ = coupon_->fixedRate();
         spread_ = coupon_->spread();
         paymentDate_ = coupon_->date();
-        rateCurve_ =
-            !nominalTermStructure_.empty() ?
-            nominalTermStructure_ :
-            ext::dynamic_pointer_cast<ZeroInflationIndex>(coupon.index())
-            ->zeroInflationTermStructure()
-            ->nominalTermStructure();
 
         // past or future fixing is managed in YoYInflationIndex::fixing()
         // use yield curve from index (which sets discount)
 
         discount_ = 1.0;
-        if (paymentDate_ > rateCurve_->referenceDate()) {
-            if (rateCurve_.empty()) {
-                // allow to extract rates, but mark the discount as invalid for prices
-                discount_ = Null<Real>();
-            } else {
-                discount_ = rateCurve_->discount(paymentDate_);
-            }
+        if (nominalTermStructure_.empty()) {
+            // allow to extract rates, but mark the discount as invalid for prices
+            discount_ = Null<Real>();
+        } else {
+            if (paymentDate_ > nominalTermStructure_->referenceDate())
+                discount_ = nominalTermStructure_->discount(paymentDate_);
         }
     }
 
@@ -160,14 +149,5 @@ namespace QuantLib {
         // with a different yield curve
         return gearing_ * adjustedFixing() + spread_;
     }
-
-
-    //=========================================================================
-    // vol-dependent pricers, note that these do not discount
-    //=========================================================================
-
-/*
-    NOT IMPLEMENTED
-*/
 
 }

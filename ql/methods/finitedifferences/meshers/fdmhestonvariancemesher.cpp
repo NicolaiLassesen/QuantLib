@@ -26,18 +26,9 @@
 #include <ql/math/integrals/gausslobattointegral.hpp>
 #include <ql/termstructures/volatility/equityfx/localvoltermstructure.hpp>
 #include <ql/methods/finitedifferences/meshers/fdmhestonvariancemesher.hpp>
-
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++11-extensions"
-#endif
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
-
 #include <set>
 #include <algorithm>
 
@@ -58,21 +49,21 @@ namespace QuantLib {
     FdmHestonVarianceMesher::FdmHestonVarianceMesher(
         Size size,
         const ext::shared_ptr<HestonProcess> & process,
-        Time maturity, Size tAvgSteps, Real epsilon)
+        Time maturity, Size tAvgSteps, Real epsilon,
+        Real mixingFactor)
         : Fdm1dMesher(size) {
 
         std::vector<Real> vGrid(size, 0.0), pGrid(size, 0.0);
-        const Real df  = 4*process->theta()*process->kappa()/
-                            square<Real>()(process->sigma());
+        const Real mixedSigma = process->sigma()*mixingFactor;
+        const Real df  = 4*process->theta()*process->kappa()/squared(mixedSigma);
         try {
             std::multiset<std::pair<Real, Real> > grid;
             
             for (Size l=1; l<=tAvgSteps; ++l) {
                 const Real t = (maturity*l)/tAvgSteps;
-                const Real ncp = 4*process->kappa()*std::exp(-process->kappa()*t)
-                    /(square<Real>()(process->sigma())
+                const Real ncp = 4*process->kappa()*std::exp(-process->kappa()*t)/(squared(mixedSigma)
                     *(1-std::exp(-process->kappa()*t)))*process->v0();
-                const Real k = square<Real>()(process->sigma())
+                const Real k = squared(mixedSigma)
                     *(1-std::exp(-process->kappa()*t))/(4*process->kappa());
 
                 const Real qMin = 0.0; // v_min = 0.0;
@@ -114,7 +105,7 @@ namespace QuantLib {
         } 
         catch (const Error&) {
             // use default mesh
-            const Real vol = process->sigma()*
+            const Real vol = mixedSigma*
                 std::sqrt(process->theta()/(2*process->kappa()));
 
             const Real mean = process->theta();
@@ -129,7 +120,7 @@ namespace QuantLib {
         }
 
         Real skewHint = ((process->kappa() != 0.0) 
-                ? std::max(1.0, process->sigma()/process->kappa()) : 1.0);
+                ? Real(std::max(1.0, mixedSigma/process->kappa())) : 1.0);
 
         std::sort(pGrid.begin(), pGrid.end());
         volaEstimate_ = GaussLobattoIntegral(100000, 1e-4)(
@@ -159,11 +150,12 @@ namespace QuantLib {
         Size size,
         const ext::shared_ptr<HestonProcess>& process,
         const ext::shared_ptr<LocalVolTermStructure>& leverageFct,
-        Time maturity, Size tAvgSteps, Real epsilon)
+        Time maturity, Size tAvgSteps, Real epsilon,
+        Real mixingFactor)
      : Fdm1dMesher(size) {
 
         const FdmHestonVarianceMesher mesher(
-            size, process, maturity, tAvgSteps, epsilon);
+            size, process, maturity, tAvgSteps, epsilon, mixingFactor);
 
         for (Size i=0; i < size; ++i) {
             dplus_[i] = mesher.dplus(i);
@@ -173,7 +165,7 @@ namespace QuantLib {
 
         volaEstimate_ = mesher.volaEstimate();
 
-        if (leverageFct) {
+        if (leverageFct != nullptr) {
             typedef boost::accumulators::accumulator_set<
                 Real, boost::accumulators::stats<
                     boost::accumulators::tag::mean> >
@@ -205,7 +197,7 @@ namespace QuantLib {
                     const Real gf = x*vol*std::sqrt(t);
                     const Real f = fwd*std::exp(gf);
 
-                    sig[i] = square<Real>()(leverageFct->localVol(t, f, true));
+                    sig[i] = squared(leverageFct->localVol(t, f, true));
                 }
 
                 const Real leverageAvg =

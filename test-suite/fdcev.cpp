@@ -19,17 +19,13 @@
 
 #include "fdcev.hpp"
 #include "utilities.hpp"
-
-#include <ql/math/functional.hpp>
 #include <ql/math/randomnumbers/rngtraits.hpp>
 #include <ql/math/integrals/gausslobattointegral.hpp>
 #include <ql/math/statistics/generalstatistics.hpp>
 #include <ql/pricingengines/vanilla/analyticcevengine.hpp>
 #include <ql/pricingengines/vanilla/fdcevvanillaengine.hpp>
-
 #include <ql/methods/finitedifferences/utilities/cevrndcalculator.hpp>
-
-#include <boost/make_shared.hpp>
+#include <ql/shared_ptr.hpp>
 
 using namespace QuantLib;
 using boost::unit_test_framework::test_suite;
@@ -59,8 +55,7 @@ void FdCevTest::testLocalMartingale() {
     const Real alpha = 1.75;
     const Real betas[] = {-2.4, 0.23, 0.9, 1.1, 1.5};
 
-    for (Size i=0; i < LENGTH(betas); ++i) {
-        const Real beta = betas[i];
+    for (Real beta : betas) {
         const CEVRNDCalculator rndCalculator(f0, alpha, beta);
 
         const Real eps = 1e-10;
@@ -146,9 +141,7 @@ void FdCevTest::testFdmCevOp() {
     const ext::shared_ptr<Exercise> exercise =
         ext::make_shared<EuropeanExercise>(maturityDate);
 
-    for (Size i=0; i < LENGTH(optionTypes); ++i) {
-        const Option::Type optionType = optionTypes[i];
-
+    for (auto optionType : optionTypes) {
         const ext::shared_ptr<PlainVanillaPayoff> payoff =
             ext::make_shared<PlainVanillaPayoff>(optionType, strike);
 
@@ -159,9 +152,7 @@ void FdCevTest::testFdmCevOp() {
         const Real alpha = 0.75;
 
         const Real betas[] = { -2.0, -0.5, 0.45, 0.6, 0.9, 1.45 };
-        for (Size j=0; j < LENGTH(betas); ++j) {
-
-            const Real beta = betas[j];
+        for (Real beta : betas) {
 
             VanillaOption option(payoff, exercise);
             option.setPricingEngine(ext::make_shared<AnalyticCEVEngine>(
@@ -214,7 +205,7 @@ void FdCevTest::testFdmCevOp() {
 
 
 test_suite* FdCevTest::suite(SpeedLevel speed) {
-    test_suite* suite = BOOST_TEST_SUITE("Finite Difference CEV tests");
+    auto* suite = BOOST_TEST_SUITE("Finite Difference CEV tests");
 
 
     suite->add(QUANTLIB_TEST_CASE(&FdCevTest::testLocalMartingale));
