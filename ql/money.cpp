@@ -185,8 +185,7 @@ namespace QuantLib {
     }
 
     bool close_enough(const Money& m1, const Money& m2, Size n) {
-        const auto & conversion_type =
-            Money::Settings::instance().conversionType();
+        const auto & conversion_type = Money::Settings::instance().conversionType();
         if (m1.currency() == m2.currency()) {
             return close_enough(m1.value(),m2.value(),n);
         } else if (conversion_type == Money::BaseCurrencyConversion) {

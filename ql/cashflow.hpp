@@ -27,6 +27,8 @@
 
 #include <ql/event.hpp>
 #include <ql/math/comparison.hpp>
+#include <ql/optional.hpp>
+#include <ql/patterns/lazyobject.hpp>
 #include <vector>
 
 namespace QuantLib {
@@ -35,7 +37,7 @@ namespace QuantLib {
     /*! This class is purely virtual and acts as a base class for the
         actual cash flow implementations.
     */
-    class CashFlow : public Event {
+    class CashFlow : public Event, public LazyObject {
       public:
         ~CashFlow() override = default;
         //! \name Event interface
@@ -47,7 +49,11 @@ namespace QuantLib {
             Settings::includeTodaysCashflows in account
         */
         bool hasOccurred(const Date& refDate = Date(),
-                         boost::optional<bool> includeRefDate = boost::none) const override;
+                         ext::optional<bool> includeRefDate = ext::nullopt) const override;
+        //@}
+        //! \name LazyObject interface
+        //@{
+        void performCalculations() const override {}
         //@}
         //! \name CashFlow interface
         //@{

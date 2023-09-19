@@ -31,6 +31,7 @@
 #include <ql/termstructures/yieldtermstructure.hpp>
 #include <ql/time/calendars/weekendsonly.hpp>
 #include <ql/time/schedule.hpp>
+#include <ql/optional.hpp>
 #include <utility>
 
 namespace QuantLib {
@@ -49,42 +50,12 @@ namespace QuantLib {
                                          const bool rebatesAccrual,
                                          const Date& tradeDate,
                                          Natural cashSettlementDays)
-    : side_(side), notional_(notional), upfront_(boost::none), runningSpread_(spread),
+    : side_(side), notional_(notional), upfront_(ext::nullopt), runningSpread_(spread),
       settlesAccrual_(settlesAccrual), paysAtDefaultTime_(paysAtDefaultTime),
       claim_(std::move(claim)),
       protectionStart_(protectionStart == Null<Date>() ? schedule[0] : protectionStart),
       tradeDate_(tradeDate), cashSettlementDays_(cashSettlementDays) {
 
-        //QL_REQUIRE((protectionStart_ <= schedule[0]) ||
-        //    (schedule.rule() == DateGeneration::CDS) ||
-        //    (schedule.rule() == DateGeneration::CDS2015),
-        //    "protection can not start after accrual");
-
-    	//leg_ = FixedRateLeg(schedule)
-        //    .withNotionals(notional)
-        //    .withCouponRates(spread, dayCounter)
-        //    .withPaymentAdjustment(convention)
-        //    .withLastPeriodDayCounter(lastPeriodDayCounter);
-
-        //Date effectiveUpfrontDate = schedule.calendar().advance(
-        //    protectionStart_ - 1, 3, Days, convention);
-        //// the upfront valuation date is trade_date + 3 (using calendar) and
-        //// protection start is assumed to be T+1 (independent of the calendar)
-
-        //if(rebatesAccrual) {
-        //    Size i = 0;
-        //    while (leg_[i]->hasOccurred(protectionStart_, false)) ++i;
-        //    ext::shared_ptr<FixedRateCoupon> coupon =
-        //        ext::dynamic_pointer_cast<FixedRateCoupon>(leg_[i]);
-        //    QL_REQUIRE(coupon->accrualStartDate() <= protectionStart_,
-        //               "contract cannot start before accrual (accrual: "
-        //                   << coupon->accrualStartDate() << " vs contract: " << protectionStart_
-        //                   << ")");
-        //    const Date& rebateDate = effectiveUpfrontDate;
-        //    accrualRebate_ = ext::make_shared<SimpleCashFlow>(
-        //        coupon->accruedAmount(protectionStart_),
-        //        rebateDate);
-        //}
         init(schedule, convention, dayCounter, lastPeriodDayCounter, rebatesAccrual);
     }
 
@@ -217,7 +188,7 @@ namespace QuantLib {
         return runningSpread_;
     }
 
-    boost::optional<Rate> CreditDefaultSwap::upfront() const {
+    ext::optional<Rate> CreditDefaultSwap::upfront() const {
         return upfront_;
     }
 
@@ -391,7 +362,7 @@ namespace QuantLib {
           case ISDA:
             engine = ext::make_shared<IsdaCdsEngine>(
                 probability, recoveryRate, discountCurve,
-                boost::none,
+                ext::nullopt,
                 IsdaCdsEngine::Taylor,
                 IsdaCdsEngine::HalfDayBias,
                 IsdaCdsEngine::Piecewise);
@@ -432,7 +403,7 @@ namespace QuantLib {
           case ISDA:
             engine = ext::make_shared<IsdaCdsEngine>(
                 probability, conventionalRecovery, discountCurve,
-                boost::none,
+                ext::nullopt,
                 IsdaCdsEngine::Taylor,
                 IsdaCdsEngine::HalfDayBias,
                 IsdaCdsEngine::Piecewise);

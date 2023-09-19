@@ -103,13 +103,8 @@ namespace QuantLib {
                 QL_FAIL("unknown interpolation type");
             }
 
-            const ext::shared_ptr<FdmLinearOpLayout> layout =
-                mesher_->layout();
-            const FdmLinearOpIterator endIter = layout->end();
-
-            Array z(layout->size());
-            for (FdmLinearOpIterator iter = layout->begin();
-                 iter!=endIter; ++iter) {
+            Array z(mesher_->layout()->size());
+            for (const auto& iter : *mesher_->layout()) {
                 const Size i = iter.index();
                 const Real lnStrike = mesher_->location(iter, 0);
 
@@ -252,8 +247,7 @@ namespace QuantLib {
             const Real strike = payoff->strike();
             strikes.insert(strike);
 
-            calibrationSet_.push_back(
-                std::make_pair(ext::make_shared<VanillaOption>(payoff, exercise), i.second));
+            calibrationSet_.emplace_back(ext::make_shared<VanillaOption>(payoff, exercise), i.second);
 
             registerWith(i.second);
         }

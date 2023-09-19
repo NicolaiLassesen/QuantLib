@@ -90,10 +90,17 @@ namespace QuantLib {
                       Position::Type putPosition = Position::Long,
                       bool isPutITMIncluded = false,
                       Rate putDigitalPayoff = Null<Rate>(),
-                      const ext::shared_ptr<DigitalReplication>& replication =
-                        ext::shared_ptr<DigitalReplication>(),
+                      const ext::shared_ptr<DigitalReplication>& replication = {},
                       bool nakedOption = false);
 
+        //@}
+        //! \name Obverver interface
+        //@{
+        void deepUpdate() override;
+        //@}
+        //! \name LazyObject interface
+        //@{
+        void performCalculations() const override;
         //@}
         //! \name Coupon interface
         //@{
@@ -121,10 +128,6 @@ namespace QuantLib {
            (multiplied by: nominal*accrualperiod*discount is the NPV of the option)
         */
         Rate putOptionRate() const;
-        //@}
-        //! \name Observer interface
-        //@{
-        void update() override;
         //@}
         //! \name Visitability
         //@{

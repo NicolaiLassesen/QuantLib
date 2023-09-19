@@ -478,7 +478,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>C:\dev\boost_1_75_0;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\dev\boost;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;_SCL_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -508,7 +508,7 @@
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>C:\dev\boost_1_75_0\stage\lib;..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\dev\boost\stage\lib;..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
@@ -675,6 +675,7 @@
     <ClCompile Include="chooseroption.cpp" />
     <ClCompile Include="cliquetoption.cpp" />
     <ClCompile Include="cms.cpp" />
+    <ClCompile Include="cms_normal.cpp" />
     <ClCompile Include="cmsspread.cpp" />
     <ClCompile Include="commodityunitofmeasure.cpp" />
     <ClCompile Include="compiledboostversion.cpp" />
@@ -695,6 +696,9 @@
     <ClCompile Include="dividendoption.cpp" />
     <ClCompile Include="doublebarrieroption.cpp" />
     <ClCompile Include="doublebinaryoption.cpp" />
+    <ClCompile Include="equityindex.cpp" />
+    <ClCompile Include="equitycashflow.cpp" />
+    <ClCompile Include="equitytotalreturnswap.cpp" />
     <ClCompile Include="europeanoption.cpp" />
     <ClCompile Include="everestoption.cpp" />
     <ClCompile Include="exchangerate.cpp" />
@@ -842,6 +846,7 @@
     <ClInclude Include="chooseroption.hpp" />
     <ClInclude Include="cliquetoption.hpp" />
     <ClInclude Include="cms.hpp" />
+    <ClInclude Include="cms_normal.hpp" />
     <ClInclude Include="cmsspread.hpp" />
     <ClInclude Include="commodityunitofmeasure.hpp" />
     <ClInclude Include="compiledboostversion.hpp" />
@@ -862,6 +867,9 @@
     <ClInclude Include="dividendoption.hpp" />
     <ClInclude Include="doublebarrieroption.hpp" />
     <ClInclude Include="doublebinaryoption.hpp" />
+    <ClInclude Include="equityindex.hpp" />
+    <ClInclude Include="equitycashflow.hpp" />
+    <ClInclude Include="equitytotalreturnswap.hpp" />
     <ClInclude Include="europeanoption.hpp" />
     <ClInclude Include="everestoption.hpp" />
     <ClInclude Include="exchangerate.hpp" />
