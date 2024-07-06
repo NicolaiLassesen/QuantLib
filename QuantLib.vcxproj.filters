@@ -4327,9 +4327,6 @@
     <ClInclude Include="ql\pricingengines\fx\forwardpointsengine.hpp">
       <Filter>pricingengines\fx</Filter>
     </ClInclude>
-    <ClInclude Include="all.hpp">
-      <Filter>pricingengines\fx</Filter>
-    </ClInclude>
     <ClInclude Include="ql\pricingengines\bond\discountingspreadengine.hpp">
       <Filter>pricingengines\bond</Filter>
     </ClInclude>
